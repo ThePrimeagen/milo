@@ -1,0 +1,39 @@
+{
+  "name": "native-sockets",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack",
+    "b": "node-gyp build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ThePrimeagen/native-sockets.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ThePrimeagen/native-sockets/issues"
+  },
+  "homepage": "https://github.com/ThePrimeagen/native-sockets#readme",
+  "devDependencies": {
+    "express": "^4.17.1",
+    "node-addon-api": "^2.0.0",
+    "node-gyp": "^6.0.1",
+    "ts-node": "^8.5.4",
+    "typescript": "^3.7.3",
+    "webpack-cli": "^3.3.10"
+  },
+  "dependencies": {
+    "@types/node": "^12.12.16",
+    "bindings": "^1.5.0",
+    "copy-webpack-plugin": "^5.0.5",
+    "dotenv": "^8.2.0",
+    "dotenv-webpack": "^1.7.0",
+    "ts-loader": "^6.2.1",
+    "webpack": "^4.41.2"
+  }
+}

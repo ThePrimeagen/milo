@@ -1,0 +1,14 @@
+{
+    "include": ["src"],
+    "compilerOptions": {
+        "outDir": "./dist/",
+        "sourceMap": true,
+        "noImplicitAny": true,
+        "lib": ["es6", "dom"],
+        "module": "es6",
+        "target": "es6",
+        "esModuleInterop": true,
+        "allowJs": true
+    }
+}
+
