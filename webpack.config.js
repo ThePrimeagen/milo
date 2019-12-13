@@ -16,7 +16,8 @@ function getCopyPaths() {
 module.exports = {
     target: 'node',
     entry: {
-        bindings: './src/index.ts',
+        clientChatter: './src/client/index.ts',
+        serverChatter: './src/server/index.ts',
     },
     plugins: [
         new CopyPlugin(getCopyPaths()),

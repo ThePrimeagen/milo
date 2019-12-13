@@ -1,8 +1,12 @@
 #include "native-sockets.h"
+#include "ReadWorker.h"
 #include <napi.h>
 #include <map>
+#include <vector>
 
 std::map<int, struct addrinfo*> addrInfos;
+//std::map<SOCKET, Napi::Function> readCallbacks;
+//SelectAsyncWorker *worker = nullptr;
 
 std::string toString(Napi::Value value) {
     return value.As<Napi::String>();
@@ -12,9 +16,23 @@ int toInt(Napi::Value value) {
     return (int)value.As<Napi::Number>().DoubleValue();
 }
 
+Napi::Value OnSelect(const Napi::CallbackInfo& info) {
+    Napi::Env env = info.Env();
+    char *errMsg = strerror(GETSOCKETERRNO());
+
+    return Napi::String::New(env, errMsg);
+}
+
 Napi::Value getErrorString(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
     char *errMsg = strerror(GETSOCKETERRNO());
+
+    return Napi::String::New(env, errMsg);
+}
+
+Napi::Value Gai_strerror(const Napi::CallbackInfo& info) {
+    Napi::Env env = info.Env();
+    const char *errMsg = gai_strerror(toInt(info[0]));
 
     return Napi::String::New(env, errMsg);
 }
@@ -35,12 +53,6 @@ Napi::Value Connect(const Napi::CallbackInfo& info) {
     }
 
     struct addrinfo* bindAddress = addrInfos[toInt(info[1])];
-    char addrInfo[200];
-    getnameinfo(bindAddress->ai_addr, bindAddress->ai_addrlen,
-            addrInfo, sizeof(char) * 100, addrInfo + 100,
-            sizeof(char) * 100, NI_NUMERICHOST);
-    printf("AddrInfo %s --- %s \n", addrInfo, addrInfo + 100);
-
     int status =
         connect(toInt(info[0]), bindAddress->ai_addr, bindAddress->ai_addrlen);
 
@@ -49,6 +61,37 @@ Napi::Value Connect(const Napi::CallbackInfo& info) {
 
 Napi::Value IsValidSocket(const Napi::CallbackInfo& info) {
     return Napi::Boolean::New(info.Env(), ISVALIDSOCKET((int)info[0].As<Napi::Number>().DoubleValue()));
+}
+
+Napi::Value OnRecv(const Napi::CallbackInfo& info) {
+    Napi::Env env = info.Env();
+
+    if (info.Length() != 4) {
+        Napi::TypeError::New(env, "Wrong number of arguments")
+            .ThrowAsJavaScriptException();
+        return env.Undefined();
+    }
+
+    if (!info[0].IsNumber() ||
+            !info[1].IsBuffer() ||
+            !info[2].IsNumber() ||
+            !info[3].IsFunction()) {
+        Napi::TypeError::New(env, "Wrong type of arguments")
+            .ThrowAsJavaScriptException();
+        return env.Undefined();
+    }
+
+
+    Napi::Function fn = info[3].As<Napi::Function>();
+    Napi::Buffer<unsigned char> buf = info[1].As<Napi::Buffer<unsigned char>>();
+    SOCKET sock = toInt(info[0]);
+    int offest = toInt(info[2]);
+
+    ReadWorker* worker = new ReadWorker(fn, sock, buf, offest);
+    worker->Queue();
+
+    //Napi::Function& callback, SOCKET socket, Napi::Buffer<unsigned char*> buf, int offset
+    return env.Undefined();
 }
 
 Napi::Value Send(const Napi::CallbackInfo& info) {
@@ -95,7 +138,8 @@ Napi::Value Send(const Napi::CallbackInfo& info) {
 Napi::Value GetAddrInfo(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
     if (info.Length() != 4 ||
-            !info[0].IsString() ||
+            (!info[0].IsString() &&
+            !info[0].IsNumber()) ||
             !info[1].IsString() ||
             !info[2].IsNumber() ||
             !info[3].IsNumber()) {
@@ -105,30 +149,23 @@ Napi::Value GetAddrInfo(const Napi::CallbackInfo& info) {
         return env.Null();
     }
 
-    std::string h = toString(info[0]);
-    const char* host = h.c_str();
-
     std::string p = toString(info[1]);
     const char* port = p.c_str();
 
     struct addrinfo* hints = addrInfos[toInt(info[2])];
-    struct addrinfo* bindAddress = addrInfos[toInt(info[3])];
+    struct addrinfo* baTemp;
 
-    printf("host and port %s --- %s \n", host, port);
+    int out;
 
-    bool isNullBind = bindAddress == nullptr;
-
-    int out = getaddrinfo(host, port, hints, &bindAddress);
-
-    // TODO: Yep, argument 5 is the one with the information.
-    if (isNullBind) {
-        addrInfos[toInt(info[3])] = bindAddress;
-        char addrInfo[200];
-        getnameinfo(bindAddress->ai_addr, bindAddress->ai_addrlen,
-                addrInfo, sizeof(char) * 100, addrInfo + 100,
-                sizeof(char) * 100, NI_NUMERICHOST);
-        printf("AddrInfo %s --- %s \n", addrInfo, addrInfo + 100);
+    if (info[0].IsString()) {
+        std::string h = toString(info[0]);
+        const char* host = h.c_str();
+        out = getaddrinfo(host, port, hints, &baTemp);
+    } else {
+        out = getaddrinfo(0, port, hints, &baTemp);
     }
+
+    addrInfos[toInt(info[3])] = baTemp;
 
     return Napi::Number::New(env, out);
 }
@@ -162,8 +199,8 @@ Napi::Value NewAddrInfo(const Napi::CallbackInfo& info) {
         hints->ai_family = toInt(options.Get("ai_family"));
     }
 
-    if (options.Get("ai_protocol").IsNumber()) {
-        hints->ai_protocol = toInt(options.Get("ai_protocol"));
+    if (options.Get("ai_flags").IsNumber()) {
+        hints->ai_flags = toInt(options.Get("ai_flags"));
     }
 
     size_t size = addrInfos.size();
@@ -191,6 +228,66 @@ Napi::Value AddrInfoToObject(const Napi::CallbackInfo& info) {
     return addrInfo;
 }
 
+Napi::Value Listen(const Napi::CallbackInfo& info) {
+    Napi::Env env = info.Env();
+
+    if (info.Length() != 2) {
+        Napi::TypeError::New(env, "Wrong number of arguments")
+            .ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    if (!info[0].IsNumber() || !info[1].IsNumber()) {
+        Napi::TypeError::New(env, "Wrong type arguments").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    return Napi::Number::New(env, listen(toInt(info[0]), toInt(info[1])));
+}
+
+Napi::Value Close(const Napi::CallbackInfo& info) {
+    Napi::Env env = info.Env();
+
+    if (info.Length() != 1) {
+        Napi::TypeError::New(env, "Wrong number of arguments")
+            .ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    if (!info[0].IsNumber()) {
+        Napi::TypeError::New(env, "Wrong type arguments").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    return Napi::Number::New(env, close(toInt(info[0])));
+}
+
+Napi::Value Bind(const Napi::CallbackInfo& info) {
+    Napi::Env env = info.Env();
+
+    if (info.Length() != 2) {
+        Napi::TypeError::New(env, "Wrong number of arguments")
+            .ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    if (!info[0].IsNumber() || !info[1].IsNumber()) {
+        Napi::TypeError::New(env, "Wrong type arguments").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+    int addrId = toInt(info[1]);
+    if (addrInfos.find(addrId) == addrInfos.end()) {
+        Napi::TypeError::New(env, "AddrId is invalid.").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    // TODO: AI_PASSIVE???? Socket server???
+    struct addrinfo* ba = addrInfos[addrId];
+    int bindRes = bind(toInt(info[0]), ba->ai_addr, ba->ai_addrlen);
+
+    return Napi::Number::New(env, bindRes);
+}
+
 Napi::Value Socket(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
 
@@ -214,8 +311,6 @@ Napi::Value Socket(const Napi::CallbackInfo& info) {
             toInt(info[1]),
             toInt(info[2]));
 
-    printf("XXXX - #socket#socket %d\n", socket_listen);
-
     return Napi::Number::New(env, socket_listen);
 }
 
@@ -224,6 +319,7 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
     exports.Set(Napi::String::New(env, "SOCK_STREAM"), Napi::Number::New(env, SOCK_STREAM));
     exports.Set(Napi::String::New(env, "AF_INET"), Napi::Number::New(env, AF_INET));
     exports.Set(Napi::String::New(env, "AI_PASSIVE"), Napi::Number::New(env, AI_PASSIVE));
+    exports.Set(Napi::String::New(env, "INADDR_ANY"), Napi::Number::New(env, INADDR_ANY));
 
     // TODO: Errors???
 
@@ -232,12 +328,17 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
     exports.Set(Napi::String::New(env, "connect"), Napi::Function::New(env, Connect));
     exports.Set(Napi::String::New(env, "send"), Napi::Function::New(env, Send));
     exports.Set(Napi::String::New(env, "getaddrinfo"), Napi::Function::New(env, GetAddrInfo));
+    exports.Set(Napi::String::New(env, "bind"), Napi::Function::New(env, Bind));
+    exports.Set(Napi::String::New(env, "listen"), Napi::Function::New(env, Listen));
+    exports.Set(Napi::String::New(env, "close"), Napi::Function::New(env, Close));
+    exports.Set(Napi::String::New(env, "gai_strerror"), Napi::Function::New(env, Gai_strerror));
 
     // Ackshually not c functions
     exports.Set(Napi::String::New(env, "getErrorString"), Napi::Function::New(env, getErrorString));
     exports.Set(Napi::String::New(env, "isValidSocket"), Napi::Function::New(env, IsValidSocket));
     exports.Set(Napi::String::New(env, "newAddrInfo"), Napi::Function::New(env, NewAddrInfo));
     exports.Set(Napi::String::New(env, "addrInfoToObject"), Napi::Function::New(env, AddrInfoToObject));
+    exports.Set(Napi::String::New(env, "onRecv"), Napi::Function::New(env, OnRecv));
 
     return exports;
 }

@@ -29,7 +29,7 @@ export default function test(bindings: NativeSocketInterface) {
     const bindId = bindings.newAddrInfo();
     console.log("XXXX - localhost", "8080");
     const addrInfoResult =
-        bindings.getaddrinfo("localhost", "8080", hintsId, bindId);
+        bindings.getaddrinfo("example.com", "80", hintsId, bindId);
 
     if (addrInfoResult) {
         console.error("Unable to getaddrinfo.  Also stop using this method you dingus");

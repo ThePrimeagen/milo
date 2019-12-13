@@ -1,7 +1,6 @@
 import bindings from 'bindings';
-import clientChat from './client/chat';
+import serverChat from './chat';
 
 const n = bindings('native-sockets');
-clientChat(n);
-
+serverChat(n);
 
