@@ -45,8 +45,8 @@ Napi::Value FDClr(const Napi::CallbackInfo& info) {
         return env.Undefined();
     }
 
-    fd_set set = fdSets[toInt(info[0])];
-    FD_CLR(&set);
+    //fd_set set = fdSets[toInt(info[0])];
+    //FD_CLR(&set);
 
     return env.Undefined();
 }

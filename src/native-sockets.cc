@@ -310,8 +310,9 @@ Napi::Value FDSet(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
 
     fd_set set;
-    size_t s = fdSets.size();
-    fdSets[s] = set;
+    size_t s = 0;
+    //size_t s = fdSets.size();
+    //fdSets[s] = set;
 
     return Napi::Number::New(env, s);
 }
