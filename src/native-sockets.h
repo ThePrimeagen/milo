@@ -13,4 +13,14 @@
 #define SOCKET int
 #define GETSOCKETERRNO() (errno)
 
+#include <napi.h>
+
+std::string toString(Napi::Value value) {
+    return value.As<Napi::String>();
+}
+
+int toInt(Napi::Value value) {
+    return (int)value.As<Napi::Number>().DoubleValue();
+}
+
 #endif
