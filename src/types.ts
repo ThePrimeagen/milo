@@ -5,8 +5,10 @@ type AddrInfoHints = {
     ai_protocol?: number;
 }
 
+type NodeCallback = (err: (x: any) => void, res: (x: any) => void) => void;
 type AddrId = number;
 type Socket = number;
+type fd_set = number;
 
 type NativeSocketInterface = {
     // Socket constants
@@ -24,6 +26,12 @@ type NativeSocketInterface = {
     bind: (sockfd: Socket, bindAddr: AddrId) => number;
     listen: (sockfd: Socket, backlog: number) => number;
     close: (sockfd: Socket) => number;
+    fd_set: () => fd_set,
+    FD_ISSET: (sockfd: Socket, set: fd_set) => void,
+    FD_CLR: (sockfd: Socket, set: fd_set) => void,
+    FD_SET: (sockfd: Socket, set: fd_set) => void,
+    FD_ZERO: (set: fd_set) => void,
+    select: (sockfd: Socket, set: fd_set, cb: NodeCallback) => void,
     gai_strerror: (error: number) => string;
 
     // NOTE: Broke from api
@@ -58,6 +66,7 @@ export {
     Socket,
     AddrId,
     AddrInfoHints,
+    fd_set,
 
     NativeSocketInterface,
 };

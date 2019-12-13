@@ -2,7 +2,9 @@ import {
     AddrId,
     AddrInfoHints,
 
-    NativeSocketInterface
+    NativeSocketInterface,
+    fd_set,
+    Socket,
 } from '../types';
 
 import {
@@ -10,24 +12,31 @@ import {
     ab2str
 } from '../utils/index';
 
-export default function serverChat({
-    SOCK_STREAM,
-    AF_INET,
-    AI_PASSIVE,
+export default async function serverChat(bindings: NativeSocketInterface) {
+    const {
+        SOCK_STREAM,
+        AF_INET,
+        AI_PASSIVE,
 
-    socket,
-    getaddrinfo,
-    bind,
-    listen,
-    close,
+        socket,
+        getaddrinfo,
+        bind,
+        listen,
+        close,
 
-    onRecv,
-    newAddrInfo,
-    isValidSocket,
-    getErrorString,
-    gai_strerror,
-    addrInfoToObject,
-}: NativeSocketInterface) {
+        onRecv,
+        newAddrInfo,
+        isValidSocket,
+        getErrorString,
+        gai_strerror,
+        addrInfoToObject,
+
+        FD_CLR,
+        FD_SET,
+        FD_ZERO,
+        FD_ISSET,
+    } = bindings;
+
     const addrHints: AddrInfoHints = {
         ai_socktype: SOCK_STREAM,
         ai_family: AF_INET,
@@ -55,20 +64,76 @@ export default function serverChat({
         return;
     }
 
-    console.log("bind");
+    console.log("bind with", socketId);
     if (bind(socketId, bindId)) {
         console.error("Unable to bind the socket.", getErrorString());
+        return;
     }
-
 
     console.log("listen");
     if (listen(socketId, 0)) {
         console.error("Unable to listen the socket.", getErrorString());
+        return;
     }
 
-    console.log("closing");
-    if (close(socketId)) {
-        console.error("Unable to close the socket.", getErrorString());
+    console.log("Here 1");
+
+    const fdSet = bindings.fd_set();
+    FD_ZERO(fdSet);
+    FD_SET(socketId, fdSet);
+
+    while (true) {
+
+        try {
+            console.log("Here 2");
+            await onSelect(bindings, socketId, fdSet);
+            console.log("Here 3");
+        } catch (e) {
+            console.log("Error", e, getErrorString());
+        }
+
+        console.log("closing because we received input.");
+        if (close(socketId)) {
+            console.error("Unable to close the socket.", getErrorString());
+        }
+        return;
     }
+
 };
+
+function onSelect(bindings: NativeSocketInterface, sockfd: Socket, fdSet: fd_set) {
+    return new Promise((res, rej) => {
+        bindings.select(sockfd, fdSet, (err, value) => {
+            if (err) {
+                rej(err);
+                return;
+            }
+            res(value);
+            return;
+        });
+    });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

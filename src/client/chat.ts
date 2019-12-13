@@ -49,12 +49,15 @@ export default function clientChat({
     const socketId = socket(
         bindData.ai_family, bindData.ai_socktype, bindData.ai_protocol);
 
+    console.log("Sacket id" , socketId);
     if (!isValidSocket(socketId)) {
         console.error("Unable to create the socket", getErrorString());
         return;
     }
 
+    console.log("about to connect");
     const connectStatus = connect(socketId, bindId);
+    console.log("connectStatus" , connectStatus);
     if (connectStatus) {
         console.error("Unable to connect to the socket", getErrorString());
         return;
@@ -69,11 +72,10 @@ export default function clientChat({
     buf[3] = 72;
      */
 
-    onRecv(socketId, buf, 0, readBytes => {
-        str2ab;
-        ab2str;
-        debugger;
-    });
+
+    setTimeout(() => {
+        close(socketId);
+    }, 2000);
 };
 
 

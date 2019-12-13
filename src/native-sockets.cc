@@ -1,5 +1,7 @@
 #include "native-sockets.h"
-#include "ReadWorker.h"
+#include "fd.h"
+
+#include "SelectWorker.h"
 #include <map>
 #include <napi.h>
 #include <vector>
@@ -10,9 +12,16 @@ std::map<int, struct addrinfo*> addrInfos;
 
 Napi::Value OnSelect(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
-    char *errMsg = strerror(GETSOCKETERRNO());
 
-    return Napi::String::New(env, errMsg);
+    SOCKET sockfd = toInt(info[0]);
+    fd_set* set = getFdSet(toInt(info[1]));
+    Napi::Function fn = info[2].As<Napi::Function>();
+    int maxFd = getMaxFd();
+
+    SelectWorker *worker = new SelectWorker(fn, sockfd, set, maxFd);
+    worker->Queue();
+
+    return env.Undefined();
 }
 
 Napi::Value getErrorString(const Napi::CallbackInfo& info) {
@@ -53,37 +62,6 @@ Napi::Value Connect(const Napi::CallbackInfo& info) {
 
 Napi::Value IsValidSocket(const Napi::CallbackInfo& info) {
     return Napi::Boolean::New(info.Env(), ISVALIDSOCKET((int)info[0].As<Napi::Number>().DoubleValue()));
-}
-
-Napi::Value OnRecv(const Napi::CallbackInfo& info) {
-    Napi::Env env = info.Env();
-
-    if (info.Length() != 4) {
-        Napi::TypeError::New(env, "Wrong number of arguments")
-            .ThrowAsJavaScriptException();
-        return env.Undefined();
-    }
-
-    if (!info[0].IsNumber() ||
-            !info[1].IsBuffer() ||
-            !info[2].IsNumber() ||
-            !info[3].IsFunction()) {
-        Napi::TypeError::New(env, "Wrong type of arguments")
-            .ThrowAsJavaScriptException();
-        return env.Undefined();
-    }
-
-
-    Napi::Function fn = info[3].As<Napi::Function>();
-    Napi::Buffer<unsigned char> buf = info[1].As<Napi::Buffer<unsigned char>>();
-    SOCKET sock = toInt(info[0]);
-    int offest = toInt(info[2]);
-
-    ReadWorker* worker = new ReadWorker(fn, sock, buf, offest);
-    worker->Queue();
-
-    //Napi::Function& callback, SOCKET socket, Napi::Buffer<unsigned char*> buf, int offset
-    return env.Undefined();
 }
 
 Napi::Value Send(const Napi::CallbackInfo& info) {
@@ -306,16 +284,6 @@ Napi::Value Socket(const Napi::CallbackInfo& info) {
     return Napi::Number::New(env, socket_listen);
 }
 
-Napi::Value FDSet(const Napi::CallbackInfo& info) {
-    Napi::Env env = info.Env();
-
-    fd_set set;
-    size_t s = fdSets.size();
-    fdSets[s] = set;
-
-    return Napi::Number::New(env, s);
-}
-
 Napi::Object Init(Napi::Env env, Napi::Object exports) {
     // Socket constants
     exports.Set(Napi::String::New(env, "SOCK_STREAM"), Napi::Number::New(env, SOCK_STREAM));
@@ -334,14 +302,18 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
     exports.Set(Napi::String::New(env, "listen"), Napi::Function::New(env, Listen));
     exports.Set(Napi::String::New(env, "close"), Napi::Function::New(env, Close));
     exports.Set(Napi::String::New(env, "gai_strerror"), Napi::Function::New(env, Gai_strerror));
-    exports.Set(Napi::String::New(env, "fdSet"), Napi::Function::New(env, FDSet));
+    exports.Set(Napi::String::New(env, "fd_set"), Napi::Function::New(env, CreateFDSet));
+    exports.Set(Napi::String::New(env, "FD_ISSET"), Napi::Function::New(env, FDIsSet));
+    exports.Set(Napi::String::New(env, "FD_CLR"), Napi::Function::New(env, FDClr));
+    exports.Set(Napi::String::New(env, "FD_SET"), Napi::Function::New(env, FDSet));
+    exports.Set(Napi::String::New(env, "FD_ZERO"), Napi::Function::New(env, FDZero));
+    exports.Set(Napi::String::New(env, "select"), Napi::Function::New(env, OnSelect));
 
     // Ackshually not c functions
     exports.Set(Napi::String::New(env, "getErrorString"), Napi::Function::New(env, getErrorString));
     exports.Set(Napi::String::New(env, "isValidSocket"), Napi::Function::New(env, IsValidSocket));
     exports.Set(Napi::String::New(env, "newAddrInfo"), Napi::Function::New(env, NewAddrInfo));
     exports.Set(Napi::String::New(env, "addrInfoToObject"), Napi::Function::New(env, AddrInfoToObject));
-    exports.Set(Napi::String::New(env, "onRecv"), Napi::Function::New(env, OnRecv));
 
     return exports;
 }
