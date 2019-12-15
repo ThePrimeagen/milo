@@ -106,11 +106,13 @@ Napi::Value FDZero(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
 
     if (!isFDCall(info)) {
+        printf("Unable to call Zero");
         return env.Undefined();
     }
 
     fd_set* set = fdSets[toInt(info[0])];
     FD_ZERO(set);
+    printf("zero'ing the set");
 
     return env.Undefined();
 }

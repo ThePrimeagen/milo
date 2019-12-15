@@ -4,6 +4,7 @@ import {
 
     NativeSocketInterface,
     fd_set,
+    select,
     Socket,
 } from '../types';
 
@@ -11,6 +12,8 @@ import {
     str2ab,
     ab2str
 } from '../utils/index';
+
+import onSelect from "../utils/onSelect";
 
 export default async function serverChat(bindings: NativeSocketInterface) {
     const {
@@ -24,7 +27,10 @@ export default async function serverChat(bindings: NativeSocketInterface) {
         listen,
         close,
 
-        onRecv,
+        recv,
+        send,
+        accept,
+
         newAddrInfo,
         isValidSocket,
         getErrorString,
@@ -64,54 +70,86 @@ export default async function serverChat(bindings: NativeSocketInterface) {
         return;
     }
 
-    console.log("bind with", socketId);
     if (bind(socketId, bindId)) {
         console.error("Unable to bind the socket.", getErrorString());
         return;
     }
 
-    console.log("listen");
     if (listen(socketId, 0)) {
         console.error("Unable to listen the socket.", getErrorString());
         return;
     }
 
-    console.log("Here 1");
-
     const fdSet = bindings.fd_set();
-    FD_ZERO(fdSet);
-    FD_SET(socketId, fdSet);
+    const socketList: number[] = [];
+    const receivingBuf = Buffer.alloc(4096);
 
     while (true) {
+        FD_ZERO(fdSet);
+        FD_SET(socketId, fdSet);
+
+        socketList.forEach(fd => FD_SET(fd, fdSet));
 
         try {
-            console.log("Here 2");
-            await onSelect(bindings, socketId, fdSet);
-            console.log("Here 3");
+            await onSelect(bindings.select, socketId, fdSet);
+
+            if (FD_ISSET(socketId, fdSet)) {
+                const clientfd = accept(socketId);
+
+                if (!isValidSocket(clientfd)) {
+                    throw new Error(`WHATNHOEUNTHOENTUHOE  --- accept ${getErrorString()}`);
+                }
+
+                socketList.push(clientfd);
+            }
+            else {
+                routeOrClose(bindings, socketId, socketList);
+            }
         } catch (e) {
             console.log("Error", e, getErrorString());
         }
 
-        console.log("closing because we received input.");
-        if (close(socketId)) {
-            console.error("Unable to close the socket.", getErrorString());
-        }
-        return;
     }
 
+    console.log("closing because we received input.");
+    if (close(socketId)) {
+        console.error("Unable to close the socket.", getErrorString());
+    }
 };
 
-function onSelect(bindings: NativeSocketInterface, sockfd: Socket, fdSet: fd_set) {
-    return new Promise((res, rej) => {
-        bindings.select(sockfd, fdSet, (err, value) => {
-            if (err) {
-                rej(err);
-                return;
+function routeOrClose(
+    bindings: NativeSocketInterface,
+    fdSet: fd_set,
+    socketList: Socket[]) {
+
+    const receivingBuf = Buffer.alloc(4096);
+
+    for (let i = socketList.length - 1; i >= 0; --i) {
+        const clientfd = socketList[i];
+
+        if (bindings.FD_ISSET(clientfd, fdSet)) {
+            const out = bindings.recv(clientfd, receivingBuf, 4096);
+
+            if (out === 0 || out === -1) {
+                bindings.FD_CLR(clientfd, fdSet);
+                socketList.splice(socketList.indexOf(clientfd), 1);
+                if (bindings.close(clientfd)) {
+                    if (out !== -1) {
+                        throw new Error(`Unable to close the socket. ${bindings.getErrorString()}`);
+                    }
+                }
             }
-            res(value);
-            return;
-        });
-    });
+            else {
+                console.log("Received", ab2str(receivingBuf.slice(0, out)));
+                socketList.forEach((sockfd, idx) => {
+                    if (i === idx) {
+                        return;
+                    }
+                    bindings.send(sockfd, receivingBuf, out);
+                });
+            }
+        }
+    }
 }
 
 

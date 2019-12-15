@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "native-sockets.h"
 #include "fd.h"
 
@@ -73,7 +74,7 @@ Napi::Value Send(const Napi::CallbackInfo& info) {
         return env.Null();
     }
 
-    if (!info[0].IsNumber() || !info[1].IsArrayBuffer() || !info[2].IsNumber() ||
+    if (!info[0].IsNumber() || !info[1].IsBuffer() || !info[2].IsNumber() ||
             (info.Length() == 4 && !info[3].IsNumber())) {
         Napi::TypeError::New(env, "Wrong type of arguments")
             .ThrowAsJavaScriptException();
@@ -96,6 +97,7 @@ Napi::Value Send(const Napi::CallbackInfo& info) {
     printf("data being sent %.*s\n", len, data);
 
     // TODO: interesting?  Partially sent packets due to overwhelmed network card.
+    // TODO: Stop being so informative.  I would rather be blissfully unaware of this situation...
     ssize_t sent = send(sock, data, len, flags);
 
     if (sent < len) {
@@ -198,6 +200,63 @@ Napi::Value AddrInfoToObject(const Napi::CallbackInfo& info) {
     return addrInfo;
 }
 
+Napi::Value Recv(const Napi::CallbackInfo& info) {
+    Napi::Env env = info.Env();
+
+    if (info.Length() != 3 && info.Length() != 4) {
+        Napi::TypeError::New(env, "Wrong number of arguments")
+            .ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    if (!info[0].IsNumber() || !info[1].IsBuffer() || !info[2].IsNumber() ||
+            (info.Length() == 4 && !info[3].IsNumber())) {
+        Napi::TypeError::New(env, "Wrong type of arguments")
+            .ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    int flags = 0;
+    SOCKET sock = toInt(info[0]);
+    Napi::Buffer<unsigned char> buf = info[1].As<Napi::Buffer<unsigned char>>();
+    int len = toInt(info[2]);
+
+    if (info.Length() == 4) {
+        flags = toInt(info[3]);
+    }
+
+    unsigned char* data = buf.TypedArrayOf<unsigned char>::Data();
+
+    // TODO: interesting?  Partially sent packets due to overwhelmed network card.
+    // TODO: Stop being so informative.  I would rather be blissfully unaware of this situation...
+    ssize_t r = recv(sock, data, len, flags);
+    return Napi::Number::New(env, r);
+}
+
+Napi::Value Accept(const Napi::CallbackInfo& info) {
+    Napi::Env env = info.Env();
+
+    if (info.Length() != 1) {
+        Napi::TypeError::New(env, "Wrong number of arguments")
+            .ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    if (!info[0].IsNumber()) {
+        Napi::TypeError::New(env, "Wrong type arguments").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    SOCKET sockfd = toInt(info[0]);
+    struct sockaddr_storage clientAddr;
+    socklen_t clientLen = sizeof(clientAddr);
+    SOCKET clientFd = accept(sockfd,
+            (struct sockaddr*) &clientAddr,
+            &clientLen);
+
+    return Napi::Number::New(env, clientFd);
+}
+
 Napi::Value Listen(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
 
@@ -258,6 +317,27 @@ Napi::Value Bind(const Napi::CallbackInfo& info) {
     return Napi::Number::New(env, bindRes);
 }
 
+Napi::Value ReadStdin(const Napi::CallbackInfo& info) {
+    Napi::Env env = info.Env();
+
+    if (info.Length() != 2) {
+        Napi::TypeError::New(env, "Wrong number of arguments")
+            .ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    if (!info[0].IsBuffer() || !info[1].IsNumber()) {
+        Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    Napi::Buffer<char> buf = info[0].As<Napi::Buffer<char>>();
+    char *buffer = (char*)buf.TypedArrayOf<unsigned char>::Data();
+    size_t bufsize = (size_t)toInt(info[1]);
+
+    return Napi::Number::New(env, getline(&buffer, &bufsize, stdin));
+}
+
 Napi::Value Socket(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
 
@@ -304,10 +384,15 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
     exports.Set(Napi::String::New(env, "gai_strerror"), Napi::Function::New(env, Gai_strerror));
     exports.Set(Napi::String::New(env, "fd_set"), Napi::Function::New(env, CreateFDSet));
     exports.Set(Napi::String::New(env, "FD_ISSET"), Napi::Function::New(env, FDIsSet));
+    exports.Set(Napi::String::New(env, "STDIN_FILENO"), Napi::Number::New(env, STDIN_FILENO));
     exports.Set(Napi::String::New(env, "FD_CLR"), Napi::Function::New(env, FDClr));
     exports.Set(Napi::String::New(env, "FD_SET"), Napi::Function::New(env, FDSet));
     exports.Set(Napi::String::New(env, "FD_ZERO"), Napi::Function::New(env, FDZero));
     exports.Set(Napi::String::New(env, "select"), Napi::Function::New(env, OnSelect));
+    exports.Set(Napi::String::New(env, "accept"), Napi::Function::New(env, Accept));
+    exports.Set(Napi::String::New(env, "recv"), Napi::Function::New(env, Recv));
+    exports.Set(Napi::String::New(env, "send"), Napi::Function::New(env, Send));
+    exports.Set(Napi::String::New(env, "readstdin"), Napi::Function::New(env, ReadStdin));
 
     // Ackshually not c functions
     exports.Set(Napi::String::New(env, "getErrorString"), Napi::Function::New(env, getErrorString));

@@ -80,7 +80,7 @@ export default async function clientChat(bindings: NativeSocketInterface) {
     }
 
     // TODO: This interface kind of sucks...
-    const buf = Buffer.alloc(4096);
+    const buf = Buffer.alloc(1024)
     const fdSet = bindings.fd_set();
 
     while (true) {
@@ -91,14 +91,10 @@ export default async function clientChat(bindings: NativeSocketInterface) {
         await onSelect(select, socketId, fdSet);
 
         if (FD_ISSET(socketId, fdSet)) {
-            const len = bindings.recv(socketId, buf, buf.byteLength);
-            console.log(ab2str(buf.slice(0, len)));
         }
 
         else if (FD_ISSET(bindings.STDIN_FILENO, fdSet)) {
             const len = bindings.readstdin(buf, buf.byteLength);
-            console.log("XXXX", len, ab2str(buf.slice(0, len)));
-            bindings.send(socketId, buf, len);
         }
     }
 };

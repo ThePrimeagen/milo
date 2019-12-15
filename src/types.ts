@@ -9,29 +9,32 @@ type NodeCallback = (err: (x: any) => void, res: (x: any) => void) => void;
 type AddrId = number;
 type Socket = number;
 type fd_set = number;
+type select = (sockfd: Socket, set: fd_set, cb: NodeCallback) => void;
 
 type NativeSocketInterface = {
     // Socket constants
     SOCK_STREAM: number;
     AF_INET: number;
     AI_PASSIVE: number;
+    STDIN_FILENO: number;
 
     // TODO: Errors???
 
     // socket functions
     socket: (domain: number, type: number, flags: number) => number;
-    send: (sockfd: Socket, buf: Uint8Array, len: number, flags?: number) => number;
-    onRecv: ((sockfd: Socket, buf: Buffer, offset: number, cb: (readBytes: number) => void) => void);
+    send: (sockfd: Socket, buf: Buffer, len: number, flags?: number) => number;
+    recv: (sockfd: Socket, buf: Buffer, len: number, flags?: number) => number;
+    accept: (sockfd: Socket) => number;
     getaddrinfo: (host: string | number, port: string, hints: AddrId, bindAddr: AddrId) => number;
     bind: (sockfd: Socket, bindAddr: AddrId) => number;
     listen: (sockfd: Socket, backlog: number) => number;
     close: (sockfd: Socket) => number;
     fd_set: () => fd_set,
-    FD_ISSET: (sockfd: Socket, set: fd_set) => void,
+    FD_ISSET: (sockfd: Socket, set: fd_set) => boolean,
     FD_CLR: (sockfd: Socket, set: fd_set) => void,
     FD_SET: (sockfd: Socket, set: fd_set) => void,
     FD_ZERO: (set: fd_set) => void,
-    select: (sockfd: Socket, set: fd_set, cb: NodeCallback) => void,
+    select: select,
     gai_strerror: (error: number) => string;
 
     // NOTE: Broke from api
@@ -54,6 +57,7 @@ type NativeSocketInterface = {
     // 6.  overcome discord
 
     // Convenience methods
+    readstdin: (buf: Buffer, len: number) => number;
     getErrorString: () => string;
     isValidSocket: (result: number) => boolean;
 
@@ -67,6 +71,8 @@ export {
     AddrId,
     AddrInfoHints,
     fd_set,
+    select,
+    NodeCallback,
 
     NativeSocketInterface,
 };

@@ -1,5 +1,5 @@
 export function ab2str(buf: ArrayBuffer): string {
-    return String.fromCharCode.apply(null, new Uint8Array(buf));
+    return String.fromCharCode.apply(null, new Uint8Array(buf.slice(0)));
 };
 
 export function str2ab(str: string): ArrayBuffer {
