@@ -83,22 +83,33 @@ export default async function clientChat(bindings: NativeSocketInterface) {
     const buf = Buffer.alloc(4096);
     const fdSet = bindings.fd_set();
 
+    rl.on('line', function(line) {
+        const len = buf.write(line);
+
+        console.log("onLine", buf.slice(0, len), len);
+        send(socketId, buf, len);
+    });
+
     while (true) {
         FD_ZERO(fdSet);
         FD_SET(socketId, fdSet);
-        FD_SET(bindings.STDIN_FILENO, fdSet);
 
         await onSelect(select, socketId, fdSet);
 
         if (FD_ISSET(socketId, fdSet)) {
+            // TODO: Build a message larger than a single MTU
             const len = bindings.recv(socketId, buf, buf.byteLength);
-            console.log(ab2str(buf.slice(0, len)));
-        }
 
-        else if (FD_ISSET(bindings.STDIN_FILENO, fdSet)) {
-            const len = bindings.readstdin(buf, buf.byteLength);
-            console.log("XXXX", len, ab2str(buf.slice(0, len)));
-            bindings.send(socketId, buf, len);
+            if (len === 0) {
+                const closeValue = close(socketId);
+                if (closeValue) {
+                    console.log("Things went wrong closing the server socket", gai_strerror(closeValue), getErrorString());
+                }
+                console.log("Closing the ship down");
+                return;
+            }
+
+            console.log(ab2str(buf.slice(0, len)));
         }
     }
 };

@@ -226,10 +226,16 @@ Napi::Value Recv(const Napi::CallbackInfo& info) {
     }
 
     unsigned char* data = buf.TypedArrayOf<unsigned char>::Data();
+    data[0] = 69;
+    data[1] = 70;
+    data[2] = 71;
+    data[3] = 72;
 
     // TODO: interesting?  Partially sent packets due to overwhelmed network card.
     // TODO: Stop being so informative.  I would rather be blissfully unaware of this situation...
     ssize_t r = recv(sock, data, len, flags);
+
+    printf("LOOK AT THE BUFFER %.*s\n", (int)r, data);
     return Napi::Number::New(env, r);
 }
 
@@ -376,7 +382,6 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
     // Ackshual c functions
     exports.Set(Napi::String::New(env, "socket"), Napi::Function::New(env, Socket));
     exports.Set(Napi::String::New(env, "connect"), Napi::Function::New(env, Connect));
-    exports.Set(Napi::String::New(env, "send"), Napi::Function::New(env, Send));
     exports.Set(Napi::String::New(env, "getaddrinfo"), Napi::Function::New(env, GetAddrInfo));
     exports.Set(Napi::String::New(env, "bind"), Napi::Function::New(env, Bind));
     exports.Set(Napi::String::New(env, "listen"), Napi::Function::New(env, Listen));
@@ -392,7 +397,6 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
     exports.Set(Napi::String::New(env, "accept"), Napi::Function::New(env, Accept));
     exports.Set(Napi::String::New(env, "recv"), Napi::Function::New(env, Recv));
     exports.Set(Napi::String::New(env, "send"), Napi::Function::New(env, Send));
-    exports.Set(Napi::String::New(env, "readstdin"), Napi::Function::New(env, ReadStdin));
 
     // Ackshually not c functions
     exports.Set(Napi::String::New(env, "getErrorString"), Napi::Function::New(env, getErrorString));

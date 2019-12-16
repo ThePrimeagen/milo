@@ -14,6 +14,7 @@ import {
 } from '../utils/index';
 
 import onSelect from "../utils/onSelect";
+import wait from "../utils/wait";
 
 export default async function serverChat(bindings: NativeSocketInterface) {
     const {
@@ -84,6 +85,13 @@ export default async function serverChat(bindings: NativeSocketInterface) {
     const socketList: number[] = [];
     const receivingBuf = Buffer.alloc(4096);
 
+    process.on('SIGINT', function() {
+        console.log("Caught interrupt signal");
+
+        close(socketId);
+        process.exit();
+    });
+
     while (true) {
         FD_ZERO(fdSet);
         FD_SET(socketId, fdSet);
@@ -103,12 +111,14 @@ export default async function serverChat(bindings: NativeSocketInterface) {
                 socketList.push(clientfd);
             }
             else {
-                routeOrClose(bindings, socketId, socketList);
+                routeOrClose(bindings, fdSet, socketList);
             }
+
         } catch (e) {
             console.log("Error", e, getErrorString());
         }
 
+        await wait(2000);
     }
 
     console.log("closing because we received input.");
@@ -129,6 +139,7 @@ function routeOrClose(
 
         if (bindings.FD_ISSET(clientfd, fdSet)) {
             const out = bindings.recv(clientfd, receivingBuf, 4096);
+            console.log("onrecv", out);
 
             if (out === 0 || out === -1) {
                 bindings.FD_CLR(clientfd, fdSet);

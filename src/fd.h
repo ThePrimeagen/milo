@@ -42,6 +42,14 @@ bool isFDCall(const Napi::CallbackInfo& info) {
         return false;
     }
 
+    printf("GettingArgs: id: %d", id);
+    if (info.Length() == 1) {
+        printf("len 1 %d\n", toInt(info[0]));
+    }
+    else {
+        printf("len 2 %d %d\n", toInt(info[0]), toInt(info[1]));
+    }
+
     if (fdSets.find(id) == fdSets.end()) {
         Napi::TypeError::New(env, "Cannot find the fdset")
             .ThrowAsJavaScriptException();
@@ -52,6 +60,8 @@ bool isFDCall(const Napi::CallbackInfo& info) {
 }
 
 Napi::Value FDIsSet(const Napi::CallbackInfo& info) {
+    printf("FD_ISSET %d\n", toInt(info[0]));
+
     Napi::Env env = info.Env();
     if (!isFDCall(info)) {
         return env.Undefined();
@@ -65,14 +75,16 @@ Napi::Value FDIsSet(const Napi::CallbackInfo& info) {
 Napi::Value FDSet(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
 
+    printf("FD_SET(%d) %d\n", toInt(info[0]), toInt(info[1]));
+
     int fd = toInt(info[0]);
+
     fd_set* set = fdSets[toInt(info[1])];
 
     if (fd > maxFd) {
         maxFd = fd;
     }
 
-    printf("What is going on here? %d %d\n", fd, toInt(info[1]));
     FD_SET(fd, set);
 
     return env.Undefined();
@@ -80,6 +92,7 @@ Napi::Value FDSet(const Napi::CallbackInfo& info) {
 
 Napi::Value CreateFDSet(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
+    printf("CreateFDSet\n");
 
     //TODO: Not possible I bet
     fd_set *set = (fd_set*)malloc(sizeof(fd_set));
@@ -91,6 +104,7 @@ Napi::Value CreateFDSet(const Napi::CallbackInfo& info) {
 
 Napi::Value FDClr(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
+    printf("FDClr %d %d \n", toInt(info[0]), toInt(info[0]));
     if (!isFDCall(info)) {
         return env.Undefined();
     }
@@ -104,6 +118,7 @@ Napi::Value FDClr(const Napi::CallbackInfo& info) {
 
 Napi::Value FDZero(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
+    printf("FDZero %d\n", toInt(info[0]));
 
     if (!isFDCall(info)) {
         printf("Unable to call Zero");
