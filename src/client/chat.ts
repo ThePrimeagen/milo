@@ -6,6 +6,10 @@ import {
 } from '../types';
 
 import {
+    slowCaseParseHttp
+} from '../http';
+
+import {
     str2ab,
     ab2str
 } from '../utils/index';
@@ -109,15 +113,10 @@ export default async function clientChat(bindings: NativeSocketInterface) {
                 return;
             }
 
-            console.log(ab2str(buf.slice(0, len)));
+            console.log(slowCaseParseHttp(buf, 0, len));
         }
     }
 };
-
-
-
-
-
 
 
 

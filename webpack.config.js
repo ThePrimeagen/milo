@@ -16,8 +16,10 @@ function getCopyPaths() {
 module.exports = {
     target: 'node',
     entry: {
-        clientChatter: './src/client/index.ts',
-        serverChatter: './src/server/index.ts',
+        clientChat: './src/client/index.ts',
+        serverChat: './src/server/index.ts',
+        serverHTTP: './src/server/http/index.ts',
+        clientHTTP: './src/client/http/index.ts',
     },
     plugins: [
         new CopyPlugin(getCopyPaths()),

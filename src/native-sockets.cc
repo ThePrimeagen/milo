@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include "native-sockets.h"
 #include "fd.h"
@@ -226,10 +227,6 @@ Napi::Value Recv(const Napi::CallbackInfo& info) {
     }
 
     unsigned char* data = buf.TypedArrayOf<unsigned char>::Data();
-    data[0] = 69;
-    data[1] = 70;
-    data[2] = 71;
-    data[3] = 72;
 
     // TODO: interesting?  Partially sent packets due to overwhelmed network card.
     // TODO: Stop being so informative.  I would rather be blissfully unaware of this situation...
