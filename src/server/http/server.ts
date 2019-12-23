@@ -17,18 +17,10 @@ import serverLoop from "../baseServer";
 import onSelect from "../../utils/onSelect";
 import wait from "../../utils/wait";
 import closeOnCtrlC from "../../utils/closeOnCtrlC";
-import {
-    isWSUpgradeRequest,
-} from "../../ws";
 
-import {
-    NotFound,
-    getHTTPHeaderEndOffset,
-    getContentLengthOffset,
-    getEndLineOffset,
+import HTTP, {
     slowCaseParseHttp,
-    HTTPBuilder,
-} from "../../http";
+} from "../../http/index";
 
 export default async function serverChat(bindings: NativeSocketInterface) {
     const {
@@ -77,6 +69,15 @@ export default async function serverChat(bindings: NativeSocketInterface) {
     }
 
     const bindData = addrInfoToObject(bindId);
+
+    if (bindData.ai_family === undefined ||
+        bindData.ai_socktype === undefined ||
+        bindData.ai_protocol === undefined) {
+
+        console.error("Unable to create the socket", getErrorString());
+        return;
+    }
+
     const socketId = socket(
         bindData.ai_family, bindData.ai_socktype, bindData.ai_protocol);
 
@@ -103,6 +104,10 @@ export default async function serverChat(bindings: NativeSocketInterface) {
     serverLoop(bindings, socketId, (socket: Socket, socketList: Socket[], idx: number) => {
         const readBytes = recv(socket, readBuf, 4096);
 
+        if (wsFds.has(socket)) {
+            wsFds.get(socket)
+        }
+
         // Houstone, we have a problem.
         if (readBytes < 0) {
             console.log("I don't knwon which erro to print, so I'll do both", getErrorString());
@@ -122,16 +127,13 @@ export default async function serverChat(bindings: NativeSocketInterface) {
         const content = slowCaseParseHttp(readBuf, 0, readBytes);
 
         // Upgrade the request
-        if (isWSUpgradeRequest(content)) {
+        if (HTTP.isWSUpgradeRequest(content)) {
             wsFds.set(socket, true);
 
             // TODO: Prolly make this faster, stronger, work is literally never
             // over
-            const response = new HTTPBuilder();
-            response.setUpgradeProtocol(content);
-
-            console.log("Sending", ab2str(response.getBuffer().slice(0, response.length())));
-            send(socket, response.getBuffer(), response.length(), 0);
+            const response = new HTTP();
+            response.respondToWSUpgrade(socket, content);
         }
 
         else {

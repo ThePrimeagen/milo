@@ -7,7 +7,7 @@ import {
 
 import {
     slowCaseParseHttp
-} from '../http';
+} from '../http/index';
 
 import {
     str2ab,

@@ -1,5 +1,7 @@
 
 export function ab2str(buf: Buffer): string {
+    // TODO: Why is this failing, clearly its not wrong..................
+    // @ts-ignore
     return String.fromCharCode.apply(null, new Uint8Array(buf));
 };
 

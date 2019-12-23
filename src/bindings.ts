@@ -1,3 +1,11 @@
 import bindings from 'bindings';
 
-export default bindings('native-sockets');
+import {
+    NativeSocketInterface
+} from './types'
+
+// Special case handling for node native layer.
+// @ts-ignore
+const b = bindings('native-sockets') as NativeSocketInterface;
+
+export default b;

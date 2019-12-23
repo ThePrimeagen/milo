@@ -17,13 +17,14 @@ import onSelect from "../../utils/onSelect";
 import wait from "../../utils/wait";
 import closeOnCtrlC from "../../utils/closeOnCtrlC";
 import {
+    slowCaseParseHttp,
+} from "../../http/index";
+
+import {
     NotFound,
-    getHTTPHeaderEndOffset,
-    getContentLengthOffset,
-    r, n,
-    getEndLineOffset,
-    HTTPBuilder,
-} from "../../http";
+    r,
+    n,
+} from "../../http/buffer";
 
 import readline from 'readline';
 
@@ -94,6 +95,9 @@ export default async function clientHTTP(bindings: NativeSocketInterface) {
     let cliLen = 0;
     let lastWasEmpty = false;
 
+    // TODO: First connect to the websocket stuff
+
+
     while (true) {
         console.log("Starting at", cliLen);
         const len = await onReadLine(buf.slice(cliLen));
@@ -101,24 +105,7 @@ export default async function clientHTTP(bindings: NativeSocketInterface) {
         console.log("It actually worked", str, str === "__end__");
 
         if (str === "__ws_upgrade__") {
-            const wsUpgrade = new HTTPBuilder();
-
-            wsUpgrade.addString("GET /chat HTTP/1.1");
-            wsUpgrade.addNewLine();
-            wsUpgrade.addString("Host: example.com:8000");
-            wsUpgrade.addNewLine();
-            wsUpgrade.addString("Upgrade: websocket");
-            wsUpgrade.addNewLine();
-            wsUpgrade.addString("Connection: Upgrade");
-            wsUpgrade.addNewLine();
-            wsUpgrade.addString("Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==");
-            wsUpgrade.addNewLine();
-            wsUpgrade.addString("Sec-WebSocket-Version: 13");
-            wsUpgrade.addNewLine();
-            wsUpgrade.addNewLine();
-
-            console.log("Sending", ab2str(wsUpgrade.getBuffer().slice(0, wsUpgrade.length())));
-            send(socketId, wsUpgrade.getBuffer(), wsUpgrade.length(), 0);
+            break;
         }
         else if (str === "__end__") {
             break;
@@ -133,12 +120,6 @@ export default async function clientHTTP(bindings: NativeSocketInterface) {
 
         console.log(ab2str(buf.slice(0, cliLen)));
     }
-
-    console.log(ab2str(buf.slice(0, cliLen)));
-
-    send(socketId, buf, cliLen);
-    const len = bindings.recv(socketId, buf, buf.byteLength);
-    console.log(ab2str(buf.slice(0, len)));
 };
 
 

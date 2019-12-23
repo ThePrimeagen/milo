@@ -22,6 +22,10 @@ type NativeSocketInterface = {
 
     // socket functions
     socket: (domain: number, type: number, flags: number) => number;
+
+    // TODO: O_NONBLOCK for non blocking send when there is not enough room.
+    // Another javascript context?????????
+    // THINK ABOUT SHARING THOSE MEMORIES
     send: (sockfd: Socket, buf: Buffer, len: number, flags?: number) => number;
     recv: (sockfd: Socket, buf: Buffer, len: number, flags?: number) => number;
     accept: (sockfd: Socket) => number;
