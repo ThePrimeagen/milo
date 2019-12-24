@@ -13,10 +13,9 @@ const noop = () => {};
 type SendFragment = {
     socketId: Socket,
     buffer: Buffer,
-    endingIdx: number,
     flags: number,
     idx: number,
-    cb: () => void,
+    cb: () => void | null,
 };
 
 const queue: SendFragment[] = [];
@@ -29,15 +28,16 @@ function sendWithQueue() {
 
     const item = queue[0];
 
-    const buf = item.buffer.slice(item.idx, item.endingIdx);
-    const len = item.endingIdx - item.idx;
+    const buf = item.buffer.slice(item.idx, item.buffer.byteLength);
+    const len = item.buffer.byteLength - item.idx;
+
     const sentBytes = bindings.send(
         item.socketId, buf, len, item.flags);
 
     // TODO: write yourself a damn linked listn already.
     if (sentBytes === len) {
         const sf = queue.shift();
-        sf.cb();
+        sf.cb && sf.cb();
     }
     else {
         item.idx += sentBytes;
@@ -48,15 +48,18 @@ function sendWithQueue() {
     }
 }
 
-export function send(socketId: Socket, buffer: Buffer, offset: number, length: number, flags: number = 0, cb: () => void = noop) {
+// buf.slice(0, length)
+export function send(
+    socketId: Socket, buffer: Buffer, flags: number = 0, cb: () => void = null) {
+
     const sF = {
         socketId,
         buffer,
-        idx: offset,
-        endingIdx: offset + length,
+        idx: 0,
         flags,
         cb
     };
+
     queue.push(sF);
     sendWithQueue();
 };

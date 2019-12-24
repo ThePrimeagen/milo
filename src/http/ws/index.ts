@@ -39,6 +39,7 @@ export enum Opcodes {
 enum State {
     Waiting = 1,
     ParsingHeader,
+    WaitingForCompleteHeader,
     ParsingBody,
 };
 
@@ -55,7 +56,8 @@ enum State {
 //
 // TODO: Probably should do some sort of object pool.
 
-const headerPool = new BufferPool(6);
+const MAX_HEADER_SIZE = 8;
+const headerPool = new BufferPool(MAX_HEADER_SIZE);
 
 // TODO: Fulfill the RFCs requirement for masks.
 // TODO: ws module may not allow us to use as simple one like this.
@@ -70,7 +72,6 @@ export function constructFrameHeader(
     payloadLength: number,
     mask?: number,
 ): number {
-        debugger;
     let ptr = 0;
 
     let firstByte = 0x0;
@@ -116,28 +117,55 @@ export function constructFrameHeader(
     return ptr;
 }
 
+type WSState = {
+    isFinished: boolean;
+    rsv1: number;
+    rsv2: number;
+    rsv3: number;
+    opcode: number;
+    isMasked: boolean;
+    mask: number;
+    payloadLength: number;
+    payload: Buffer;
+    payloadPtr: number;
+    payloads: Buffer[];
+    state: State;
+
+};
+
+function createDefaultState() {
+    return {
+        isFinished: false,
+        opcode: 0,
+        isMasked: false,
+        mask: 0,
+        payloadLength: 0,
+        payloadPtr: 0,
+        payloads: [],
+        state: State.Waiting,
+    } as WSState;
+}
+
 export default class WSFrame {
     private callbacks: WSCallback[];
-    private key: string;
-    private isFinished: boolean;
-    private rsv1: number;
-    private rsv2: number;
-    private rsv3: number;
-    private opcode: number;
-    private isMasked: boolean;
-    private mask: number;
-    private payloadLength: number;
-    private payload: Buffer;
-    private payloadPtr: number;
-    private payloads: Buffer[];
     private maxFrameSize: number;
-    private state: State;
+    private msgState: WSState;
+    private controlState: WSState;
+    private closed: boolean;
+    private sockfd: number;
 
-    constructor(maxFrameSize = 8096) {
-        this.state = State.Waiting;
+    constructor(socketfd: number, maxFrameSize = 8096) {
         this.callbacks = [];
-        this.payloads = [];
-        this.maxFrameSize = 8096;
+        this.maxFrameSize = maxFrameSize;
+        this.msgState = createDefaultState();
+        this.controlState = createDefaultState();
+        this.closed = false;
+        this.sockfd = socketfd;
+    }
+
+    getActiveState() {
+        return this.controlState.state > this.msgState.state ?
+            this.controlState : this.msgState;
     }
 
     onFrame(cb: WSCallback) {
@@ -145,47 +173,137 @@ export default class WSFrame {
     }
 
     // TODO: Contiuation frames, spelt wrong
-    send(sockfd: Socket, buf: Buffer, offset: number, length: number) {
+    send(sockfd: Socket, buf: Buffer, offset: number,
+        length: number, frameType: Opcodes = Opcodes.BinaryFrame) {
+
         if (length > 2 ** 32) {
             throw new Error("You are dumb");
         }
 
-        // TODO: Max frame size
-        // while (ptr < length) {
+        const endIdx = offset + length;
+        let ptr = offset;
+        let ptrLength = 0;
+        let ft = frameType;
+        let count = 0;
 
-            const header = headerPool.malloc();
+        const header = headerPool.malloc();
 
-            // TODO: isFinished should be based on continuation frame.
-            // TODO: Frame type?
-            const endIdx = constructFrameHeader(
-                header, true, Opcodes.BinaryFrame, length, generateMask());
+        do {
+            const ptrStart = ptr;
 
-            // TODO: break this into multiple sends
-            SocketUtils.send(sockfd, header, 0, endIdx);
-            SocketUtils.send(sockfd, buf, offset, length, 0,
-                () => headerPool.free(header));
-        // } // end while
+            if (ptr > offset) {
+                ft = Opcodes.ContinuationFrame;
+            }
+
+            const frameSize = Math.min(endIdx - ptr, this.maxFrameSize);
+            const headerEnd = constructFrameHeader(
+                header, true, ft, frameSize, generateMask());
+
+            const fullBuf = Buffer.allocUnsafe(headerEnd + frameSize);
+
+            header.copy(fullBuf, 0);
+            ptr += buf.copy(fullBuf, headerEnd, ptr, endIdx);
+
+            SocketUtils.send(sockfd, fullBuf);
+
+            ptrLength += ptr - ptrStart;
+
+        } while (ptrLength < length);
+
+        headerPool.free(header);
+    }
+
+    isControlFrame(packet: Buffer): boolean {
+        const opCode = (packet[0] & 0xF0) >>> 4;
+        return opCode === Opcodes.Ping ||
+            opCode === Opcodes.Pong ||
+            opCode === Opcodes.CloseConnection;
     }
 
     // TODO: Handle Continuation.
     processStreamData(packet: Buffer, offset: number, endIdx: number) {
 
-        let ptrOffset = 0;
-        if (this.state === State.Waiting) {
-
-            // TODO: What if the packet is split even on the header.....
-            this.state = State.ParsingHeader;
-            ptrOffset = this.parseHeader(packet, offset, endIdx);
+        if (this.closed) {
+            throw new Error("Hey, closed for business bud.");
         }
 
-        this.state = State.ParsingBody;
-        ptrOffset = this.parseBody(packet, ptrOffset, endIdx);
+        let ptr = offset;
+        let state = this.getActiveState();
 
-        if (this.isFinished) {
-            this.isFinished = false;
-            this.state = State.Waiting;
-            this.pushFrame();
-        }
+        do {
+            if (state.state === State.Waiting ||
+                state.state === State.WaitingForCompleteHeader) {
+
+                // ITS GONNA DO IT.
+                if (state.state === State.Waiting &&
+                    this.isControlFrame(packet)) {
+
+                    state = this.controlState;
+                }
+
+                let nextPtrOffset: number | boolean = 0;
+                if (state.state === State.Waiting) {
+                    nextPtrOffset = this.parseHeader(state, packet, ptr, endIdx);
+                }
+
+                else {
+                    // TODO: Stitching control frames???
+                    // CONFUSING, stitch the two headers together, and call it
+                    // a day.
+                    const headerBuf = headerPool.malloc();
+                    const payloadByteLength = state.payload.byteLength;
+
+                    state.payload.copy(headerBuf, 0);
+                    packet.copy(headerBuf, state.payload.byteLength);
+
+                    nextPtrOffset =
+                        this.parseHeader(state, headerBuf, 0, MAX_HEADER_SIZE);
+
+                    if (typeof nextPtrOffset === 'boolean') {
+                        throw new Error("WHAT JUST HAPPENED HERE, DEBUG ME PLEASE");
+                    }
+
+                    nextPtrOffset -= payloadByteLength;
+                    headerPool.free(headerBuf);
+                }
+
+                if (nextPtrOffset === false) {
+
+                    state.state = State.WaitingForCompleteHeader;
+                    state.payload = packet.slice(ptr, endIdx);
+                    break;
+                }
+
+                else {
+                    // @ts-ignore
+                    ptr = nextPtrOffset;
+                }
+            }
+
+            state.state = State.ParsingBody;
+            const remainingPacket = state.payloadLength - state.payloadPtr;
+            const subEndIdx = Math.min(ptr + remainingPacket, endIdx);
+
+            ptr += this.parseBody(state, packet, ptr, subEndIdx);
+
+            const endOfPayload = state.payloadLength === state.payloadPtr;
+            if (state.isFinished && endOfPayload) {
+                state.isFinished = false;
+                state.state = State.Waiting;
+                this.pushFrame(state);
+
+                if (state.opcode === Opcodes.CloseConnection) {
+                    this.closed = true;
+                }
+            }
+
+            // TODO: we about to go into contiuation mode, so get it baby!
+            else if (!state.isFinished && endOfPayload) {
+                state.payloads.push(state.payload);
+                state.state = State.Waiting;
+            }
+
+        } while (ptr < endIdx);
     }
 
     /*
@@ -215,80 +333,85 @@ export default class WSFrame {
     // TODO: Endianness????
     //
     // Send 126 bytes to find out how they order their bytes.
-    private parseHeader(packet: Buffer, offset: number, endIdx: number): number {
-        debugger;
+    private parseHeader(
+        state: WSState, packet: Buffer,
+        offset: number, endIdx: number): number | boolean {
+
+        if (endIdx - offset < MAX_HEADER_SIZE) {
+            return false;
+        }
+
         let ptr = offset;
         const byte1 = packet.readUInt8(ptr++);
-        this.isFinished = (byte1 & 0x1) === 1;
+        state.isFinished = (byte1 & 0x1) === 1;
 
-        this.rsv1 = (byte1 & 0x2)
-        this.rsv2 = (byte1 & 0x4)
-        this.rsv3 = (byte1 & 0x8)
-        this.opcode = (byte1 & 0xF0) >>> 4;
+        state.rsv1 = (byte1 & 0x2)
+        state.rsv2 = (byte1 & 0x4)
+        state.rsv3 = (byte1 & 0x8)
+        state.opcode = (byte1 & 0xF0) >>> 4;
 
         const byte2 = packet.readUInt8(ptr++);
 
-        this.isMasked = (byte2 & 0x1) === 1;
-        this.payloadLength =  (byte2 & 0xFE) >>> 1;
+        state.isMasked = (byte2 & 0x1) === 1;
 
-        if (this.payloadLength === 126) {
-            this.payloadLength = ntohs(packet, ptr);
+        state.payloadLength =  (byte2 & 0xFE) >>> 1;
+
+        if (state.payloadLength === 126) {
+            state.payloadLength = ntohs(packet, ptr);
             ptr += 2;
         }
 
-        else if (this.payloadLength === 127) {
+        else if (state.payloadLength === 127) {
             throw new Error("We don't read your kind, packet");
         }
 
-        if (this.isMasked) {
-            this.mask = ntohl(packet, ptr);
+        if (state.isMasked) {
+            state.mask = ntohl(packet, ptr);
             ptr += 4;
         }
 
-        // TODO: How exactly should we do this?
-        if (this.opcode === Opcodes.ContinuationFrame) {
-            if (this.state === State.Waiting) {
-                throw new Error("FIX ME, DO SOMETHING DIFFERENT");
-            }
-            this.payloads.push(this.payload);
-        }
-
-        this.payloadPtr = 0;
-        this.payload = Buffer.allocUnsafe(this.payloadLength);
+        state.payloadPtr = 0;
+        state.payload = Buffer.allocUnsafe(state.payloadLength);
 
         return ptr;
     }
 
-    private parseBody(packet: Buffer, offset: number, endIdx: number): number {
+    private parseBody(
+        state: WSState, packet: Buffer,
+        offset: number, endIdx: number): number {
 
         // TODO: When the packet has multiple frames in it, i need to be able
         // to read what I need to read, not the whole thing, segfault incoming
 
         // TODO: is this ever needed?
-        const remaining = this.payloadLength - this.payloadPtr;
-        if (remaining < endIdx - offset) {
-            throw new Error(`How is this possible?  The remaining data in the ws packet is more than I was expected - remaining ${remaining} - offset ${offset} - endIdx ${endIdx}`);
+        const remaining = state.payloadLength - state.payloadPtr;
+        const copyAmount = packet.copy(state.payload,
+            state.payloadPtr, offset, endIdx);
+
+        if (state.isMasked) {
+            maskFn(state.payload, state.payloadPtr, copyAmount, state.mask);
         }
 
-        const readAmount =
-            packet.copy(this.payload, this.payloadPtr, offset, endIdx);
+        state.payloadPtr += copyAmount;
 
-        if (this.isMasked) {
-            maskFn(this.payload, this.payloadPtr, readAmount, this.mask);
-        }
-
-        this.payloadPtr += readAmount;
-
-        return readAmount;
+        return copyAmount;
     }
 
     // TODO: We make the assumption that anyone who wants to use that data
     // has to copy it, and not us.
-    private pushFrame() {
-        debugger;
+    private pushFrame(state: WSState) {
+        let buf = state.payload;
+
+        if (state.payloads.length) {
+            state.payloads.push(state.payload);
+
+            buf = Buffer.concat(state.payloads);
+            state.payloads = null;
+        }
 
         // TODO: Continuation Frame
-        this.callbacks.forEach(cb => cb(this.payload));
+        // TODONE: *** YEAH
+        this.callbacks.forEach(cb => cb(buf));
     }
 };
 
