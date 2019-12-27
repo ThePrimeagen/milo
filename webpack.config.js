@@ -19,8 +19,9 @@ module.exports = {
         //clientChat: './src/client/index.ts',
         //serverChat: './src/server/index.ts',
         //serverHTTP: './src/server/http/index.ts',
-        clientHTTP: './src/client/http/index.ts',
         wsServer: './src/ws-server/server.ts',
+        clientHTTP: './src/ws-server/client.ts',
+        clientHTTPReal: './src/ws-server/client-real.ts',
     },
     plugins: [
         new CopyPlugin(getCopyPaths()),

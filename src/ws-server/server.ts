@@ -5,6 +5,8 @@ const wss = new ws.Server({
 });
 
 wss.on('connection', function(ws) {
+    console.log("OHHHH MY WE ARE CONNECTED.");
+
     ws.on('message', function(data) {
         const json = JSON.parse(data.toString());
 

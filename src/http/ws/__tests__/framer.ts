@@ -1,7 +1,8 @@
 
 jest.doMock('../../socket.utils');
 
-import WSFrame, {Opcodes, constructFrameHeader} from '../index';
+import WSFramer, {constructFrameHeader} from '../framer';
+import {Opcodes} from '../types';
 import maskFn from '../mask';
 import * as NBO from 'network-byte-order';
 import {
@@ -31,6 +32,8 @@ import {
 
 // FOR YOU JELMEGA
 const mask = 0xAABBAABB;
+const maskBuf = Buffer.alloc(4);
+maskBuf.writeUInt32LE(mask, 0);
 
 const countObj = {"count": 0};
 const countObj2 = {"count": 2};
@@ -41,8 +44,8 @@ const countLen2 = countBuf2.byteLength;
 
 const maskedCountBuf = Buffer.from(JSON.stringify(countObj));
 const maskedCountBuf2 = Buffer.from(JSON.stringify(countObj2));
-maskFn(maskedCountBuf, 0, countLen, mask);
-maskFn(maskedCountBuf2, 0, countLen2, mask);
+maskFn(maskedCountBuf, 0, countLen, maskBuf);
+maskFn(maskedCountBuf2, 0, countLen2, maskBuf);
 
 describe("WS", function() {
 
@@ -55,12 +58,12 @@ describe("WS", function() {
         const buf = Buffer.alloc(1000);
 
         const ptr = constructFrameHeader(
-            buf, true, Opcodes.TextFrame, countLen, mask);
+            buf, true, Opcodes.TextFrame, countLen, maskBuf);
 
         countBuf.copy(buf, ptr);
-        maskFn(buf, 6, countLen, mask);
+        maskFn(buf, 6, countLen, maskBuf);
 
-        const ws = new WSFrame(3);
+        const ws = new WSFramer();
 
         ws.onFrame((contents) => {
             expect(JSON.parse(contents.toString())).toEqual(countObj);
@@ -74,7 +77,7 @@ describe("WS", function() {
         const buf = Buffer.alloc(1000);
         countBuf.copy(buf, 0);
 
-        const ws = new WSFrame(5);
+        const ws = new WSFramer();
 
         ws.send(3, buf, 0, countLen);
 
@@ -82,7 +85,7 @@ describe("WS", function() {
 
         const hBuf = Buffer.alloc(6);
         const headerBuf = constructFrameHeader(
-            hBuf, true, Opcodes.BinaryFrame, countLen, mask);
+            hBuf, true, Opcodes.BinaryFrame, countLen, maskBuf);
 
         expect(send).toHaveBeenNthCalledWith(1, 3, Buffer.concat([hBuf, buf.slice(0, countLen)]));
     });
@@ -99,9 +102,8 @@ describe("WS", function() {
             buf[i] = i % 255;
         }
 
-        const ws = new WSFrame(3, 3);
+        const ws = new WSFramer(3);
 
-        debugger
         ws.send(3, buf, 0, bufLength);
 
         expect(send).toBeCalledTimes(3);
@@ -136,16 +138,18 @@ describe("WS", function() {
         const buf = Buffer.alloc(1000);
 
         let bufPtr = constructFrameHeader(
-            buf, true, Opcodes.BinaryFrame, countLen, mask);
+            buf, true, Opcodes.BinaryFrame, countLen, maskBuf);
 
         bufPtr += countBuf.copy(buf, bufPtr);
-        maskFn(buf, bufPtr - countLen, countLen, mask);
-        bufPtr += constructFrameHeader(
-            buf.slice(bufPtr), true, Opcodes.BinaryFrame, countLen, mask);
-        bufPtr += countBuf2.copy(buf, bufPtr);
-        maskFn(buf, bufPtr - countLen2, countLen2, mask);
+        maskFn(buf, bufPtr - countLen, countLen, maskBuf);
 
-        const ws = new WSFrame(3);
+        bufPtr += constructFrameHeader(
+            buf.slice(bufPtr), true, Opcodes.BinaryFrame, countLen, maskBuf);
+
+        bufPtr += countBuf2.copy(buf, bufPtr);
+        maskFn(buf, bufPtr - countLen2, countLen2, maskBuf);
+
+        const ws = new WSFramer();
 
         let i = 0;
         ws.onFrame((contents) => {
@@ -172,20 +176,20 @@ describe("WS", function() {
         const part2Len = 6;
 
         let ptrH = constructFrameHeader(
-            bufHello, false, Opcodes.BinaryFrame, part1Len, mask);
+            bufHello, false, Opcodes.BinaryFrame, part1Len, maskBuf);
 
         bufHello.slice(ptrH).write("Hello");
-        maskFn(bufHello, ptrH, part1Len, mask);
+        maskFn(bufHello, ptrH, part1Len, maskBuf);
         ptrH += part1Len;
 
         let ptrW = constructFrameHeader(
-            bufWorld, true, Opcodes.ContinuationFrame, part2Len, mask);
+            bufWorld, true, Opcodes.ContinuationFrame, part2Len, maskBuf);
 
         bufWorld.slice(ptrW).write(" World");
-        maskFn(bufWorld, ptrW, part2Len, mask);
+        maskFn(bufWorld, ptrW, part2Len, maskBuf);
         ptrW += part2Len;
 
-        const ws = new WSFrame(3);
+        const ws = new WSFramer();
 
         let i = 0;
         ws.onFrame((contents) => {
@@ -201,11 +205,11 @@ describe("WS", function() {
         // TODO: I think buf gets mutated with the mask... I think that is ok... maybe?
         const buf = Buffer.alloc(1000);
         let bufPtr = constructFrameHeader(
-            buf, true, Opcodes.BinaryFrame, countLen, mask);
+            buf, true, Opcodes.BinaryFrame, countLen, maskBuf);
 
         bufPtr += countBuf.copy(buf, bufPtr);
-        maskFn(buf, bufPtr - countLen, countLen, mask);
-        const ws = new WSFrame(3);
+        maskFn(buf, bufPtr - countLen, countLen, maskBuf);
+        const ws = new WSFramer();
 
         ws.onFrame((contents) => {
             expect(JSON.parse(contents.toString())).toEqual(countObj);
@@ -222,12 +226,12 @@ describe("WS", function() {
         // TODO: I think buf gets mutated with the mask... I think that is ok... maybe?
         const buf = Buffer.alloc(1000);
         let bufPtr = constructFrameHeader(
-            buf, true, Opcodes.BinaryFrame, countLen, mask);
+            buf, true, Opcodes.BinaryFrame, countLen, maskBuf);
 
         bufPtr += countBuf.copy(buf, bufPtr);
-        maskFn(buf, bufPtr - countLen, countLen, mask);
+        maskFn(buf, bufPtr - countLen, countLen, maskBuf);
 
-        const ws = new WSFrame(3);
+        const ws = new WSFramer();
 
         ws.onFrame((contents) => {
             expect(JSON.parse(contents.toString())).toEqual(countObj);
@@ -248,26 +252,26 @@ describe("WS", function() {
         const part1Len = 5;
 
         let ptrH = constructFrameHeader(
-            bufHello, false, Opcodes.BinaryFrame, part1Len, mask);
+            bufHello, false, Opcodes.BinaryFrame, part1Len, maskBuf);
 
         bufHello.slice(ptrH).write("Hello");
-        maskFn(bufHello, ptrH, part1Len, mask);
+        maskFn(bufHello, ptrH, part1Len, maskBuf);
         ptrH += part1Len;
 
         const bufClose = Buffer.alloc(20);
 
         let ptrC = constructFrameHeader(
-            bufClose, true, Opcodes.CloseConnection, 2, mask);
+            bufClose, true, Opcodes.CloseConnection, 2, maskBuf);
 
         NBO.htons(bufClose, ptrC, 42);
-        maskFn(bufClose, ptrC, 2, mask);
+        maskFn(bufClose, ptrC, 2, maskBuf);
         ptrC += 2;
 
-        const ws = new WSFrame(3);
+        const ws = new WSFramer();
 
         let i = 0;
-        ws.onFrame((contents) => {
-            expect(NBO.ntohs(contents, 0)).toEqual(42);
+        ws.onFrame(buffer => {
+            expect(NBO.ntohs(buffer, 0)).toEqual(42);
         });
 
         ws.processStreamData(bufHello, 0, ptrH);

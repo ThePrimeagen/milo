@@ -3,8 +3,9 @@ import maskFn from '../mask';
 // FOR YOU JELMEGA
 // LittleEndian is going to be BBAABBAA
 // 171IQ
-const bigMask = 0xAA_BB_AA_BB;
 const littleMask = 0xBB_AA_BB_AA;
+const littleMaskBuf = Buffer.alloc(4);
+littleMaskBuf.writeUInt32LE(littleMask, 0);
 
 // 0b1011
 // 0b0100
@@ -38,12 +39,8 @@ describe("WS", function() {
         const b = Buffer.alloc(1000);
         buf.copy(b, 0);
 
-        let mask = bigMask;
-        if (isLittleEndian()) {
-            mask = littleMask;
-        }
+        const mask = littleMaskBuf;
 
-        debugger;
         maskFn(b, 0, buf.length, mask);
         checkBuf(b, maskedArr);
 

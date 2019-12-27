@@ -1,6 +1,14 @@
 // TODO: Come back to the HTTP frame builder
 import bindings from '../bindings';
 
+// 1117 aabb aabb 7b22636f756e74223a307d
+// 1117
+// 0001 0001 0001 1110 1010 1010 1011 1011
+//      rrrf
+//      sssi
+//      vvvn
+//      123
+
 import {
     ab2str
 } from '../utils/index';
@@ -29,6 +37,10 @@ import {
 } from './buffer';
 
 import * as wsUtils from './ws.utils';
+
+const switchingProtocolsStr = "HTTP/1.1 101 Switching Protocols";
+const switchingProtocolsBuf = Buffer.alloc(switchingProtocolsStr.length);
+switchingProtocolsBuf.write(switchingProtocolsStr);
 
 export default class HTTP {
     private wsKeyGenerated: string;
@@ -90,6 +102,15 @@ export default class HTTP {
     }
 }
 
+function isUpgradeToWebsockets(buf: Buffer): boolean {
+    let isEqual = true;
+    for (let i = 0; i < switchingProtocolsBuf.byteLength && isEqual; ++i) {
+        isEqual = isEqual && buf[i] === switchingProtocolsBuf[i];
+    }
+
+    return isEqual;
+}
+
 function getSlowCasePath(buf: Buffer, offset: number, maxLength: number): SlowPath {
     const out = {} as SlowPath;
 
@@ -97,7 +118,8 @@ function getSlowCasePath(buf: Buffer, offset: number, maxLength: number): SlowPa
     let spaceIdx = getSpaceIdx(buf, ptr);
 
     const requestType = ab2str(buf.slice(ptr, spaceIdx));
-    if (requestType !== RequestTypes.GET && requestType !== RequestTypes.POST) {
+    if (requestType !== RequestTypes.GET &&
+        requestType !== RequestTypes.POST) {
         throw new Error('Unsupported HTTP types');
     }
 
@@ -129,8 +151,10 @@ export function slowCaseParseHttp(buf: Buffer, offset: number, maxLength: number
         throw new Error("Not valid HTTP");
     }
 
-    const path = buf.slice(offset, endLineIdx);
-    out.path = getSlowCasePath(buf, offset, endLineIdx);
+    if (!isUpgradeToWebsockets(buf.slice(offset))) {
+        const path = buf.slice(offset, endLineIdx);
+        out.path = getSlowCasePath(buf, offset, endLineIdx);
+    }
 
     ptr += endLineIdx + 2;
 

@@ -21,6 +21,8 @@ type SendFragment = {
 const queue: SendFragment[] = [];
 let running = false;
 
+// TODO: If buffer creation is making everything slow then we will split the
+// header from the body, but ensure we can send that.
 function sendWithQueue() {
     if (queue.length === 0) {
         return;
@@ -31,6 +33,7 @@ function sendWithQueue() {
     const buf = item.buffer.slice(item.idx, item.buffer.byteLength);
     const len = item.buffer.byteLength - item.idx;
 
+    console.log("Sending", buf.toString("hex"));
     const sentBytes = bindings.send(
         item.socketId, buf, len, item.flags);
 

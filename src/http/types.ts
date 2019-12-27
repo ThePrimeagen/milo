@@ -6,7 +6,7 @@ export type SlowPath = {
 
 export type SlowParsedHttp = {
     headers: { [key: string]: string };
-    path: SlowPath;
+    path?: SlowPath;
     body: Buffer;
 };
 
