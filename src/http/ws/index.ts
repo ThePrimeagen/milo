@@ -52,6 +52,7 @@ export default class WS {
                     break;
 
                 default:
+                    debugger;
                     throw new Error("Can you handle this?");
             }
         });

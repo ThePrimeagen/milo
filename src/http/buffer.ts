@@ -7,6 +7,10 @@ const contentLength = "content-length".split('').map(x => x.charCodeAt(0));
 
 const NotFound = -1;
 
+export function parse64BigInt(buffer: Buffer, offset: number): BigInt {
+    return BigInt(`0x${buffer.slice(offset, offset + 8).toString('hex')}`);
+};
+
 export class BufferPool {
     private pool: Buffer[];
     private size: number;

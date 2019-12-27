@@ -1,5 +1,6 @@
 import {
     BufferPool,
+    parse64BigInt,
 } from '../buffer';
 
 import maskFn from './mask';
@@ -56,6 +57,8 @@ const headerPool = new BufferPool(MAX_HEADER_SIZE);
 const maskNumber = 0xAABBAABB;
 const maskBuf = Buffer.alloc(4);
 maskBuf.writeUInt32LE(maskNumber, 0);
+
+let payloadHeadersReceived = 0;
 
 // TODO: Fulfill the RFCs requirement for masks.
 // TODO: ws module may not allow us to use as simple one like this.
@@ -147,13 +150,15 @@ function createDefaultState(isControlFrame = false) {
 export default class WSFramer {
     private callbacks: WSCallback[];
     private maxFrameSize: number;
+    private maxPacketSize: number;
     private msgState: WSState;
     private controlState: WSState;
     private closed: boolean;
 
-    constructor(maxFrameSize = 8096) {
+    constructor(maxFrameSize = 8096, maxPacketSize = 1024 * 1024 * 4) {
         this.callbacks = [];
         this.maxFrameSize = maxFrameSize;
+        this.maxPacketSize = maxPacketSize;
         this.msgState = createDefaultState();
         this.controlState = createDefaultState(true);
         this.closed = false;
@@ -352,6 +357,11 @@ export default class WSFramer {
 
         const opcode = byte1 & 0xF;
 
+        if (opcode != Opcodes.ContinuationFrame &&
+            opcode != Opcodes.BinaryFrame) {
+            debugger;
+        }
+
         if (opcode != Opcodes.ContinuationFrame) {
             state.opcode = opcode;
         }
@@ -368,7 +378,13 @@ export default class WSFramer {
         }
 
         else if (state.payloadLength === 127) {
-            throw new Error("We don't read your kind, packet");
+            const payloadB = parse64BigInt(packet, ptr);
+            if (payloadB > BigInt(this.maxPacketSize)) {
+                throw new Error(`Cannot possibly parse a payload of ${payloadB}.  Too big`);
+            }
+
+            state.payloadLength = Number(payloadB);
+            ptr += 8;
         }
 
         if (state.isMasked) {
@@ -378,6 +394,8 @@ export default class WSFramer {
 
         state.payloadPtr = 0;
         state.payload = Buffer.allocUnsafe(state.payloadLength);
+
+        console.log("PayloadLength", ++payloadHeadersReceived, state.payloadLength);
 
         return ptr;
     }
@@ -409,6 +427,28 @@ export default class WSFramer {
     // TODO: Obviously there is no copying here.
     private pushFrame(state: WSState) {
         let buf = state.payload;
+
+        const fState = Object.
+            keys(state).
+            // @ts-ignore
+            reduce((acc, k) => {
+
+
+            // @ts-ignore
+                if (state[k] instanceof Buffer) {
+            // @ts-ignore
+                    acc[k] = `Buffer(${state[k].byteLength})`;
+            // @ts-ignore
+                }
+            // @ts-ignore
+                else {
+            // @ts-ignore
+                    acc[k] = state[k];
+                }
+                return acc;
+            }, {});
+
+        //console.log("PushFrame", buf.byteLength, fState);
 
         if (state.payloads.length) {
             state.payloads.push(state.payload);

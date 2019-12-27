@@ -33,7 +33,6 @@ function sendWithQueue() {
     const buf = item.buffer.slice(item.idx, item.buffer.byteLength);
     const len = item.buffer.byteLength - item.idx;
 
-    console.log("Sending", buf.toString("hex"));
     const sentBytes = bindings.send(
         item.socketId, buf, len, item.flags);
 

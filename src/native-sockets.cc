@@ -91,19 +91,11 @@ Napi::Value Send(const Napi::CallbackInfo& info) {
         flags = toInt(info[3]);
     }
 
-    printf("XXXX - %d\n", len);
-
     unsigned char* data = buf.TypedArrayOf<unsigned char>::Data();
-
-    printf("data being sent %.*s\n", len, data);
 
     // TODO: interesting?  Partially sent packets due to overwhelmed network card.
     // TODO: Stop being so informative.  I would rather be blissfully unaware of this situation...
     ssize_t sent = send(sock, data, len, flags);
-
-    if (sent < len) {
-        printf("XXXXX - Length is greater than size of sent bytes, you are in trouble sir. %d - %zu\n", len, sent);
-    }
 
     return Napi::Number::New(env, sent);
 }
@@ -232,7 +224,6 @@ Napi::Value Recv(const Napi::CallbackInfo& info) {
     // TODO: Stop being so informative.  I would rather be blissfully unaware of this situation...
     ssize_t r = recv(sock, data, len, flags);
 
-    printf("LOOK AT THE BUFFER %.*s\n", (int)r, data);
     return Napi::Number::New(env, r);
 }
 

@@ -127,20 +127,26 @@ async function run() {
 
     console.log("We actually really did it.  Like for real, ws are connected.");
 
-    // @ts-ignore
-    global.bindings = bindings;
-    // @ts-ignore
-    global.socketId = socketId;
-
     const ws = new WS(socketId);
-    // @ts-ignore
-    global.ws = ws;
 
-    ws.onData((state, buffer) => {
-        const obj = JSON.parse(buffer.toString());
-        obj.count++;
+    let dataCount = 0;
+    let then = Date.now();
+    let bytesReceived = 0;
 
-        ws.send(obj);
+    ws.send("send");
+    ws.onData(function parseWSData(state, buffer) {
+        bytesReceived += buffer.byteLength;
+
+        if (++dataCount === 1000) {
+            const now = Date.now();
+            console.log("Total Bytes Received:", bytesReceived);
+            console.log("Time Spent:", now - then);
+            console.log("Mbps:", (bytesReceived / (now - then)) * 1000);
+            return;
+        }
+        else if (dataCount < 1000) {
+            ws.send("send");
+        }
     });
 
     const countObj = {count: 0};
