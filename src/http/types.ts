@@ -7,7 +7,7 @@ export type SlowPath = {
 export type SlowParsedHttp = {
     headers: { [key: string]: string };
     path?: SlowPath;
-    body: Buffer;
+    body: Uint8Array;
 };
 
 export enum HeaderKey {

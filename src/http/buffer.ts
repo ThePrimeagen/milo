@@ -7,12 +7,14 @@ const contentLength = "content-length".split('').map(x => x.charCodeAt(0));
 
 const NotFound = -1;
 
-export function parse64BigInt(buffer: Buffer, offset: number): BigInt {
-    return BigInt(`0x${buffer.slice(offset, offset + 8).toString('hex')}`);
+export function parse64BigInt(buffer: Uint8Array, offset: number): BigInt {
+    // @ts-ignore
+    // TODO michael fix me
+    return BigInt(`0x${uint8ArraySlice(buffer, offset, offset + 8).toString('hex')}`);
 };
 
 export class BufferPool {
-    private pool: Buffer[];
+    private pool: Uint8Array[];
     private size: number;
 
     constructor(size: number) {
@@ -22,13 +24,13 @@ export class BufferPool {
 
     malloc() {
         if (this.pool.length === 0) {
-            this.pool.push(Buffer.allocUnsafe(this.size));
+            this.pool.push(new Uint8Array(this.size));
         }
 
         return this.pool.pop();
     }
 
-    free(buffer: Buffer) {
+    free(buffer: Uint8Array) {
         this.pool.push(buffer);
     }
 
@@ -36,7 +38,7 @@ export class BufferPool {
 
 export interface BufferBuilderInterface {
     length: () => number;
-    getBuffer: () => Buffer;
+    getBuffer: () => Uint8Array;
     addString: (str: string) => void;
     addNewLine: () => void;
     clear: () => void;
@@ -44,12 +46,12 @@ export interface BufferBuilderInterface {
 
 class BufferBuilder implements BufferBuilderInterface {
     private ptr: number;
-    private buffer: Buffer;
+    private buffer: Uint8Array;
 
-    constructor(buf: Buffer | number = 4096) {
+    constructor(buf: Uint8Array | number = 4096) {
         this.ptr = 0;
         if (typeof buf === 'number') {
-            this.buffer = Buffer.allocUnsafe(buf);
+            this.buffer = new Uint8Array(buf);
         }
 
         else {
@@ -81,11 +83,11 @@ class BufferBuilder implements BufferBuilderInterface {
     }
 }
 
-export function createBufferBuilder(buf: Buffer | number = 4096): BufferBuilderInterface {
+export function createBufferBuilder(buf: Uint8Array | number = 4096): BufferBuilderInterface {
     return new BufferBuilder(buf);
 };
 
-export function getCharacterIdx(buf: Buffer, needle: number, offset: number, maxLength?: number) {
+export function getCharacterIdx(buf: Uint8Array, needle: number, offset: number, maxLength?: number) {
     let idx = NotFound;
     maxLength = maxLength || buf.length;
     for (let i = offset; idx === NotFound && i < maxLength; ++i) {
@@ -97,11 +99,11 @@ export function getCharacterIdx(buf: Buffer, needle: number, offset: number, max
     return idx;
 }
 
-export function getColonIdx(buf: Buffer, offset: number, maxLength: number): number {
+export function getColonIdx(buf: Uint8Array, offset: number, maxLength: number): number {
     return getCharacterIdx(buf, colon, offset, maxLength);
 }
 
-export function getSpaceIdx(buf: Buffer, offset: number) {
+export function getSpaceIdx(buf: Uint8Array, offset: number) {
     return getCharacterIdx(buf, space, offset);
 }
 
@@ -111,7 +113,7 @@ export {
     n,
 };
 
-export function getEndLineOffset(buf: Buffer, offset: number, maxLength: number): number {
+export function getEndLineOffset(buf: Uint8Array, offset: number, maxLength: number): number {
     let i = offset;
     let found = false;
 
@@ -127,7 +129,7 @@ export function getEndLineOffset(buf: Buffer, offset: number, maxLength: number)
     return found ? i : -1;
 }
 
-export function getHTTPHeaderEndOffset(buf: Buffer, offset: number, maxLength: number): number {
+export function getHTTPHeaderEndOffset(buf: Uint8Array, offset: number, maxLength: number): number {
     let i = offset;
     let found = false;
 

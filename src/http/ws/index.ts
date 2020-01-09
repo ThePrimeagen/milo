@@ -1,5 +1,6 @@
 import bindings from '../../bindings';
 import WSFramer, {WSState} from './framer';
+import nrdp from "../../nrdp";
 
 import {
     Opcodes,
@@ -10,10 +11,10 @@ import {
     Socket
 } from '../../types';
 
-type CloseCB = (buf: Buffer) => void;
+type CloseCB = (buf: Uint8Array) => void;
 
 // TODO: Do we need frame type?
-type DataCB = (state: WSState, buf: Buffer) => void;
+type DataCB = (state: WSState, buf: Uint8Array) => void;
 
 const defaultOptions = {
     maxFrameSize: 8192
@@ -31,7 +32,7 @@ export default class WS {
         this.closeCBs = [];
         this.dataCBs = [];
 
-        this.frame.onFrame((buffer: Buffer, state: WSState) => {
+        this.frame.onFrame((buffer: Uint8Array, state: WSState) => {
             switch (state.opcode) {
                 case Opcodes.CloseConnection:
                     this.closeCBs.forEach(cb => cb(buffer));
@@ -58,17 +59,17 @@ export default class WS {
         });
     }
 
-    pushData(buf: Buffer, offset: number, length: number) {
+    pushData(buf: Uint8Array, offset: number, length: number) {
         this.frame.processStreamData(buf, offset, offset + length);
     }
 
-    send(obj: Buffer | object | string, offset?: number, length?: number) {
+    send(obj: Uint8Array | object | string, offset?: number, length?: number) {
 
         let bufOut = null;
         let o, l;
         let opcode = Opcodes.BinaryFrame;
 
-        if (obj instanceof Buffer) {
+        if (obj instanceof Uint8Array) {
             o = offset;
             l = length;
             opcode = Opcodes.BinaryFrame;
@@ -79,16 +80,14 @@ export default class WS {
             const str = JSON.stringify(obj);
             o = 0;
             l = str.length;
-            bufOut = Buffer.allocUnsafe(l);
-            bufOut.write(str);
+            bufOut = nrdp.atoutf8(str);
 
         }
 
         else {
             o = 0;
             l = obj.length;
-            bufOut = Buffer.allocUnsafe(obj.length);
-            bufOut.write(obj);
+            bufOut = nrdp.atoutf8(obj);
         }
 
         this.frame.send(this.sockfd, bufOut, o, l, opcode);
@@ -102,7 +101,7 @@ export default class WS {
         this.dataCBs.push(cb);
     }
 
-    private handleControlFrame(buffer: Buffer, state: WSState) {
+    private handleControlFrame(buffer: Uint8Array, state: WSState) {
         console.log("CONTROL FRAME", state);
     }
 }

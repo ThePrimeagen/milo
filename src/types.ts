@@ -26,8 +26,8 @@ type NativeSocketInterface = {
     // TODO: O_NONBLOCK for non blocking send when there is not enough room.
     // Another javascript context?????????
     // THINK ABOUT SHARING THOSE MEMORIES
-    send: (sockfd: Socket, buf: Buffer, len: number, flags?: number) => number;
-    recv: (sockfd: Socket, buf: Buffer, len: number, flags?: number) => number;
+    send: (sockfd: Socket, buf: Uint8Array, len: number, flags?: number) => number;
+    recv: (sockfd: Socket, buf: Uint8Array, len: number, flags?: number) => number;
     accept: (sockfd: Socket) => number;
     getaddrinfo: (host: string | number, port: string, hints: AddrId, bindAddr: AddrId) => number;
     bind: (sockfd: Socket, bindAddr: AddrId) => number;
@@ -61,7 +61,7 @@ type NativeSocketInterface = {
     // 6.  overcome discord
 
     // Convenience methods
-    readstdin: (buf: Buffer, len: number) => number;
+    readstdin: (buf: Uint8Array, len: number) => number;
     getErrorString: () => string;
     isValidSocket: (result: number) => boolean;
 

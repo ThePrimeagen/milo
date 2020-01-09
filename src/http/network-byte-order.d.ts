@@ -6,7 +6,7 @@ declare module 'network-byte-order' {
     b is an Array of octets or a Node.JS Buffer. i is the zero-based index at which
     to write into b. v is the value to convert.
      */
-    export function htonl(buffer: Buffer, index: number, v: number): number;
+    export function htonl(buffer: Uint8Array, index: number, v: number): number;
 
     /**
     htons(b, i, v) The htons() function converts the given unsigned 16-bit (short)
@@ -17,7 +17,7 @@ declare module 'network-byte-order' {
     to write into b. v is the value to convert.
 
      */
-    export function htons(buffer: Buffer, index: number, v: number): number;
+    export function htons(buffer: Uint8Array, index: number, v: number): number;
 
     /**
     ntohl(b, i) The ntohl() function converts the unsigned 32-bit (long) integer
@@ -27,7 +27,7 @@ declare module 'network-byte-order' {
     zero-based index at which to read from b.
 
      */
-    export function ntohl(buffer: Buffer, index: number): number;
+    export function ntohl(buffer: Uint8Array, index: number): number;
 
     /**
     ntohs(b, i) The ntohs() function converts the unsigned 16-bit (short) integer
@@ -36,7 +36,7 @@ declare module 'network-byte-order' {
     b is an Array of octets or a Node.JS Buffer to read the value from. i is the
     zero-based index at which to read from b.
      */
-    export function ntohs(buffer: Buffer, index: number): number;
+    export function ntohs(buffer: Uint8Array, index: number): number;
 
     /*
     ntohsStr(s, i) s is a string to the read value from. i is the zero-based index

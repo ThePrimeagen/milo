@@ -12,8 +12,10 @@ export function switchProtocolResponse(key: string) {
 }
 
 export function getResponseWSKey(incomingKey: string): string {
-    const shadKey = sha1(incomingKey + WS_KEY);
-    return Buffer.from(shadKey, 'hex').toString('base64');
+    // @ts-ignore
+    const shadKey = nrdp.hash("sha1", incomingKey + WS_KEY);
+    // @ts-ignore
+    return nrdp.btoa(shadKey);
 }
 
 export function validateUpgradeResponse(requestKey: string, responseKey: string): boolean {

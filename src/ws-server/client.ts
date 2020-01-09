@@ -85,7 +85,7 @@ if (connectStatus) {
 rl.on('line', function(line) {
     const len = buf.write(line);
 
-    console.log("onLine", buf.slice(0, len), len);
+    console.log("onLine", uint8ArraySlice(buf, 0, len), len);
     send(socketId, buf, len);
 });
  */
@@ -98,7 +98,7 @@ const path = "/";
 http.upgradeToWS(socketId, host, path);
 
 async function run() {
-    const buf = Buffer.alloc(4096);
+    const buf = new Uint8Array(4096);
     const fdSet = bindings.fd_set();
 
     let count = 0;

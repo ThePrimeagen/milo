@@ -10,7 +10,8 @@ import bindings from '../bindings';
 //      123
 
 import {
-    ab2str
+    ab2str,
+    uint8ArraySlice
 } from '../utils/index';
 
 import {
@@ -36,11 +37,13 @@ import {
     createBufferBuilder,
 } from './buffer';
 
+import { uint8ArrayWriteString } from "../utils";
+
 import * as wsUtils from './ws.utils';
 
 const switchingProtocolsStr = "HTTP/1.1 101 Switching Protocols";
-const switchingProtocolsBuf = Buffer.alloc(switchingProtocolsStr.length);
-switchingProtocolsBuf.write(switchingProtocolsStr);
+const switchingProtocolsBuf = new Uint8Array(switchingProtocolsStr.length);
+uint8ArrayWriteString(switchingProtocolsBuf, switchingProtocolsStr);
 
 export default class HTTP {
     private wsKeyGenerated: string;
@@ -76,10 +79,10 @@ export default class HTTP {
         wsUpgrade.addNewLine();
         wsUpgrade.addNewLine();
 
-        console.log("Sending", ab2str(wsUpgrade.getBuffer().slice(0, wsUpgrade.length())));
-
         const buf = wsUpgrade.getBuffer();
         const len = wsUpgrade.length();
+        console.log("Sending", ab2str(uint8ArraySlice(buf, 0, len)));
+
         bindings.send(socketId, buf, len, 0);
     }
 
@@ -102,7 +105,7 @@ export default class HTTP {
     }
 }
 
-function isUpgradeToWebsockets(buf: Buffer): boolean {
+function isUpgradeToWebsockets(buf: Uint8Array): boolean {
     let isEqual = true;
     for (let i = 0; i < switchingProtocolsBuf.byteLength && isEqual; ++i) {
         isEqual = isEqual && buf[i] === switchingProtocolsBuf[i];
@@ -111,13 +114,13 @@ function isUpgradeToWebsockets(buf: Buffer): boolean {
     return isEqual;
 }
 
-function getSlowCasePath(buf: Buffer, offset: number, maxLength: number): SlowPath {
+function getSlowCasePath(buf: Uint8Array, offset: number, maxLength: number): SlowPath {
     const out = {} as SlowPath;
 
     let ptr = offset;
     let spaceIdx = getSpaceIdx(buf, ptr);
 
-    const requestType = ab2str(buf.slice(ptr, spaceIdx));
+    const requestType = ab2str(uint8ArraySlice(buf, ptr, spaceIdx));
     if (requestType !== RequestTypes.GET &&
         requestType !== RequestTypes.POST) {
         throw new Error('Unsupported HTTP types');
@@ -127,10 +130,10 @@ function getSlowCasePath(buf: Buffer, offset: number, maxLength: number): SlowPa
     ptr =  spaceIdx + 1;
 
     spaceIdx = getSpaceIdx(buf, ptr);
-    out.uri = ab2str(buf.slice(ptr, spaceIdx));
+    out.uri = ab2str(uint8ArraySlice(buf, ptr, spaceIdx));
     ptr =  spaceIdx + 1;
 
-    const protocol = ab2str(buf.slice(ptr, maxLength));
+    const protocol = ab2str(uint8ArraySlice(buf, ptr, maxLength));
     if (protocol !== Protocol.HTTP1_1) {
         throw new Error(`Unsupported Protocol ${protocol}` );
     }
@@ -140,7 +143,7 @@ function getSlowCasePath(buf: Buffer, offset: number, maxLength: number): SlowPa
     return out;
 }
 
-export function slowCaseParseHttp(buf: Buffer, offset: number, maxLength: number): SlowParsedHttp {
+export function slowCaseParseHttp(buf: Uint8Array, offset: number, maxLength: number): SlowParsedHttp {
     let ptr = offset;
 
     const out = { headers: {} } as SlowParsedHttp;
@@ -151,8 +154,8 @@ export function slowCaseParseHttp(buf: Buffer, offset: number, maxLength: number
         throw new Error("Not valid HTTP");
     }
 
-    if (!isUpgradeToWebsockets(buf.slice(offset))) {
-        const path = buf.slice(offset, endLineIdx);
+    if (!isUpgradeToWebsockets(uint8ArraySlice(buf, offset))) {
+        const path = uint8ArraySlice(buf, offset, endLineIdx);
         out.path = getSlowCasePath(buf, offset, endLineIdx);
     }
 
@@ -170,10 +173,10 @@ export function slowCaseParseHttp(buf: Buffer, offset: number, maxLength: number
         }
 
         const colonIdx = getColonIdx(buf, ptr, maxLength);
-        const key = ab2str(buf.slice(ptr, colonIdx));
+        const key = ab2str(uint8ArraySlice(buf, ptr, colonIdx));
 
         ptr = colonIdx + 1;
-        let value = ab2str(buf.slice(ptr, endLineIdx));
+        let value = ab2str(uint8ArraySlice(buf, ptr, endLineIdx));
         if (value[0] === ' ') {
             value = value.substring(1);
         }
@@ -183,7 +186,7 @@ export function slowCaseParseHttp(buf: Buffer, offset: number, maxLength: number
 
     } while (true);
 
-    out.body = buf.slice(ptr, maxLength);
+    out.body = uint8ArraySlice(buf, ptr, maxLength);
 
     return out;
 };

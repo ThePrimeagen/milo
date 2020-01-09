@@ -4,8 +4,9 @@ import maskFn from '../mask';
 // LittleEndian is going to be BBAABBAA
 // 171IQ
 const littleMask = 0xBB_AA_BB_AA;
-const littleMaskBuf = Buffer.alloc(4);
-littleMaskBuf.writeUInt32LE(littleMask, 0);
+const littleMaskBuf = new Uint8Array(4);
+const littleView = new DataView(littleMaskBuf.buffer);
+littleView.setUint32(littleMask, 0, true);
 
 // 0b1011
 // 0b0100
@@ -28,7 +29,7 @@ function isLittleEndian() {
     return uint16array[0] === 0xBBAA;
 }
 
-function checkBuf(buf: Buffer, arr: number[], offset: number = 0) {
+function checkBuf(buf: Uint8Array, arr: number[], offset: number = 0) {
     for (let i = 0; i < arr.length; ++i) {
         expect(buf[offset + i]).toEqual(arr[i]);
     }
@@ -36,7 +37,7 @@ function checkBuf(buf: Buffer, arr: number[], offset: number = 0) {
 
 describe("WS", function() {
     it("should mask properly", function() {
-        const b = Buffer.alloc(1000);
+        const b = new Uint8Array(1000);
         buf.copy(b, 0);
 
         const mask = littleMaskBuf;
