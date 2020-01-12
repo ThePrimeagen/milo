@@ -5,6 +5,10 @@ import {
     NativeSocketInterface
 } from '../types';
 
+import {
+    uint8ArraySlice
+} from "../utils";
+
 import b from '../bindings';
 const bindings = b as NativeSocketInterface;
 const noop = () => {};
@@ -12,7 +16,7 @@ const noop = () => {};
 // sends structured data
 type SendFragment = {
     socketId: Socket,
-    buffer: Buffer,
+    buffer: Uint8Array,
     flags: number,
     idx: number,
     cb: () => void | null,
@@ -30,7 +34,7 @@ function sendWithQueue() {
 
     const item = queue[0];
 
-    const buf = item.buffer.slice(item.idx, item.buffer.byteLength);
+    const buf = uint8ArraySlice(item.buffer, item.idx, item.buffer.byteLength);
     const len = item.buffer.byteLength - item.idx;
 
     const sentBytes = bindings.send(
@@ -50,9 +54,9 @@ function sendWithQueue() {
     }
 }
 
-// buf.slice(0, length)
+// uint8ArraySlice(buf, 0, length)
 export function send(
-    socketId: Socket, buffer: Buffer, flags: number = 0, cb: () => void = null) {
+    socketId: Socket, buffer: Uint8Array, flags: number = 0, cb: () => void = null) {
 
     const sF = {
         socketId,

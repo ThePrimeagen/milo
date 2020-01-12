@@ -1,7 +1,8 @@
-const createBufferBuilder = require('../buffer').createBufferBuilder;
+import { createBufferBuilder } from "../buffer";
+import { uint8ArrayWriteString } from "../../utils";
 
-const helloWorld = Buffer.alloc(28);
-helloWorld.write("Hello World\r\nHello Sunny\r\n\r\n");
+const helloWorld = new Uint8Array(28);
+uint8ArrayWriteString(helloWorld, "Hello World\r\nHello Sunny\r\n\r\n");
 
 describe("buffer", function() {
     it("should addStrings with ease", function() {

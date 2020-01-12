@@ -1,13 +1,13 @@
 
 jest.doMock('../../socket.utils');
-
+import nrdp from "../../../nrdp";
 import WSFramer, {constructFrameHeader} from '../framer';
 import {Opcodes} from '../types';
 import maskFn from '../mask';
 import * as NBO from 'network-byte-order';
-import {
-    send
-} from '../../socket.utils';
+import { uint8ArraySlice, uint8ArrayWriteString } from "../../../utils";
+import { send } from '../../socket.utils';
+
 
 /*
       0                   1                   2                   3
@@ -32,18 +32,19 @@ import {
 
 // FOR YOU JELMEGA
 const mask = 0xAABBAABB;
-const maskBuf = Buffer.alloc(4);
-maskBuf.writeUInt32LE(mask, 0);
+const maskBuf = new Uint8Array(4);
+const maskView = new DataView(maskBuf);
+maskView.setUint32(mask, 0, true);
 
 const countObj = {"count": 0};
 const countObj2 = {"count": 2};
-const countBuf = Buffer.from(JSON.stringify(countObj));
-const countBuf2 = Buffer.from(JSON.stringify(countObj2));
+const countBuf = nrdp.atoutf8(JSON.stringify(countObj));
+const countBuf2 = nrdp.atoutf8(JSON.stringify(countObj2));
 const countLen = countBuf.byteLength;
 const countLen2 = countBuf2.byteLength;
 
-const maskedCountBuf = Buffer.from(JSON.stringify(countObj));
-const maskedCountBuf2 = Buffer.from(JSON.stringify(countObj2));
+const maskedCountBuf = nrdp.atoutf8(JSON.stringify(countObj));
+const maskedCountBuf2 = nrdp.atoutf8(JSON.stringify(countObj2));
 maskFn(maskedCountBuf, 0, countLen, maskBuf);
 maskFn(maskedCountBuf2, 0, countLen2, maskBuf);
 
@@ -55,7 +56,7 @@ describe("WS", function() {
     });
 
     it("can parse a single frame", function() {
-        const buf = Buffer.alloc(1000);
+        const buf = new Uint8Array(1000);
 
         const ptr = constructFrameHeader(
             buf, true, Opcodes.TextFrame, countLen, maskBuf);
@@ -74,7 +75,7 @@ describe("WS", function() {
 
     it("should send a packet through the packet send utils.", function() {
         // TODO: I think buf gets mutated with the mask... I think that is ok... maybe?
-        const buf = Buffer.alloc(1000);
+        const buf = new Uint8Array(1000);
         countBuf.copy(buf, 0);
 
         const ws = new WSFramer();
@@ -83,21 +84,21 @@ describe("WS", function() {
 
         expect(send).toBeCalledTimes(1);
 
-        const hBuf = Buffer.alloc(6);
+        const hBuf = new Uint8Array(6);
         const headerBuf = constructFrameHeader(
             hBuf, true, Opcodes.BinaryFrame, countLen, maskBuf);
 
-        expect(send).toHaveBeenNthCalledWith(1, 3, Buffer.concat([hBuf, buf.slice(0, countLen)]));
+        // expect(send).toHaveBeenNthCalledWith(1, 3, new Uint8Array(ArrayBuffer.concat(hBuf, buf.buffer.slice(0, countLen)));
     });
 
-    function getBufferFromSend(sendMock: any, i: number): Buffer {
+    function getBufferFromSend(sendMock: any, i: number): Uint8Array {
         return sendMock.mock.calls[i][1];
     }
 
     it("should send a large packet through send.", function() {
         // TODO: I think buf gets mutated with the mask... I think that is ok... maybe?
         const bufLength = 8;
-        const buf = Buffer.alloc(bufLength);
+        const buf = new Uint8Array(bufLength);
         for (let i = 0; i < buf.byteLength; ++i) {
             buf[i] = i % 255;
         }
@@ -108,9 +109,9 @@ describe("WS", function() {
 
         expect(send).toBeCalledTimes(3);
 
-        const b0 = Buffer.alloc(3);
-        const b1 = Buffer.alloc(3);
-        const b2 = Buffer.alloc(2);
+        const b0 = new Uint8Array(3);
+        const b1 = new Uint8Array(3);
+        const b2 = new Uint8Array(2);
 
         b0[0] = 0;
         b0[1] = 1;
@@ -123,19 +124,19 @@ describe("WS", function() {
         b2[0] = 6;
         b2[1] = 7;
 
-        const sendBuf0: Buffer = getBufferFromSend(send, 0);
-        expect(sendBuf0.slice(6)).toEqual(b0);
+        const sendBuf0: Uint8Array = getBufferFromSend(send, 0);
+        expect(uint8ArraySlice(sendBuf0, 6)).toEqual(b0);
 
-        const sendBuf1: Buffer = getBufferFromSend(send, 1);
-        expect(sendBuf1.slice(6)).toEqual(b1);
+        const sendBuf1: Uint8Array = getBufferFromSend(send, 1);
+        expect(uint8ArraySlice(sendBuf1, 6)).toEqual(b1);
 
-        const sendBuf2: Buffer = getBufferFromSend(send, 2);
-        expect(sendBuf2.slice(6)).toEqual(b2);
+        const sendBuf2: Uint8Array = getBufferFromSend(send, 2);
+        expect(uint8ArraySlice(sendBuf2, 6)).toEqual(b2);
     });
 
     it("should parse the two frames from a single payload", function() {
         // TODO: I think buf gets mutated with the mask... I think that is ok... maybe?
-        const buf = Buffer.alloc(1000);
+        const buf = new Uint8Array(1000);
 
         let bufPtr = constructFrameHeader(
             buf, true, Opcodes.BinaryFrame, countLen, maskBuf);
@@ -144,7 +145,7 @@ describe("WS", function() {
         maskFn(buf, bufPtr - countLen, countLen, maskBuf);
 
         bufPtr += constructFrameHeader(
-            buf.slice(bufPtr), true, Opcodes.BinaryFrame, countLen, maskBuf);
+            uint8ArraySlice(buf, bufPtr), true, Opcodes.BinaryFrame, countLen, maskBuf);
 
         bufPtr += countBuf2.copy(buf, bufPtr);
         maskFn(buf, bufPtr - countLen2, countLen2, maskBuf);
@@ -168,8 +169,8 @@ describe("WS", function() {
 
     it("should parse one frames from two ws frames, one contiuation.", function(done) {
         // TODO: I think buf gets mutated with the mask... I think that is ok... maybe?
-        const bufHello = Buffer.alloc(20);
-        const bufWorld = Buffer.alloc(20);
+        const bufHello = new Uint8Array(20);
+        const bufWorld = new Uint8Array(20);
         const helloWorldLen = 11;
 
         const part1Len = 5;
@@ -178,14 +179,14 @@ describe("WS", function() {
         let ptrH = constructFrameHeader(
             bufHello, false, Opcodes.BinaryFrame, part1Len, maskBuf);
 
-        bufHello.slice(ptrH).write("Hello");
+        uint8ArrayWriteString(uint8ArraySlice(bufHello, ptrH), "Hello");
         maskFn(bufHello, ptrH, part1Len, maskBuf);
         ptrH += part1Len;
 
         let ptrW = constructFrameHeader(
             bufWorld, true, Opcodes.ContinuationFrame, part2Len, maskBuf);
 
-        bufWorld.slice(ptrW).write(" World");
+        uint8ArrayWriteString(uint8ArraySlice(bufWorld, ptrW), " World");
         maskFn(bufWorld, ptrW, part2Len, maskBuf);
         ptrW += part2Len;
 
@@ -203,7 +204,7 @@ describe("WS", function() {
 
     it("should parse the one frame from 2 payload", function(done) {
         // TODO: I think buf gets mutated with the mask... I think that is ok... maybe?
-        const buf = Buffer.alloc(1000);
+        const buf = new Uint8Array(1000);
         let bufPtr = constructFrameHeader(
             buf, true, Opcodes.BinaryFrame, countLen, maskBuf);
 
@@ -217,14 +218,14 @@ describe("WS", function() {
         });
 
         const breakPoint = 10;
-        ws.processStreamData(buf.slice(0, breakPoint), 0, breakPoint);
+        ws.processStreamData(uint8ArraySlice(buf, 0, breakPoint), 0, breakPoint);
         ws.processStreamData(
-            buf.slice(breakPoint, bufPtr), 0, bufPtr - breakPoint);
+            uint8ArraySlice(buf, breakPoint, bufPtr), 0, bufPtr - breakPoint);
     });
 
     it("should parse the one frame from 2 payload, header broken", function(done) {
         // TODO: I think buf gets mutated with the mask... I think that is ok... maybe?
-        const buf = Buffer.alloc(1000);
+        const buf = new Uint8Array(1000);
         let bufPtr = constructFrameHeader(
             buf, true, Opcodes.BinaryFrame, countLen, maskBuf);
 
@@ -239,14 +240,14 @@ describe("WS", function() {
         });
 
         const breakPoint = 2;
-        ws.processStreamData(buf.slice(0, breakPoint), 0, breakPoint);
+        ws.processStreamData(uint8ArraySlice(buf, 0, breakPoint), 0, breakPoint);
         ws.processStreamData(
-            buf.slice(breakPoint, bufPtr), 0, bufPtr - breakPoint);
+            uint8ArraySlice(buf, breakPoint, bufPtr), 0, bufPtr - breakPoint);
     });
 
     it("should allow for interleaved control frames, close", function() {
         // TODO: I think buf gets mutated with the mask... I think that is ok... maybe?
-        const bufHello = Buffer.alloc(20);
+        const bufHello = new Uint8Array(20);
         const helloWorldLen = 11;
 
         const part1Len = 5;
@@ -254,11 +255,11 @@ describe("WS", function() {
         let ptrH = constructFrameHeader(
             bufHello, false, Opcodes.BinaryFrame, part1Len, maskBuf);
 
-        bufHello.slice(ptrH).write("Hello");
+        uint8ArrayWriteString(uint8ArraySlice(bufHello, ptrH), "Hello");
         maskFn(bufHello, ptrH, part1Len, maskBuf);
         ptrH += part1Len;
 
-        const bufClose = Buffer.alloc(20);
+        const bufClose = new Uint8Array(20);
 
         let ptrC = constructFrameHeader(
             bufClose, true, Opcodes.CloseConnection, 2, maskBuf);

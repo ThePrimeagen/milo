@@ -6,6 +6,7 @@ jest.mock('../../bindings', () => {
 
 // dont be rude sunny
 import * as wsUtils from '../ws.utils';
+import { uint8ArrayWriteString } from "../../utils";
 
 jest.doMock('../ws.utils.ts', () => {
     return {
@@ -17,8 +18,8 @@ jest.doMock('../ws.utils.ts', () => {
 });
 
 
-const hwBuf = Buffer.alloc(11);
-hwBuf.write("Hello World");
+const hwBuf = new Uint8Array(11);
+uint8ArrayWriteString(hwBuf, "Hello World");
 
 import {SlowParsedHttp} from '../types';
 

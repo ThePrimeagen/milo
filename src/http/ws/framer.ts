@@ -6,6 +6,11 @@ import {
 import maskFn from './mask';
 
 import {
+    uint8ArraySlice,
+    uint8ArrayConcat
+} from "../../utils";
+
+import {
     Socket,
 } from '../../types';
 
@@ -29,7 +34,7 @@ import {
 // @ts-ignore
 } from 'network-byte-order';
 
-type WSCallback = (buffer: Buffer, state: WSState) => void;
+type WSCallback = (buffer: Uint8Array, state: WSState) => void;
 
 enum State {
     Waiting = 1,
@@ -55,23 +60,24 @@ const MAX_HEADER_SIZE = 8;
 const headerPool = new BufferPool(MAX_HEADER_SIZE);
 
 const maskNumber = 0xAABBAABB;
-const maskBuf = Buffer.alloc(4);
-maskBuf.writeUInt32LE(maskNumber, 0);
+const maskBuf = new Uint8Array(4);
+const maskView = new DataView(maskBuf.buffer);
+maskView.setUint32(maskNumber, 0, true);
 
 let payloadHeadersReceived = 0;
 
 // TODO: Fulfill the RFCs requirement for masks.
 // TODO: ws module may not allow us to use as simple one like this.
-function generateMask(): Buffer {
+function generateMask(): Uint8Array {
     return maskBuf;
 }
 
 export function constructFrameHeader(
-    buf: Buffer,
+    buf: Uint8Array,
     isFinished: boolean,
     opCode: number,
     payloadLength: number,
-    mask?: Buffer,
+    mask?: Uint8Array,
 ): number {
     let ptr = 0;
 
@@ -81,7 +87,7 @@ export function constructFrameHeader(
     }
 
     firstByte |= (opCode & 0xF);
-    buf.writeUInt8(firstByte, ptr++);
+    buf[ptr++] = firstByte;
 
     // payload encoding
     let secondByte = 0;
@@ -107,14 +113,14 @@ export function constructFrameHeader(
         throw new Error('Bad implementation, Prime');
     }
 
-    buf.writeUInt8(secondByte, 1);
+    buf[1] = secondByte;
 
     if (mask !== undefined) {
-        mask.copy(buf, ptr, 0, 4);
+        buf.set(mask, ptr);
         ptr += 4;
     }
 
-    return ptr;
+  return ptr;
 }
 
 export type WSState = {
@@ -124,12 +130,12 @@ export type WSState = {
     rsv3: number;
     opcode: number;
     isMasked: boolean;
-    mask: Buffer;
+    mask: Uint8Array;
     payloadLength: number;
-    payload: Buffer;
+    payload: Uint8Array;
     isControlFrame: boolean;
     payloadPtr: number;
-    payloads: Buffer[];
+    payloads: Uint8Array[];
     state: State;
 };
 
@@ -139,7 +145,7 @@ function createDefaultState(isControlFrame = false) {
         opcode: 0,
         isControlFrame,
         isMasked: false,
-        mask: Buffer.alloc(4),
+        mask: new Uint8Array(4),
         payloadLength: 0,
         payloadPtr: 0,
         payloads: [],
@@ -174,7 +180,7 @@ export default class WSFramer {
     }
 
     // TODO: Contiuation frames, spelt wrong
-    send(sockfd: Socket, buf: Buffer, offset: number,
+    send(sockfd: Socket, buf: Uint8Array, offset: number,
         length: number, frameType: Opcodes = Opcodes.BinaryFrame) {
 
         if (length > 2 ** 32) {
@@ -202,10 +208,13 @@ export default class WSFramer {
             const headerEnd = constructFrameHeader(
                 header, true, ft, frameSize, mask);
 
-            const fullBuf = Buffer.allocUnsafe(headerEnd + frameSize);
+            const fullBuf = new Uint8Array(headerEnd + frameSize);
 
-            header.copy(fullBuf, 0);
-            ptr += buf.copy(fullBuf, headerEnd, ptr, endIdx);
+            fullBuf.set(header);
+
+            const sub = new Uint8Array(buf.buffer, ptr, endIdx - ptr);
+            fullBuf.set(sub, headerEnd);
+            ptr += sub.byteLength;
 
             maskFn(fullBuf, headerEnd, frameSize, mask);
 
@@ -221,7 +230,7 @@ export default class WSFramer {
         headerPool.free(header);
     }
 
-    isControlFrame(packet: Buffer): boolean {
+    isControlFrame(packet: Uint8Array): boolean {
         const opCode = (packet[0] & 0x0F);
 
         return opCode === Opcodes.Ping ||
@@ -230,7 +239,7 @@ export default class WSFramer {
     }
 
     // TODO: Handle Continuation.
-    processStreamData(packet: Buffer, offset: number, endIdx: number) {
+    processStreamData(packet: Uint8Array, offset: number, endIdx: number) {
 
         if (this.closed) {
             throw new Error("Hey, closed for business bud.");
@@ -261,8 +270,8 @@ export default class WSFramer {
                     const headerBuf = headerPool.malloc();
                     const payloadByteLength = state.payload.byteLength;
 
-                    state.payload.copy(headerBuf, 0);
-                    packet.copy(headerBuf, state.payload.byteLength);
+                    headerBuf.set(state.payload);
+                    headerBuf.set(packet, state.payload.byteLength);
 
                     nextPtrOffset =
                         this.parseHeader(state, headerBuf, 0, MAX_HEADER_SIZE);
@@ -278,7 +287,7 @@ export default class WSFramer {
                 if (nextPtrOffset === false) {
 
                     state.state = State.WaitingForCompleteHeader;
-                    state.payload = packet.slice(ptr, endIdx);
+                    state.payload = uint8ArraySlice(packet, ptr, endIdx);
                     break;
                 }
 
@@ -341,14 +350,14 @@ export default class WSFramer {
     // TODO: Endianness????
     //
     // Send 126 bytes to find out how they order their bytes.
-    private parseHeader(state: WSState, packet: Buffer, offset: number, endIdx: number): number | boolean {
+    private parseHeader(state: WSState, packet: Uint8Array, offset: number, endIdx: number): number | boolean {
 
         if (endIdx - offset < MAX_HEADER_SIZE) {
             return false;
         }
 
         let ptr = offset;
-        const byte1 = packet.readUInt8(ptr++);
+        const byte1 = packet[ptr++];
         state.isFinished = (byte1 & (0x80)) >>> 7 === 1;
 
         state.rsv1 = (byte1 & 0x40) >> 6;
@@ -366,7 +375,7 @@ export default class WSFramer {
             state.opcode = opcode;
         }
 
-        const byte2 = packet.readUInt8(ptr++);
+        const byte2 = packet[ptr++];
 
         state.isMasked = (byte2 & 0x80) >>> 7 === 1;
 
@@ -388,12 +397,12 @@ export default class WSFramer {
         }
 
         if (state.isMasked) {
-            packet.copy(state.mask, 0, ptr, ptr + 4);
+            state.mask = packet.slice(ptr, ptr + 4);
             ptr += 4;
         }
 
         state.payloadPtr = 0;
-        state.payload = Buffer.allocUnsafe(state.payloadLength);
+        state.payload = new Uint8Array(state.payloadLength);
 
         console.log("PayloadLength", ++payloadHeadersReceived, state.payloadLength);
 
@@ -401,7 +410,7 @@ export default class WSFramer {
     }
 
     private parseBody(
-        state: WSState, packet: Buffer,
+        state: WSState, packet: Uint8Array,
         offset: number, endIdx: number): number {
 
         // TODO: When the packet has multiple frames in it, i need to be able
@@ -409,8 +418,9 @@ export default class WSFramer {
 
         // TODO: is this ever needed?
         const remaining = state.payloadLength - state.payloadPtr;
-        const copyAmount = packet.copy(state.payload,
-            state.payloadPtr, offset, endIdx);
+        const sub = new Uint8Array(packet, offset, endIdx - offset);
+        state.payload.set(sub, state.payloadPtr);
+        const copyAmount = sub.byteLength;
 
         if (state.isMasked) {
             maskFn(state.payload, state.payloadPtr, copyAmount, state.mask);
@@ -428,32 +438,33 @@ export default class WSFramer {
     private pushFrame(state: WSState) {
         let buf = state.payload;
 
-        const fState = Object.
-            keys(state).
-            // @ts-ignore
-            reduce((acc, k) => {
+        // const fState = Object.
+        //     keys(state).
+        //     // @ts-ignore
+        //     reduce((acc, k) => {
 
 
-            // @ts-ignore
-                if (state[k] instanceof Buffer) {
-            // @ts-ignore
-                    acc[k] = `Buffer(${state[k].byteLength})`;
-            // @ts-ignore
-                }
-            // @ts-ignore
-                else {
-            // @ts-ignore
-                    acc[k] = state[k];
-                }
-                return acc;
-            }, {});
+        //     // @ts-ignore
+        //         if (state[k] instanceof Buffer) {
+        //     // @ts-ignore
+        //             acc[k] = `Buffer(${state[k].byteLength})`;
+        //     // @ts-ignore
+        //         }
+        //     // @ts-ignore
+        //         else {
+        //     // @ts-ignore
+        //             acc[k] = state[k];
+        //         }
+        //         return acc;
+        //     }, {});
 
         //console.log("PushFrame", buf.byteLength, fState);
 
         if (state.payloads.length) {
             state.payloads.push(state.payload);
 
-            buf = Buffer.concat(state.payloads);
+            // buf = Buffer.concat(state.payloads);
+            buf = uint8ArrayConcat.apply(undefined, state.payloads);
             state.payloads = null;
         }
 

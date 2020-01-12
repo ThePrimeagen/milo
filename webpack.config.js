@@ -1,6 +1,5 @@
 const path = require('path');
 
-const Dotenv = require('dotenv-webpack')
 const CopyPlugin = require('copy-webpack-plugin');
 
 const buildPath = path.join(__dirname, 'build/Release/obj.target/native-sockets.node');
@@ -16,16 +15,12 @@ function getCopyPaths() {
 module.exports = {
     target: 'node',
     entry: {
-        //clientChat: './src/client/index.ts',
-        //serverChat: './src/server/index.ts',
-        //serverHTTP: './src/server/http/index.ts',
         wsServer: './src/ws-server/server.ts',
         clientHTTP: './src/ws-server/client.ts',
         clientHTTPReal: './src/ws-server/client-real.ts',
     },
     plugins: [
-        new CopyPlugin(getCopyPaths()),
-        new Dotenv(),
+        new CopyPlugin(getCopyPaths())
     ],
     module: {
         rules: [{
@@ -48,9 +43,9 @@ module.exports = {
     },
 
     optimization: {
-		// We no not want to minimize our code.
-		minimize: false
-	},
+        // We no not want to minimize our code.
+        minimize: false
+    },
     output: {
         filename: '[name].js',
         path: path.resolve(__dirname, "dist")
