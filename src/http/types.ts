@@ -24,5 +24,5 @@ export enum Protocol {
 export enum RequestTypes {
     GET = 'GET',
     POST = 'POST'
-}
+};
 

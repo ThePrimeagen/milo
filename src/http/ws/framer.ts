@@ -62,7 +62,7 @@ const headerPool = new BufferPool(MAX_HEADER_SIZE);
 const maskNumber = 0xAABBAABB;
 const maskBuf = new Uint8Array(4);
 const maskView = new DataView(maskBuf.buffer);
-maskView.setUint32(maskNumber, 0, true);
+maskView.setUint32(0, maskNumber, true);
 
 let payloadHeadersReceived = 0;
 
@@ -418,7 +418,8 @@ export default class WSFramer {
 
         // TODO: is this ever needed?
         const remaining = state.payloadLength - state.payloadPtr;
-        const sub = new Uint8Array(packet, offset, endIdx - offset);
+        const sub = new Uint8Array(packet.buffer, offset, endIdx - offset);
+            debugger;
         state.payload.set(sub, state.payloadPtr);
         const copyAmount = sub.byteLength;
 

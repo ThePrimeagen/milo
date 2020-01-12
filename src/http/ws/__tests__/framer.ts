@@ -1,6 +1,5 @@
-
 jest.doMock('../../socket.utils');
-import nrdp from "../../../nrdp";
+import nrdp, { utils as crossSystemUtils } from "../../../nrdp";
 import WSFramer, {constructFrameHeader} from '../framer';
 import {Opcodes} from '../types';
 import maskFn from '../mask';
@@ -33,11 +32,12 @@ import { send } from '../../socket.utils';
 // FOR YOU JELMEGA
 const mask = 0xAABBAABB;
 const maskBuf = new Uint8Array(4);
-const maskView = new DataView(maskBuf);
-maskView.setUint32(mask, 0, true);
+const maskView = new DataView(maskBuf.buffer);
+maskView.setUint32(0, mask, true);
 
 const countObj = {"count": 0};
 const countObj2 = {"count": 2};
+
 const countBuf = nrdp.atoutf8(JSON.stringify(countObj));
 const countBuf2 = nrdp.atoutf8(JSON.stringify(countObj2));
 const countLen = countBuf.byteLength;
@@ -58,16 +58,17 @@ describe("WS", function() {
     it("can parse a single frame", function() {
         const buf = new Uint8Array(1000);
 
+        debugger;
         const ptr = constructFrameHeader(
             buf, true, Opcodes.TextFrame, countLen, maskBuf);
 
-        countBuf.copy(buf, ptr);
+        crossSystemUtils.copyUint8Array(countBuf, buf, ptr);
         maskFn(buf, 6, countLen, maskBuf);
 
         const ws = new WSFramer();
 
         ws.onFrame((contents) => {
-            expect(JSON.parse(contents.toString())).toEqual(countObj);
+            expect(JSON.parse(nrdp.utf8toa(contents))).toEqual(countObj);
         });
 
         ws.processStreamData(buf, 0, ptr + countLen);
@@ -76,7 +77,8 @@ describe("WS", function() {
     it("should send a packet through the packet send utils.", function() {
         // TODO: I think buf gets mutated with the mask... I think that is ok... maybe?
         const buf = new Uint8Array(1000);
-        countBuf.copy(buf, 0);
+
+        crossSystemUtils.copyUint8Array(countBuf, buf, 0);
 
         const ws = new WSFramer();
 
@@ -141,13 +143,14 @@ describe("WS", function() {
         let bufPtr = constructFrameHeader(
             buf, true, Opcodes.BinaryFrame, countLen, maskBuf);
 
-        bufPtr += countBuf.copy(buf, bufPtr);
+        crossSystemUtils.copyUint8Array(countBuf, buf, 0);
+        bufPtr += crossSystemUtils.copyUint8Array(countBuf, buf, bufPtr);
         maskFn(buf, bufPtr - countLen, countLen, maskBuf);
 
         bufPtr += constructFrameHeader(
             uint8ArraySlice(buf, bufPtr), true, Opcodes.BinaryFrame, countLen, maskBuf);
 
-        bufPtr += countBuf2.copy(buf, bufPtr);
+        bufPtr += crossSystemUtils.copyUint8Array(countBuf, buf, bufPtr);
         maskFn(buf, bufPtr - countLen2, countLen2, maskBuf);
 
         const ws = new WSFramer();
@@ -208,7 +211,7 @@ describe("WS", function() {
         let bufPtr = constructFrameHeader(
             buf, true, Opcodes.BinaryFrame, countLen, maskBuf);
 
-        bufPtr += countBuf.copy(buf, bufPtr);
+        bufPtr += crossSystemUtils.copyUint8Array(countBuf, buf, bufPtr);
         maskFn(buf, bufPtr - countLen, countLen, maskBuf);
         const ws = new WSFramer();
 
@@ -229,7 +232,7 @@ describe("WS", function() {
         let bufPtr = constructFrameHeader(
             buf, true, Opcodes.BinaryFrame, countLen, maskBuf);
 
-        bufPtr += countBuf.copy(buf, bufPtr);
+        bufPtr += crossSystemUtils.copyUint8Array(countBuf, buf, bufPtr);
         maskFn(buf, bufPtr - countLen, countLen, maskBuf);
 
         const ws = new WSFramer();

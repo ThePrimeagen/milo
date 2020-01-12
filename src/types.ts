@@ -81,3 +81,11 @@ export {
     NativeSocketInterface,
 };
 
+export type NRDP = {
+    hash(type: string, data: string): Uint8Array;
+    btoa(buffer: Uint8Array|ArrayBuffer|string, returnUint8Array?: boolean): string|Uint8Array;
+    atob(buffer: Uint8Array|ArrayBuffer|string, returnUint8Array?: boolean): string|Uint8Array;
+    atoutf8(buffer: string): Uint8Array;
+    utf8toa(buffer: Uint8Array|ArrayBuffer): string;
+};
+
