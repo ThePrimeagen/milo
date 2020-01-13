@@ -212,7 +212,9 @@ export default class WSFramer {
 
             fullBuf.set(header);
 
-            const sub = new Uint8Array(buf.buffer, ptr, endIdx - ptr);
+            const framedFrameSize = Math.min(frameSize, endIdx - ptr);
+            const sub = new Uint8Array(buf.buffer, ptr, framedFrameSize);
+
             fullBuf.set(sub, headerEnd);
             ptr += sub.byteLength;
 
@@ -271,8 +273,11 @@ export default class WSFramer {
                     const payloadByteLength = state.payload.byteLength;
 
                     headerBuf.set(state.payload);
-                    headerBuf.set(packet, state.payload.byteLength);
+                    headerBuf.set(
+                        packet.slice(0, headerBuf.length - payloadByteLength),
+                        payloadByteLength);
 
+                    debugger;
                     nextPtrOffset =
                         this.parseHeader(state, headerBuf, 0, MAX_HEADER_SIZE);
 
@@ -404,8 +409,6 @@ export default class WSFramer {
         state.payloadPtr = 0;
         state.payload = new Uint8Array(state.payloadLength);
 
-        console.log("PayloadLength", ++payloadHeadersReceived, state.payloadLength);
-
         return ptr;
     }
 
@@ -418,8 +421,7 @@ export default class WSFramer {
 
         // TODO: is this ever needed?
         const remaining = state.payloadLength - state.payloadPtr;
-        const sub = new Uint8Array(packet.buffer, offset, endIdx - offset);
-            debugger;
+        const sub = packet.slice(offset, endIdx);
         state.payload.set(sub, state.payloadPtr);
         const copyAmount = sub.byteLength;
 

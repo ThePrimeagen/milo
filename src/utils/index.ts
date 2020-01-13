@@ -33,7 +33,10 @@ export function arrayBufferSlice(buf: Uint8Array|ArrayBuffer, start: number, end
 
 export function uint8ArraySlice(buf: Uint8Array|ArrayBuffer, start: number, end?: number): Uint8Array
 {
-    return new Uint8Array(arrayBufferSlice(buf, start, end));
+    if (buf instanceof ArrayBuffer) {
+        return new Uint8Array(buf).subarray(start, end);
+    }
+    return buf.subarray(start, end);
 }
 
 export function arrayBufferConcat(...buffers: Array<Uint8Array|ArrayBuffer>): ArrayBuffer
@@ -43,9 +46,20 @@ export function arrayBufferConcat(...buffers: Array<Uint8Array|ArrayBuffer>): Ar
     return ArrayBuffer.concat(...buffers);
 }
 
-export function uint8ArrayConcat(...buffers: Array<Uint8Array|ArrayBuffer>): ArrayBuffer
+export function uint8ArrayConcat(...buffers: Array<Uint8Array|ArrayBuffer>): Uint8Array
 {
-    // @ts-ignore
-    // TODO michael fix
-    return new Uint8Array(ArrayBuffer.concat(...buffers));
+    if (process.env.NRDP) {
+        // @ts-ignore
+        return new Uint8Array(ArrayBuffer.concat(...buffers));
+    }
+
+    // TODO: Make this better, but for now.
+    const buf: Buffer = Buffer.concat(buffers.map(x => {
+        if (x instanceof ArrayBuffer) {
+            return new Uint8Array(x);
+        }
+        return x;
+    }));
+    return Uint8Array.from(buf);
 }
+

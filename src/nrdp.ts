@@ -46,17 +46,17 @@ if (!process.env.NRDP) {
 }
 
 export const utils = {
-    copyUint8Array(from: Uint8Array, to: Uint8Array, startingAt: number = 0): number {
+    copyUint8Array(from: Uint8Array, to: Uint8Array, targetStart: number = 0, sourceIdx: number = 0, sourceEndIdx?: number): number {
         if (process.env.NRDP) {
             // @ts-ignore
-            return from.copy(to, startingAt);
+            return from.copy(to, targetStart);
         }
 
         // TODO: YOU NEED TO CHANGE THIS NOW.
         const fromBuf = Buffer.from(from.buffer);
         const toBuf = Buffer.from(to.buffer);
 
-        return fromBuf.copy(toBuf, startingAt);
+        return fromBuf.copy(toBuf, targetStart, sourceIdx, sourceEndIdx);
     }
 };
 

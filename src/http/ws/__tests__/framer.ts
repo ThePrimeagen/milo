@@ -58,7 +58,6 @@ describe("WS", function() {
     it("can parse a single frame", function() {
         const buf = new Uint8Array(1000);
 
-        debugger;
         const ptr = constructFrameHeader(
             buf, true, Opcodes.TextFrame, countLen, maskBuf);
 
@@ -126,6 +125,10 @@ describe("WS", function() {
         b2[0] = 6;
         b2[1] = 7;
 
+        maskFn(b0, 0, 3, maskBuf);
+        maskFn(b1, 0, 3, maskBuf);
+        maskFn(b2, 0, 2, maskBuf);
+
         const sendBuf0: Uint8Array = getBufferFromSend(send, 0);
         expect(uint8ArraySlice(sendBuf0, 6)).toEqual(b0);
 
@@ -140,17 +143,18 @@ describe("WS", function() {
         // TODO: I think buf gets mutated with the mask... I think that is ok... maybe?
         const buf = new Uint8Array(1000);
 
+        debugger;
         let bufPtr = constructFrameHeader(
             buf, true, Opcodes.BinaryFrame, countLen, maskBuf);
 
-        crossSystemUtils.copyUint8Array(countBuf, buf, 0);
+        crossSystemUtils.copyUint8Array(countBuf, buf, bufPtr);
         bufPtr += crossSystemUtils.copyUint8Array(countBuf, buf, bufPtr);
         maskFn(buf, bufPtr - countLen, countLen, maskBuf);
 
         bufPtr += constructFrameHeader(
             uint8ArraySlice(buf, bufPtr), true, Opcodes.BinaryFrame, countLen, maskBuf);
 
-        bufPtr += crossSystemUtils.copyUint8Array(countBuf, buf, bufPtr);
+        bufPtr += crossSystemUtils.copyUint8Array(countBuf2, buf, bufPtr);
         maskFn(buf, bufPtr - countLen2, countLen2, maskBuf);
 
         const ws = new WSFramer();
@@ -161,7 +165,7 @@ describe("WS", function() {
             if (i === 1) {
                 obj = countObj2;
             }
-            expect(JSON.parse(contents.toString())).toEqual(obj);
+            expect(JSON.parse(nrdp.utf8toa(contents))).toEqual(obj);
 
             i++;
         });
@@ -197,7 +201,7 @@ describe("WS", function() {
 
         let i = 0;
         ws.onFrame((contents) => {
-            expect(contents.toString()).toEqual("Hello World");
+            expect(nrdp.utf8toa(contents)).toEqual("Hello World");
             done();
         });
 
@@ -216,7 +220,8 @@ describe("WS", function() {
         const ws = new WSFramer();
 
         ws.onFrame((contents) => {
-            expect(JSON.parse(contents.toString())).toEqual(countObj);
+            debugger;
+            expect(JSON.parse(nrdp.utf8toa(contents))).toEqual(countObj);
             done();
         });
 
@@ -238,7 +243,7 @@ describe("WS", function() {
         const ws = new WSFramer();
 
         ws.onFrame((contents) => {
-            expect(JSON.parse(contents.toString())).toEqual(countObj);
+            expect(JSON.parse(nrdp.utf8toa(contents))).toEqual(countObj);
             done();
         });
 
