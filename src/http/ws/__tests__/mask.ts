@@ -4,7 +4,6 @@ import maskFn from '../mask';
 // LittleEndian is going to be BBAABBAA
 // therefore, we write it in BigE.
 // 171IQ
-debugger
 const mask = 0xAA_BB_AA_BB;
 const maskBuf = new Uint8Array(4);
 const maskView = new DataView(maskBuf.buffer);

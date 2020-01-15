@@ -1,12 +1,15 @@
-jest.doMock('../../socket.utils');
+import { NetworkPipe } from "../../types";
 import nrdp, { utils as crossSystemUtils } from "../../../nrdp";
 import WSFramer, {constructFrameHeader} from '../framer';
 import {Opcodes} from '../types';
 import maskFn from '../mask';
 import * as NBO from 'network-byte-order';
 import { uint8ArraySlice, uint8ArrayWriteString } from "../../../utils";
-import { send } from '../../socket.utils';
 
+// @ts-ignore
+const pipe = {
+    send: jest.fn()
+} as NetworkPipe;
 
 /*
       0                   1                   2                   3
@@ -52,7 +55,7 @@ describe("WS", function() {
 
     beforeEach(function() {
         // @ts-ignore
-        send.mockClear();
+        pipe.send.mockClear();
     });
 
     it("can parse a single frame", function() {
@@ -64,9 +67,9 @@ describe("WS", function() {
         crossSystemUtils.copyUint8Array(countBuf, buf, ptr);
         maskFn(buf, 6, countLen, maskBuf);
 
-        const ws = new WSFramer();
+        const ws = new WSFramer(pipe);
 
-        ws.onFrame((contents) => {
+        ws.onFrame((contents: Uint8Array) => {
             expect(JSON.parse(nrdp.utf8toa(contents))).toEqual(countObj);
         });
 
@@ -79,11 +82,11 @@ describe("WS", function() {
 
         crossSystemUtils.copyUint8Array(countBuf, buf, 0);
 
-        const ws = new WSFramer();
+        const ws = new WSFramer(pipe);
 
-        ws.send(3, buf, 0, countLen);
+        ws.send(buf, 0, countLen);
 
-        expect(send).toBeCalledTimes(1);
+        expect(pipe.send).toBeCalledTimes(1);
 
         const hBuf = new Uint8Array(6);
         const headerBuf = constructFrameHeader(
@@ -93,7 +96,7 @@ describe("WS", function() {
     });
 
     function getBufferFromSend(sendMock: any, i: number): Uint8Array {
-        return sendMock.mock.calls[i][1];
+        return sendMock.mock.calls[i][0];
     }
 
     it("should send a large packet through send.", function() {
@@ -104,11 +107,11 @@ describe("WS", function() {
             buf[i] = i % 255;
         }
 
-        const ws = new WSFramer(3);
+        const ws = new WSFramer(pipe, 3);
 
-        ws.send(3, buf, 0, bufLength);
+        ws.send(buf, 0, bufLength);
 
-        expect(send).toBeCalledTimes(3);
+        expect(pipe.send).toBeCalledTimes(3);
 
         const b0 = new Uint8Array(3);
         const b1 = new Uint8Array(3);
@@ -129,13 +132,13 @@ describe("WS", function() {
         maskFn(b1, 0, 3, maskBuf);
         maskFn(b2, 0, 2, maskBuf);
 
-        const sendBuf0: Uint8Array = getBufferFromSend(send, 0);
+        const sendBuf0: Uint8Array = getBufferFromSend(pipe.send, 0);
         expect(uint8ArraySlice(sendBuf0, 6)).toEqual(b0);
 
-        const sendBuf1: Uint8Array = getBufferFromSend(send, 1);
+        const sendBuf1: Uint8Array = getBufferFromSend(pipe.send, 1);
         expect(uint8ArraySlice(sendBuf1, 6)).toEqual(b1);
 
-        const sendBuf2: Uint8Array = getBufferFromSend(send, 2);
+        const sendBuf2: Uint8Array = getBufferFromSend(pipe.send, 2);
         expect(uint8ArraySlice(sendBuf2, 6)).toEqual(b2);
     });
 
@@ -143,7 +146,6 @@ describe("WS", function() {
         // TODO: I think buf gets mutated with the mask... I think that is ok... maybe?
         const buf = new Uint8Array(1000);
 
-        debugger;
         let bufPtr = constructFrameHeader(
             buf, true, Opcodes.BinaryFrame, countLen, maskBuf);
 
@@ -157,7 +159,7 @@ describe("WS", function() {
         bufPtr += crossSystemUtils.copyUint8Array(countBuf2, buf, bufPtr);
         maskFn(buf, bufPtr - countLen2, countLen2, maskBuf);
 
-        const ws = new WSFramer();
+        const ws = new WSFramer(pipe);
 
         let i = 0;
         ws.onFrame((contents) => {
@@ -197,7 +199,7 @@ describe("WS", function() {
         maskFn(bufWorld, ptrW, part2Len, maskBuf);
         ptrW += part2Len;
 
-        const ws = new WSFramer();
+        const ws = new WSFramer(pipe);
 
         let i = 0;
         ws.onFrame((contents) => {
@@ -217,10 +219,9 @@ describe("WS", function() {
 
         bufPtr += crossSystemUtils.copyUint8Array(countBuf, buf, bufPtr);
         maskFn(buf, bufPtr - countLen, countLen, maskBuf);
-        const ws = new WSFramer();
+        const ws = new WSFramer(pipe);
 
         ws.onFrame((contents) => {
-            debugger;
             expect(JSON.parse(nrdp.utf8toa(contents))).toEqual(countObj);
             done();
         });
@@ -240,7 +241,7 @@ describe("WS", function() {
         bufPtr += crossSystemUtils.copyUint8Array(countBuf, buf, bufPtr);
         maskFn(buf, bufPtr - countLen, countLen, maskBuf);
 
-        const ws = new WSFramer();
+        const ws = new WSFramer(pipe);
 
         ws.onFrame((contents) => {
             expect(JSON.parse(nrdp.utf8toa(contents))).toEqual(countObj);
@@ -276,7 +277,7 @@ describe("WS", function() {
         maskFn(bufClose, ptrC, 2, maskBuf);
         ptrC += 2;
 
-        const ws = new WSFramer();
+        const ws = new WSFramer(pipe);
 
         let i = 0;
         ws.onFrame(buffer => {

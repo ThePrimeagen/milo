@@ -11,6 +11,10 @@
         "esModuleInterop": true,
         "allowJs": true,
         "moduleResolution": "node"
-    }
+    },
+
+    "THESE SHOULD BE INTEGRATED": true,
+    "strictNullChecks": true,
+    "strictPropertyInitialization": true
 }
 

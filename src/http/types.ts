@@ -1,3 +1,8 @@
+export type NetworkPipe = {
+    send(buf: Uint8Array | ArrayBuffer): void;
+    close(): void;
+};
+
 export type SlowPath = {
     requestType: RequestTypes;
     uri: string;

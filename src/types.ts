@@ -11,6 +11,13 @@ type Socket = number;
 type fd_set = number;
 type select = (sockfd: Socket, set: fd_set, cb: NodeCallback) => void;
 
+type SocketCallback = (data: Uint8Array) => void;
+
+export type ReducedSocketInterface = {
+    on: (type: string, cb: SocketCallback) => void;
+    send: (dat: Uint8Array) => void;
+};
+
 type NativeSocketInterface = {
     // Socket constants
     SOCK_STREAM: number;

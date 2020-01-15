@@ -3,6 +3,10 @@ import {
     parse64BigInt,
 } from '../buffer';
 
+import {
+    NetworkPipe
+} from '../types';
+
 import maskFn from './mask';
 
 import {
@@ -22,8 +26,6 @@ import {
 import {
     Opcodes
 } from './types';
-
-import * as SocketUtils from '../socket.utils';
 
 // @ts-ignore
 import {
@@ -160,9 +162,11 @@ export default class WSFramer {
     private msgState: WSState;
     private controlState: WSState;
     private closed: boolean;
+    private pipe: NetworkPipe;
 
-    constructor(maxFrameSize = 8096, maxPacketSize = 1024 * 1024 * 4) {
+    constructor(pipe: NetworkPipe, maxFrameSize = 8096, maxPacketSize = 1024 * 1024 * 4) {
         this.callbacks = [];
+        this.pipe = pipe;
         this.maxFrameSize = maxFrameSize;
         this.maxPacketSize = maxPacketSize;
         this.msgState = createDefaultState();
@@ -180,7 +184,7 @@ export default class WSFramer {
     }
 
     // TODO: Contiuation frames, spelt wrong
-    send(sockfd: Socket, buf: Uint8Array, offset: number,
+    send(buf: Uint8Array, offset: number,
         length: number, frameType: Opcodes = Opcodes.BinaryFrame) {
 
         if (length > 2 ** 32) {
@@ -223,7 +227,7 @@ export default class WSFramer {
             // TODO if fullBuf is just to slow to send upgrade the socket
             // library to handle the same reference to the buf with different
             // offsets.
-            SocketUtils.send(sockfd, fullBuf);
+            this.pipe.send(fullBuf);
 
             ptrLength += ptr - ptrStart;
 
@@ -277,7 +281,6 @@ export default class WSFramer {
                         packet.slice(0, headerBuf.length - payloadByteLength),
                         payloadByteLength);
 
-                    debugger;
                     nextPtrOffset =
                         this.parseHeader(state, headerBuf, 0, MAX_HEADER_SIZE);
 
@@ -373,7 +376,6 @@ export default class WSFramer {
 
         if (opcode != Opcodes.ContinuationFrame &&
             opcode != Opcodes.BinaryFrame) {
-            debugger;
         }
 
         if (opcode != Opcodes.ContinuationFrame) {

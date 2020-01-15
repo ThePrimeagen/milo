@@ -1,6 +1,8 @@
-import bindings from '../../bindings';
 import WSFramer, {WSState} from './framer';
 import nrdp from "../../nrdp";
+import {
+    NetworkPipe
+} from '../types';
 
 import {
     Opcodes,
@@ -22,13 +24,13 @@ const defaultOptions = {
 
 export default class WS {
     private frame: WSFramer;
-    private sockfd: number;
+    private pipe: NetworkPipe;
     private closeCBs: CloseCB[];
     private dataCBs: DataCB[];
 
-    constructor(socketId: Socket, opts: WSOptions = defaultOptions) {
-        this.frame = new WSFramer(opts.maxFrameSize);
-        this.sockfd = socketId;
+    constructor(pipe: NetworkPipe, opts: WSOptions = defaultOptions) {
+        this.frame = new WSFramer(pipe, opts.maxFrameSize);
+        this.pipe = pipe;
         this.closeCBs = [];
         this.dataCBs = [];
 
@@ -38,13 +40,12 @@ export default class WS {
                     this.closeCBs.forEach(cb => cb(buffer));
 
                     // attempt to close the sockfd.
-                    bindings.close(this.sockfd);
+                    this.pipe.close();
 
                     break;
 
                 case Opcodes.Ping:
-                    this.frame.send(
-                        this.sockfd, buffer, 0, buffer.length, Opcodes.Pong);
+                    this.frame.send(buffer, 0, buffer.length, Opcodes.Pong);
                     break;
 
                 case Opcodes.BinaryFrame:
@@ -53,44 +54,41 @@ export default class WS {
                     break;
 
                 default:
-                    debugger;
                     throw new Error("Can you handle this?");
             }
         });
     }
 
-    pushData(buf: Uint8Array, offset: number, length: number) {
-        this.frame.processStreamData(buf, offset, offset + length);
+    pushData(buf: Uint8Array | ArrayBuffer) {
+        let uBuf: Uint8Array = buf instanceof ArrayBuffer ?
+            new Uint8Array(buf) : buf;
+
+        this.frame.processStreamData(uBuf, 0, uBuf.byteLength);
     }
 
-    send(obj: Uint8Array | object | string, offset?: number, length?: number) {
+    send(obj: Uint8Array | object | string) {
 
         let bufOut = null;
-        let o, l;
+        let len;
         let opcode = Opcodes.BinaryFrame;
 
         if (obj instanceof Uint8Array) {
-            o = offset;
-            l = length;
             opcode = Opcodes.BinaryFrame;
             bufOut = obj;
         }
 
         else if (typeof obj === 'object' || obj === null) {
             const str = JSON.stringify(obj);
-            o = 0;
-            l = str.length;
             bufOut = nrdp.atoutf8(str);
-
+            opcode = Opcodes.TextFrame;
         }
 
         else {
-            o = 0;
-            l = obj.length;
             bufOut = nrdp.atoutf8(obj);
+            opcode = Opcodes.TextFrame;
         }
 
-        this.frame.send(this.sockfd, bufOut, o, l, opcode);
+        this.frame.send(bufOut, 0, bufOut.length, opcode);
     }
 
     onClose(cb: CloseCB) {
