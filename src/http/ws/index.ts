@@ -59,11 +59,16 @@ export default class WS {
         });
     }
 
-    pushData(buf: Uint8Array | ArrayBuffer) {
+    pushData(buf: Uint8Array | ArrayBuffer, offset: number = 0, length?: number) {
+
         let uBuf: Uint8Array = buf instanceof ArrayBuffer ?
             new Uint8Array(buf) : buf;
 
-        this.frame.processStreamData(uBuf, 0, uBuf.byteLength);
+        if (length === undefined) {
+            length = uBuf.byteLength;
+        }
+
+        this.frame.processStreamData(uBuf, offset, length);
     }
 
     send(obj: Uint8Array | object | string) {

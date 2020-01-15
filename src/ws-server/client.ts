@@ -176,7 +176,7 @@ async function run() {
         if (FD_ISSET(socketId, fdSet)) {
             const bytesRead = recv(socketId, buf, 4096, 0);
             packetBytesReceived += bytesRead;
-            ws.pushData(buf.subarray(0, bytesRead));
+            ws.pushData(buf, 0, bytesRead);
         }
     }
 }
