@@ -8,7 +8,7 @@ import { uint8ArraySlice, uint8ArrayWriteString } from "../../../utils";
 
 // @ts-ignore
 const pipe = {
-    send: jest.fn()
+    write: jest.fn()
 } as NetworkPipe;
 
 /*
@@ -55,7 +55,7 @@ describe("WS", function() {
 
     beforeEach(function() {
         // @ts-ignore
-        pipe.send.mockClear();
+        pipe.write.mockClear();
     });
 
     it("can parse a single frame", function() {
@@ -86,7 +86,7 @@ describe("WS", function() {
 
         ws.send(buf, 0, countLen);
 
-        expect(pipe.send).toBeCalledTimes(1);
+        expect(pipe.write).toBeCalledTimes(1);
 
         const hBuf = new Uint8Array(6);
         const headerBuf = constructFrameHeader(
@@ -111,7 +111,7 @@ describe("WS", function() {
 
         ws.send(buf, 0, bufLength);
 
-        expect(pipe.send).toBeCalledTimes(3);
+        expect(pipe.write).toBeCalledTimes(3);
 
         const b0 = new Uint8Array(3);
         const b1 = new Uint8Array(3);
@@ -132,13 +132,13 @@ describe("WS", function() {
         maskFn(b1, 0, 3, maskBuf);
         maskFn(b2, 0, 2, maskBuf);
 
-        const sendBuf0: Uint8Array = getBufferFromSend(pipe.send, 0);
+        const sendBuf0: Uint8Array = getBufferFromSend(pipe.write, 0);
         expect(uint8ArraySlice(sendBuf0, 6)).toEqual(b0);
 
-        const sendBuf1: Uint8Array = getBufferFromSend(pipe.send, 1);
+        const sendBuf1: Uint8Array = getBufferFromSend(pipe.write, 1);
         expect(uint8ArraySlice(sendBuf1, 6)).toEqual(b1);
 
-        const sendBuf2: Uint8Array = getBufferFromSend(pipe.send, 2);
+        const sendBuf2: Uint8Array = getBufferFromSend(pipe.write, 2);
         expect(uint8ArraySlice(sendBuf2, 6)).toEqual(b2);
     });
 

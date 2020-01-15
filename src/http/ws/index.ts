@@ -22,6 +22,9 @@ const defaultOptions = {
     maxFrameSize: 8192
 } as WSOptions;
 
+const readBuffer = new ArrayBuffer(4096);
+const readView = new Uint8Array(readBuffer);
+
 export default class WS {
     private frame: WSFramer;
     private pipe: NetworkPipe;
@@ -33,6 +36,20 @@ export default class WS {
         this.pipe = pipe;
         this.closeCBs = [];
         this.dataCBs = [];
+
+        // The pipe is ready to read.
+        pipe.ondata = () => {
+            let bytesRead;
+            while (1) {
+
+                bytesRead = pipe.read(readBuffer, 0, readBuffer.byteLength);
+                if (bytesRead <=  0) {
+                    break;
+                }
+
+                this.frame.processStreamData(readView, 0, bytesRead);
+            }
+        };
 
         this.frame.onFrame((buffer: Uint8Array, state: WSState) => {
             switch (state.opcode) {
@@ -57,18 +74,6 @@ export default class WS {
                     throw new Error("Can you handle this?");
             }
         });
-    }
-
-    pushData(buf: Uint8Array | ArrayBuffer, offset: number = 0, length?: number) {
-
-        let uBuf: Uint8Array = buf instanceof ArrayBuffer ?
-            new Uint8Array(buf) : buf;
-
-        if (length === undefined) {
-            length = uBuf.byteLength;
-        }
-
-        this.frame.processStreamData(uBuf, offset, length);
     }
 
     send(obj: Uint8Array | object | string) {

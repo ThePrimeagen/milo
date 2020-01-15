@@ -3,7 +3,9 @@ import HTTP, {
 } from '../http/index';
 
 import {
-    NetworkPipe
+    NetworkPipe,
+    ConstBuffer,
+    Buffer,
 } from '../http/types';
 
 import WS from '../http/ws/index';
@@ -103,7 +105,9 @@ const path = "/";
 http.upgradeToWS(socketId, host, path);
 
 async function run() {
-    const buf = new Uint8Array(4096);
+    // ~ 100K buffer
+    const buf = new Uint8Array(4096 * 32);
+
     const fdSet = bindings.fd_set();
 
     let count = 0;
@@ -121,6 +125,7 @@ async function run() {
     }
 
     let bytesRead = recv(socketId, buf, 4096);
+
     if (bytesRead === 0) {
         throw new Error("How did you get closed so fast?");
     }
@@ -132,9 +137,36 @@ async function run() {
 
     console.log("We actually really did it.  Like for real, ws are connected.");
 
+    let bytesReadOffset = 0;
     const pipe = {
-        send(dat: Uint8Array) {
-            socketSend(socketId, dat, 0);
+        read(dat: Buffer, offset: number, length: number) {
+            const amountToRead = Math.min(length, bytesRead);
+
+            let readBuf: Uint8Array =
+                (dat instanceof ArrayBuffer ? new Uint8Array(dat) : dat);
+
+            readBuf.set(buf.subarray(bytesReadOffset, bytesReadOffset + amountToRead), offset);
+
+            // Adjust the bytes.
+            bytesRead -= amountToRead;
+            bytesReadOffset += amountToRead;
+
+            return amountToRead;
+        },
+
+        write(dat: ConstBuffer, offset: number, length: number) {
+            let buf: Uint8Array;
+            if (typeof dat === 'string') {
+                buf = null;
+            }
+            else if (dat instanceof ArrayBuffer) {
+                buf = new Uint8Array(dat).subarray(offset, offset + length);
+            }
+            else {
+                buf = dat.subarray(offset, offset + length);
+            }
+
+            socketSend(socketId, buf, 0);
         },
 
         close() {
@@ -174,9 +206,13 @@ async function run() {
         await onSelect(select, socketId, fdSet);
 
         if (FD_ISSET(socketId, fdSet)) {
-            const bytesRead = recv(socketId, buf, 4096, 0);
+            bytesRead = recv(socketId, buf, 4096, 0);
+            bytesReadOffset = 0;
+
             packetBytesReceived += bytesRead;
-            ws.pushData(buf, 0, bytesRead);
+
+            // denoting pipe is ready to be read.
+            pipe.ondata();
         }
     }
 }

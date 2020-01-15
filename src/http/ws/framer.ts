@@ -227,7 +227,7 @@ export default class WSFramer {
             // TODO if fullBuf is just to slow to send upgrade the socket
             // library to handle the same reference to the buf with different
             // offsets.
-            this.pipe.send(fullBuf);
+            this.pipe.write(fullBuf, 0, fullBuf.byteLength);
 
             ptrLength += ptr - ptrStart;
 
