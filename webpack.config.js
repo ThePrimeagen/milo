@@ -1,5 +1,6 @@
 const path = require('path');
 
+const webpack = require('webpack');
 const CopyPlugin = require('copy-webpack-plugin');
 
 const buildPath = path.join(__dirname, 'build/Release/obj.target/native-sockets.node');
@@ -21,7 +22,10 @@ module.exports = {
         clientHTTPReal: './src/ws-server/client-real.ts',
     },
     plugins: [
-        new CopyPlugin(getCopyPaths())
+        new CopyPlugin(getCopyPaths()),
+        new webpack.DefinePlugin({
+            'process.env.NRDP': process.env.NRDP && true || false,
+        })
     ],
     module: {
         rules: [{

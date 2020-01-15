@@ -81,7 +81,7 @@
 /******/
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 34);
+/******/ 	return __webpack_require__(__webpack_require__.s = 29);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -111,10 +111,10 @@ module.exports = {
 "use strict";
 
 
-const zlib = __webpack_require__(27);
+const zlib = __webpack_require__(22);
 
 const bufferUtil = __webpack_require__(5);
-const Limiter = __webpack_require__(28);
+const Limiter = __webpack_require__(23);
 const { kStatusCode, NOOP } = __webpack_require__(2);
 
 const TRAILER = Buffer.from([0x00, 0x00, 0xff, 0xff]);
@@ -783,24 +783,23 @@ module.exports = require("crypto");
 
 /***/ }),
 /* 7 */,
-/* 8 */,
-/* 9 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-const EventEmitter = __webpack_require__(10);
-const https = __webpack_require__(23);
-const http = __webpack_require__(11);
-const net = __webpack_require__(24);
-const tls = __webpack_require__(25);
+const EventEmitter = __webpack_require__(9);
+const https = __webpack_require__(18);
+const http = __webpack_require__(10);
+const net = __webpack_require__(19);
+const tls = __webpack_require__(20);
 const { randomBytes, createHash } = __webpack_require__(6);
-const { URL } = __webpack_require__(26);
+const { URL } = __webpack_require__(21);
 
 const PerMessageDeflate = __webpack_require__(4);
-const Receiver = __webpack_require__(12);
-const Sender = __webpack_require__(15);
+const Receiver = __webpack_require__(11);
+const Sender = __webpack_require__(14);
 const {
   BINARY_TYPES,
   EMPTY_BUFFER,
@@ -809,8 +808,8 @@ const {
   kWebSocket,
   NOOP
 } = __webpack_require__(2);
-const { addEventListener, removeEventListener } = __webpack_require__(29);
-const { format, parse } = __webpack_require__(16);
+const { addEventListener, removeEventListener } = __webpack_require__(24);
+const { format, parse } = __webpack_require__(15);
 const { toBuffer } = __webpack_require__(5);
 
 const readyStates = ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'];
@@ -1699,25 +1698,25 @@ function socketOnError() {
 
 
 /***/ }),
-/* 10 */
+/* 9 */
 /***/ (function(module, exports) {
 
 module.exports = require("events");
 
 /***/ }),
-/* 11 */
+/* 10 */
 /***/ (function(module, exports) {
 
 module.exports = require("http");
 
 /***/ }),
-/* 12 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-const { Writable } = __webpack_require__(13);
+const { Writable } = __webpack_require__(12);
 
 const PerMessageDeflate = __webpack_require__(4);
 const {
@@ -1727,7 +1726,7 @@ const {
   kWebSocket
 } = __webpack_require__(2);
 const { concat, toArrayBuffer, unmask } = __webpack_require__(5);
-const { isValidStatusCode, isValidUTF8 } = __webpack_require__(14);
+const { isValidStatusCode, isValidUTF8 } = __webpack_require__(13);
 
 const GET_INFO = 0;
 const GET_PAYLOAD_LENGTH_16 = 1;
@@ -2211,13 +2210,13 @@ function error(ErrorCtor, message, prefix, statusCode) {
 
 
 /***/ }),
-/* 13 */
+/* 12 */
 /***/ (function(module, exports) {
 
 module.exports = require("stream");
 
 /***/ }),
-/* 14 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2254,7 +2253,7 @@ exports.isValidStatusCode = (code) => {
 
 
 /***/ }),
-/* 15 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2264,7 +2263,7 @@ const { randomFillSync } = __webpack_require__(6);
 
 const PerMessageDeflate = __webpack_require__(4);
 const { EMPTY_BUFFER } = __webpack_require__(2);
-const { isValidStatusCode } = __webpack_require__(14);
+const { isValidStatusCode } = __webpack_require__(13);
 const { mask: applyMask, toBuffer } = __webpack_require__(5);
 
 const mask = Buffer.alloc(4);
@@ -2621,7 +2620,7 @@ module.exports = Sender;
 
 
 /***/ }),
-/* 16 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2851,59 +2850,55 @@ module.exports = { format, parse };
 
 
 /***/ }),
-/* 17 */
+/* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-const WebSocket = __webpack_require__(9);
+const WebSocket = __webpack_require__(8);
 
-WebSocket.createWebSocketStream = __webpack_require__(30);
-WebSocket.Server = __webpack_require__(31);
-WebSocket.Receiver = __webpack_require__(12);
-WebSocket.Sender = __webpack_require__(15);
+WebSocket.createWebSocketStream = __webpack_require__(25);
+WebSocket.Server = __webpack_require__(26);
+WebSocket.Receiver = __webpack_require__(11);
+WebSocket.Sender = __webpack_require__(14);
 
 module.exports = WebSocket;
 
 
 /***/ }),
-/* 18 */,
-/* 19 */,
-/* 20 */,
-/* 21 */,
-/* 22 */,
-/* 23 */
+/* 17 */,
+/* 18 */
 /***/ (function(module, exports) {
 
 module.exports = require("https");
 
 /***/ }),
-/* 24 */
+/* 19 */
 /***/ (function(module, exports) {
 
 module.exports = require("net");
 
 /***/ }),
-/* 25 */
+/* 20 */
 /***/ (function(module, exports) {
 
 module.exports = require("tls");
 
 /***/ }),
-/* 26 */
+/* 21 */
 /***/ (function(module, exports) {
 
 module.exports = require("url");
 
 /***/ }),
-/* 27 */
+/* 22 */
 /***/ (function(module, exports) {
 
 module.exports = require("zlib");
 
 /***/ }),
-/* 28 */
+/* 23 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2964,7 +2959,7 @@ module.exports = Limiter;
 
 
 /***/ }),
-/* 29 */
+/* 24 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3141,13 +3136,13 @@ module.exports = EventTarget;
 
 
 /***/ }),
-/* 30 */
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-const { Duplex } = __webpack_require__(13);
+const { Duplex } = __webpack_require__(12);
 
 /**
  * Emits the `'close'` event on a stream.
@@ -3297,19 +3292,19 @@ module.exports = createWebSocketStream;
 
 
 /***/ }),
-/* 31 */
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-const EventEmitter = __webpack_require__(10);
+const EventEmitter = __webpack_require__(9);
 const { createHash } = __webpack_require__(6);
-const { createServer, STATUS_CODES } = __webpack_require__(11);
+const { createServer, STATUS_CODES } = __webpack_require__(10);
 
 const PerMessageDeflate = __webpack_require__(4);
-const WebSocket = __webpack_require__(9);
-const { format, parse } = __webpack_require__(16);
+const WebSocket = __webpack_require__(8);
+const { format, parse } = __webpack_require__(15);
 const { GUID } = __webpack_require__(2);
 
 const keyRegex = /^[+/0-9A-Za-z]{22}==$/;
@@ -3710,14 +3705,14 @@ function abortHandshake(socket, code, message, headers) {
 
 
 /***/ }),
-/* 32 */,
-/* 33 */,
-/* 34 */
+/* 27 */,
+/* 28 */,
+/* 29 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var ws__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(17);
+/* harmony import */ var ws__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(16);
 /* harmony import */ var ws__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(ws__WEBPACK_IMPORTED_MODULE_0__);
 
 const wss = new ws__WEBPACK_IMPORTED_MODULE_0___default.a.Server({

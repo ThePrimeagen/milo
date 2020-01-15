@@ -81,7 +81,7 @@
 /******/
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 38);
+/******/ 	return __webpack_require__(__webpack_require__.s = 33);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -136,7 +136,7 @@ function arrayBufferConcat(...buffers) {
     return ArrayBuffer.concat(...buffers);
 }
 function uint8ArrayConcat(...buffers) {
-    if (process.env.NRDP) {
+    if (true) {
         // @ts-ignore
         return new Uint8Array(ArrayBuffer.concat(...buffers));
     }
@@ -286,49 +286,18 @@ function getHTTPHeaderEndOffset(buf, offset, maxLength) {
 "use strict";
 /* unused harmony export utils */
 let exportObj;
-if (process.env.NRDP) {
+if (true) {
     // @ts-ignore
     exportObj = nrdp;
 }
-if (!process.env.NRDP) {
-    const sha1 = __webpack_require__(18);
-    const atob = __webpack_require__(21);
-    const btoa = __webpack_require__(22);
-    exportObj = {
-        hash(type, data) {
-            const outStr = sha1(data);
-            return;
-        },
-        btoa,
-        atob,
-        // TODO: Assuming ASICC, probably shouldn't
-        atoutf8(str) {
-            const buf = new Uint8Array(str.length);
-            let i, strLen;
-            for (i = 0, strLen = str.length; i < strLen; i++) {
-                buf[i] = str.charCodeAt(i);
-            }
-            return buf;
-        },
-        // TODO: Assumes Ascii
-        utf8toa(buffer) {
-            if (buffer instanceof Uint8Array) {
-                return String.fromCharCode.apply(null, buffer);
-            }
-            return String.fromCharCode.apply(null, new Uint8Array(buffer));
-        }
-    };
-}
+if (false) {}
 const utils = {
     copyUint8Array(from, to, targetStart = 0, sourceIdx = 0, sourceEndIdx) {
-        if (process.env.NRDP) {
+        if (true) {
             // @ts-ignore
             return from.copy(to, targetStart);
         }
-        // TODO: YOU NEED TO CHANGE THIS NOW.
-        const fromBuf = Buffer.from(from.buffer);
-        const toBuf = Buffer.from(to.buffer);
-        return fromBuf.copy(toBuf, targetStart, sourceIdx, sourceEndIdx);
+        else {}
     }
 };
 /* harmony default export */ __webpack_exports__["a"] = (exportObj);
@@ -447,45 +416,7 @@ exports.ntohlStr = function(s, i) {
 
 
 /***/ }),
-/* 8 */
-/***/ (function(module, exports) {
-
-var charenc = {
-  // UTF-8 encoding
-  utf8: {
-    // Convert a string to a byte array
-    stringToBytes: function(str) {
-      return charenc.bin.stringToBytes(unescape(encodeURIComponent(str)));
-    },
-
-    // Convert a byte array to a string
-    bytesToString: function(bytes) {
-      return decodeURIComponent(escape(charenc.bin.bytesToString(bytes)));
-    }
-  },
-
-  // Binary encoding
-  bin: {
-    // Convert a string to a byte array
-    stringToBytes: function(str) {
-      for (var bytes = [], i = 0; i < str.length; i++)
-        bytes.push(str.charCodeAt(i) & 0xFF);
-      return bytes;
-    },
-
-    // Convert a byte array to a string
-    bytesToString: function(bytes) {
-      for (var str = [], i = 0; i < bytes.length; i++)
-        str.push(String.fromCharCode(bytes[i]));
-      return str.join('');
-    }
-  }
-};
-
-module.exports = charenc;
-
-
-/***/ }),
+/* 8 */,
 /* 9 */,
 /* 10 */,
 /* 11 */,
@@ -494,96 +425,7 @@ module.exports = charenc;
 /* 14 */,
 /* 15 */,
 /* 16 */,
-/* 17 */,
-/* 18 */
-/***/ (function(module, exports, __webpack_require__) {
-
-(function() {
-  var crypt = __webpack_require__(20),
-      utf8 = __webpack_require__(8).utf8,
-      bin = __webpack_require__(8).bin,
-
-  // The core
-  sha1 = function (message) {
-    // Convert to byte array
-    if (message.constructor == String)
-      message = utf8.stringToBytes(message);
-    else if (typeof Buffer !== 'undefined' && typeof Buffer.isBuffer == 'function' && Buffer.isBuffer(message))
-      message = Array.prototype.slice.call(message, 0);
-    else if (!Array.isArray(message))
-      message = message.toString();
-
-    // otherwise assume byte array
-
-    var m  = crypt.bytesToWords(message),
-        l  = message.length * 8,
-        w  = [],
-        H0 =  1732584193,
-        H1 = -271733879,
-        H2 = -1732584194,
-        H3 =  271733878,
-        H4 = -1009589776;
-
-    // Padding
-    m[l >> 5] |= 0x80 << (24 - l % 32);
-    m[((l + 64 >>> 9) << 4) + 15] = l;
-
-    for (var i = 0; i < m.length; i += 16) {
-      var a = H0,
-          b = H1,
-          c = H2,
-          d = H3,
-          e = H4;
-
-      for (var j = 0; j < 80; j++) {
-
-        if (j < 16)
-          w[j] = m[i + j];
-        else {
-          var n = w[j - 3] ^ w[j - 8] ^ w[j - 14] ^ w[j - 16];
-          w[j] = (n << 1) | (n >>> 31);
-        }
-
-        var t = ((H0 << 5) | (H0 >>> 27)) + H4 + (w[j] >>> 0) + (
-                j < 20 ? (H1 & H2 | ~H1 & H3) + 1518500249 :
-                j < 40 ? (H1 ^ H2 ^ H3) + 1859775393 :
-                j < 60 ? (H1 & H2 | H1 & H3 | H2 & H3) - 1894007588 :
-                         (H1 ^ H2 ^ H3) - 899497514);
-
-        H4 = H3;
-        H3 = H2;
-        H2 = (H1 << 30) | (H1 >>> 2);
-        H1 = H0;
-        H0 = t;
-      }
-
-      H0 += a;
-      H1 += b;
-      H2 += c;
-      H3 += d;
-      H4 += e;
-    }
-
-    return [H0, H1, H2, H3, H4];
-  },
-
-  // Public API
-  api = function (message, options) {
-    var digestbytes = crypt.wordsToBytes(sha1(message));
-    return options && options.asBytes ? digestbytes :
-        options && options.asString ? bin.bytesToString(digestbytes) :
-        crypt.bytesToHex(digestbytes);
-  };
-
-  api._blocksize = 16;
-  api._digestsize = 20;
-
-  module.exports = api;
-})();
-
-
-/***/ }),
-/* 19 */
+/* 17 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -1027,170 +869,31 @@ class ws_WS {
 
 
 /***/ }),
-/* 20 */
-/***/ (function(module, exports) {
-
-(function() {
-  var base64map
-      = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/',
-
-  crypt = {
-    // Bit-wise rotation left
-    rotl: function(n, b) {
-      return (n << b) | (n >>> (32 - b));
-    },
-
-    // Bit-wise rotation right
-    rotr: function(n, b) {
-      return (n << (32 - b)) | (n >>> b);
-    },
-
-    // Swap big-endian to little-endian and vice versa
-    endian: function(n) {
-      // If number given, swap endian
-      if (n.constructor == Number) {
-        return crypt.rotl(n, 8) & 0x00FF00FF | crypt.rotl(n, 24) & 0xFF00FF00;
-      }
-
-      // Else, assume array and swap all items
-      for (var i = 0; i < n.length; i++)
-        n[i] = crypt.endian(n[i]);
-      return n;
-    },
-
-    // Generate an array of any length of random bytes
-    randomBytes: function(n) {
-      for (var bytes = []; n > 0; n--)
-        bytes.push(Math.floor(Math.random() * 256));
-      return bytes;
-    },
-
-    // Convert a byte array to big-endian 32-bit words
-    bytesToWords: function(bytes) {
-      for (var words = [], i = 0, b = 0; i < bytes.length; i++, b += 8)
-        words[b >>> 5] |= bytes[i] << (24 - b % 32);
-      return words;
-    },
-
-    // Convert big-endian 32-bit words to a byte array
-    wordsToBytes: function(words) {
-      for (var bytes = [], b = 0; b < words.length * 32; b += 8)
-        bytes.push((words[b >>> 5] >>> (24 - b % 32)) & 0xFF);
-      return bytes;
-    },
-
-    // Convert a byte array to a hex string
-    bytesToHex: function(bytes) {
-      for (var hex = [], i = 0; i < bytes.length; i++) {
-        hex.push((bytes[i] >>> 4).toString(16));
-        hex.push((bytes[i] & 0xF).toString(16));
-      }
-      return hex.join('');
-    },
-
-    // Convert a hex string to a byte array
-    hexToBytes: function(hex) {
-      for (var bytes = [], c = 0; c < hex.length; c += 2)
-        bytes.push(parseInt(hex.substr(c, 2), 16));
-      return bytes;
-    },
-
-    // Convert a byte array to a base-64 string
-    bytesToBase64: function(bytes) {
-      for (var base64 = [], i = 0; i < bytes.length; i += 3) {
-        var triplet = (bytes[i] << 16) | (bytes[i + 1] << 8) | bytes[i + 2];
-        for (var j = 0; j < 4; j++)
-          if (i * 8 + j * 6 <= bytes.length * 8)
-            base64.push(base64map.charAt((triplet >>> 6 * (3 - j)) & 0x3F));
-          else
-            base64.push('=');
-      }
-      return base64.join('');
-    },
-
-    // Convert a base-64 string to a byte array
-    base64ToBytes: function(base64) {
-      // Remove non-base-64 characters
-      base64 = base64.replace(/[^A-Z0-9+\/]/ig, '');
-
-      for (var bytes = [], i = 0, imod4 = 0; i < base64.length;
-          imod4 = ++i % 4) {
-        if (imod4 == 0) continue;
-        bytes.push(((base64map.indexOf(base64.charAt(i - 1))
-            & (Math.pow(2, -2 * imod4 + 8) - 1)) << (imod4 * 2))
-            | (base64map.indexOf(base64.charAt(i)) >>> (6 - imod4 * 2)));
-      }
-      return bytes;
-    }
-  };
-
-  module.exports = crypt;
-})();
-
-
-/***/ }),
-/* 21 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-function atob(str) {
-  return Buffer.from(str, 'base64').toString('binary');
-}
-
-module.exports = atob.atob = atob;
-
-
-/***/ }),
-/* 22 */
-/***/ (function(module, exports) {
-
-(function () {
-  "use strict";
-
-  function btoa(str) {
-    var buffer;
-
-    if (str instanceof Buffer) {
-      buffer = str;
-    } else {
-      buffer = Buffer.from(str.toString(), 'binary');
-    }
-
-    return buffer.toString('base64');
-  }
-
-  module.exports = btoa;
-}());
-
-
-/***/ }),
+/* 18 */,
+/* 19 */,
+/* 20 */,
+/* 21 */,
+/* 22 */,
 /* 23 */,
 /* 24 */,
 /* 25 */,
 /* 26 */,
-/* 27 */,
-/* 28 */,
-/* 29 */,
-/* 30 */,
-/* 31 */,
-/* 32 */
+/* 27 */
 /***/ (function(module, exports) {
 
 module.exports = require("path");
 
 /***/ }),
-/* 33 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(__filename) {/**
  * Module dependencies.
  */
 
-var fs = __webpack_require__(35),
-  path = __webpack_require__(32),
-  fileURLToPath = __webpack_require__(36),
+var fs = __webpack_require__(30),
+  path = __webpack_require__(27),
+  fileURLToPath = __webpack_require__(31),
   join = path.join,
   dirname = path.dirname,
   exists =
@@ -1409,14 +1112,14 @@ exports.getRoot = function getRoot(file) {
 /* WEBPACK VAR INJECTION */}.call(this, "/index.js"))
 
 /***/ }),
-/* 34 */,
-/* 35 */
+/* 29 */,
+/* 30 */
 /***/ (function(module, exports) {
 
 module.exports = require("fs");
 
 /***/ }),
-/* 36 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 
@@ -1424,7 +1127,7 @@ module.exports = require("fs");
  * Module dependencies.
  */
 
-var sep = __webpack_require__(32).sep || '/';
+var sep = __webpack_require__(27).sep || '/';
 
 /**
  * Module exports.
@@ -1488,15 +1191,15 @@ function fileUriToPath (uri) {
 
 
 /***/ }),
-/* 37 */,
-/* 38 */
+/* 32 */,
+/* 33 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 
 // EXTERNAL MODULE: ./node_modules/bindings/bindings.js
-var bindings = __webpack_require__(33);
+var bindings = __webpack_require__(28);
 var bindings_default = /*#__PURE__*/__webpack_require__.n(bindings);
 
 // CONCATENATED MODULE: ./src/bindings.ts
@@ -1546,15 +1249,13 @@ function switchProtocolResponse(key) {
 }
 function getResponseWSKey(incomingKey) {
     let shadKey;
-    if (process.env.NRDP) {
+    if (true) {
         // @ts-ignore
         shadKey = nrdp.hash("sha1", incomingKey + WS_KEY);
         // @ts-ignore
         return nrdp.btoa(shadKey);
     }
-    const sha1 = __webpack_require__(18);
-    shadKey = sha1(incomingKey + WS_KEY);
-    return Buffer.from(shadKey, 'hex').toString('base64');
+    else {}
 }
 function validateUpgradeResponse(requestKey, responseKey) {
     return getResponseWSKey(requestKey) === responseKey;
@@ -1695,7 +1396,7 @@ function slowCaseParseHttp(buf, offset, maxLength) {
 ;
 
 // EXTERNAL MODULE: ./src/http/ws/index.ts + 3 modules
-var http_ws = __webpack_require__(19);
+var http_ws = __webpack_require__(17);
 
 // CONCATENATED MODULE: ./src/utils/onSelect.ts
 function onSelect(selectFn, sockfd, fdSet) {

@@ -19,10 +19,11 @@ export function getResponseWSKey(incomingKey: string): string {
         // @ts-ignore
         return nrdp.btoa(shadKey);
     }
-
-    const sha1 = require('sha1');
-    shadKey = sha1(incomingKey + WS_KEY);
-    return Buffer.from(shadKey, 'hex').toString('base64');
+    else {
+        const sha1 = require('sha1');
+        shadKey = sha1(incomingKey + WS_KEY);
+        return Buffer.from(shadKey, 'hex').toString('base64');
+    }
 }
 
 export function validateUpgradeResponse(requestKey: string, responseKey: string): boolean {

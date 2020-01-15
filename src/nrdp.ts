@@ -51,12 +51,13 @@ export const utils = {
             // @ts-ignore
             return from.copy(to, targetStart);
         }
+        else {
+            // TODO: YOU NEED TO CHANGE THIS NOW.
+            const fromBuf = Buffer.from(from.buffer);
+            const toBuf = Buffer.from(to.buffer);
 
-        // TODO: YOU NEED TO CHANGE THIS NOW.
-        const fromBuf = Buffer.from(from.buffer);
-        const toBuf = Buffer.from(to.buffer);
-
-        return fromBuf.copy(toBuf, targetStart, sourceIdx, sourceEndIdx);
+            return fromBuf.copy(toBuf, targetStart, sourceIdx, sourceEndIdx);
+        }
     }
 };
 
