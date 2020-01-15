@@ -26,7 +26,6 @@ wss.on('connection', function(ws) {
         // @ts-ignore
         const buffer = getBigAssBufferSlice();
         ws.send(buffer);
-        console.log("PayloadLength", ++payloadHeadersReceived, buffer.byteLength);
     }
 
     function stopData() {

@@ -1,3 +1,7 @@
+import {
+    uint8ArraySlice
+} from '../utils/index';
+
 const r = "\r".charCodeAt(0);
 const n = "\n".charCodeAt(0);
 const newLine = [r, n];
@@ -8,6 +12,7 @@ const contentLength = "content-length".split('').map(x => x.charCodeAt(0));
 const NotFound = -1;
 
 export function parse64BigInt(buffer: Uint8Array, offset: number): BigInt {
+    throw new Error('Cannot have a 4GB packet rook.');
     // @ts-ignore
     // TODO michael fix me
     return BigInt(`0x${uint8ArraySlice(buffer, offset, offset + 8).toString('hex')}`);

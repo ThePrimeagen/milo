@@ -394,10 +394,9 @@ export default class WSFramer {
         }
 
         else if (state.payloadLength === 127) {
-            const payloadB = parse64BigInt(packet, ptr);
-            if (payloadB > BigInt(this.maxPacketSize)) {
-                throw new Error(`Cannot possibly parse a payload of ${payloadB}.  Too big`);
-            }
+            const pView = new DataView(packet.buffer);
+            // big endian
+            const payloadB = pView.getUint32(ptr + 4);
 
             state.payloadLength = Number(payloadB);
             ptr += 8;

@@ -2,6 +2,10 @@ import HTTP, {
     slowCaseParseHttp
 } from '../http/index';
 
+import {
+    NetworkPipe
+} from '../http/types';
+
 import WS from '../http/ws/index';
 import bindings from '../bindings';
 
@@ -17,6 +21,7 @@ import {
 } from '../utils/index';
 
 import onSelect from "../utils/onSelect";
+import {send as socketSend } from "../http/socket.utils";
 import readline from 'readline';
 
 const {
@@ -127,15 +132,28 @@ async function run() {
 
     console.log("We actually really did it.  Like for real, ws are connected.");
 
-    const ws = new WS(socketId);
+    const pipe = {
+        send(dat: Uint8Array) {
+            socketSend(socketId, dat, 0);
+        },
+
+        close() {
+            close(socketId);
+        }
+
+    } as NetworkPipe;
+
+    const ws = new WS(pipe);
 
     let dataCount = 0;
     let then = Date.now();
     let bytesReceived = 0;
+    let packetBytesReceived = 0;
 
     ws.send("send");
     ws.onData(function parseWSData(state, buffer) {
         bytesReceived += buffer.byteLength;
+        packetBytesReceived = 0;
 
         if (++dataCount === 1000) {
             const now = Date.now();
@@ -149,9 +167,6 @@ async function run() {
         }
     });
 
-    const countObj = {count: 0};
-    ws.send(countObj);
-
     while (true) {
 
         FD_ZERO(fdSet);
@@ -160,7 +175,8 @@ async function run() {
 
         if (FD_ISSET(socketId, fdSet)) {
             const bytesRead = recv(socketId, buf, 4096, 0);
-            ws.pushData(buf, 0, bytesRead);
+            packetBytesReceived += bytesRead;
+            ws.pushData(buf.subarray(0, bytesRead));
         }
     }
 }
