@@ -2,11 +2,14 @@ import maskFn from '../mask';
 
 // FOR YOU JELMEGA
 // LittleEndian is going to be BBAABBAA
+// therefore, we write it in BigE.
 // 171IQ
-const littleMask = 0xBB_AA_BB_AA;
-const littleMaskBuf = new Uint8Array(4);
-const littleView = new DataView(littleMaskBuf.buffer);
-littleView.setUint32(littleMask, 0, true);
+debugger
+const mask = 0xAA_BB_AA_BB;
+const maskBuf = new Uint8Array(4);
+const maskView = new DataView(maskBuf.buffer);
+
+maskView.setUint32(0, mask);
 
 // 0b1011
 // 0b0100
@@ -40,12 +43,10 @@ describe("WS", function() {
         const b = new Uint8Array(1000);
         buf.copy(b, 0);
 
-        const mask = littleMaskBuf;
-
-        maskFn(b, 0, buf.length, mask);
+        maskFn(b, 0, buf.length, maskBuf);
         checkBuf(b, maskedArr);
 
-        maskFn(b, 0, buf.length, mask);
+        maskFn(b, 0, buf.length, maskBuf);
         checkBuf(b, unmaskedArr);
     });
 });
