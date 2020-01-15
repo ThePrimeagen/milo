@@ -7,7 +7,7 @@
         "noImplicitAny": true,
         "lib": ["es6", "dom"],
         "module": "es6",
-        "target": "es6",
+        "target": "es5",
         "esModuleInterop": true,
         "allowJs": true,
         "moduleResolution": "node"
