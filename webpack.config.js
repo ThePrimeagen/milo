@@ -15,6 +15,7 @@ function getCopyPaths() {
 module.exports = {
     target: 'node',
     entry: {
+        websockets: './src/http/ws/index.ts',
         wsServer: './src/ws-server/server.ts',
         clientHTTP: './src/ws-server/client.ts',
         clientHTTPReal: './src/ws-server/client-real.ts',
