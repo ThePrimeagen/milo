@@ -1,24 +1,23 @@
 {
-  "name": "native-sockets",
+  "name": "milo",
   "version": "1.0.8",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc && rollup --config",
-    "b": "node-gyp build"
+    "build": "tsc && rollup --config"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ThePrimeagen/native-sockets.git"
+    "url": "git+https://github.com/ThePrimeagen/milo.git"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ThePrimeagen/native-sockets/issues"
+    "url": "https://github.com/ThePrimeagen/milo/issues"
   },
-  "homepage": "https://github.com/ThePrimeagen/native-sockets#readme",
+  "homepage": "https://github.com/ThePrimeagen/milo#readme",
   "dependencies": {
     "0x": "^4.9.1",
     "@babel/types": "^7.7.4",
@@ -42,7 +41,6 @@
     "jest": "^24.9.0",
     "network-byte-order": "^0.2.0",
     "node-addon-api": "^2.0.0",
-    "node-gyp": "^6.0.1",
     "rollup": "^1.29.0",
     "rollup-plugin-typescript2": "^0.25.3",
     "sha1": "^1.1.1",

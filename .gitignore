@@ -1,4 +1,5 @@
 .zshrc.bak
 node_modules
 build
+dist
 

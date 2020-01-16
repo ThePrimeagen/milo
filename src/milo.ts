@@ -3,7 +3,6 @@ import Platform from "./Platform";
 import { NetworkPipe } from "./types";
 import { headerValue } from "./Utils";
 // @ts-ignore
-import WS from "native-sockets";
 
 const requests = new Map();
 
@@ -55,6 +54,7 @@ export function _wsUpgrade(data: RequestData): Promise<NetworkPipe>
     });
 }
 
+/*
 export let ws: WS;
 export function createWS(url: string): Promise<WS>
 {
@@ -69,3 +69,4 @@ export function createWS(url: string): Promise<WS>
         return ws;
     });
 }
+*/
