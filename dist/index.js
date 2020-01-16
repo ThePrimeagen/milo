@@ -562,7 +562,7 @@
 	                    var headerBuf = headerPool.malloc();
 	                    var payloadByteLength = state.payload.byteLength;
 	                    headerBuf.set(state.payload);
-	                    headerBuf.set(packet.slice(0, headerBuf.length - payloadByteLength), payloadByteLength);
+	                    headerBuf.set(packet.subarray(0, headerBuf.length - payloadByteLength), payloadByteLength);
 	                    nextPtrOffset =
 	                        this.parseHeader(state, headerBuf, 0, MAX_HEADER_SIZE);
 	                    if (typeof nextPtrOffset === 'boolean') {
@@ -658,7 +658,10 @@
 	            ptr += 8;
 	        }
 	        if (state.isMasked) {
-	            state.mask = packet.slice(ptr, ptr + 4);
+	            state.mask = new Uint8Array(4);
+	            var maskInView = new DataView(packet.subarray(ptr, ptr + 4).buffer);
+	            var stateMaskView = new DataView(state.mask.buffer);
+	            stateMaskView.setUint32(0, maskView.getUint32(0));
 	            ptr += 4;
 	        }
 	        state.payloadPtr = 0;
@@ -670,7 +673,7 @@
 	        // to read what I need to read, not the whole thing, segfault incoming
 	        // TODO: is this ever needed?
 	        var remaining = state.payloadLength - state.payloadPtr;
-	        var sub = packet.slice(offset, endIdx);
+	        var sub = packet.subarray(offset, endIdx);
 	        state.payload.set(sub, state.payloadPtr);
 	        var copyAmount = sub.byteLength;
 	        if (state.isMasked) {

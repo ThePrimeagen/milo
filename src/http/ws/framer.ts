@@ -278,7 +278,7 @@ export default class WSFramer {
 
                     headerBuf.set(state.payload);
                     headerBuf.set(
-                        packet.slice(0, headerBuf.length - payloadByteLength),
+                        packet.subarray(0, headerBuf.length - payloadByteLength),
                         payloadByteLength);
 
                     nextPtrOffset =
@@ -403,7 +403,12 @@ export default class WSFramer {
         }
 
         if (state.isMasked) {
-            state.mask = packet.slice(ptr, ptr + 4);
+            state.mask = new Uint8Array(4);
+
+            const maskInView = new DataView(packet.subarray(ptr, ptr + 4).buffer);
+            const stateMaskView = new DataView(state.mask.buffer);
+
+            stateMaskView.setUint32(0, maskView.getUint32(0));
             ptr += 4;
         }
 
@@ -422,7 +427,7 @@ export default class WSFramer {
 
         // TODO: is this ever needed?
         const remaining = state.payloadLength - state.payloadPtr;
-        const sub = packet.slice(offset, endIdx);
+        const sub = packet.subarray(offset, endIdx);
         state.payload.set(sub, state.payloadPtr);
         const copyAmount = sub.byteLength;
 
