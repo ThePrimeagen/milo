@@ -1,8 +1,8 @@
 {
   "name": "native-sockets",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "",
-  "main": "dist/websockets.js",
+  "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc && rollup --config",
