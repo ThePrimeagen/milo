@@ -29,6 +29,7 @@ wss.on('connection', function(ws) {
     }
 
     function stopData() {
+        // @ts-ignore
         clearTimeout(timerId);
     }
 

@@ -1,20 +1,14 @@
 {
     "include": ["src"],
-    "exclude": ["node_modules"],
     "compilerOptions": {
-        "outDir": "./dist/",
+        "outDir": "./build/",
         "sourceMap": true,
         "noImplicitAny": true,
-        "lib": ["es6", "dom"],
-        "module": "es6",
+        "lib": ["es6"],
+        "module": "commonjs",
         "target": "es5",
         "esModuleInterop": true,
-        "allowJs": true,
-        "moduleResolution": "node"
-    },
-
-    "THESE SHOULD BE INTEGRATED": true,
-    "strictNullChecks": true,
-    "strictPropertyInitialization": true
+        "allowJs": false
+    }
 }
 
