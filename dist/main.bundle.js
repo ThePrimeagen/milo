@@ -1,3 +1,4 @@
+exports["ws"] =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -81,12 +82,11 @@
 /******/
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 34);
+/******/ 	return __webpack_require__(__webpack_require__.s = 6);
 /******/ })
 /************************************************************************/
-/******/ ({
-
-/***/ 22:
+/******/ ([
+/* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -131,7 +131,7 @@ exports.htons = function(b, i, v) {
  * @returns {number}
  */
 exports.ntohs = function(b, i) {
-	return ((0xff & b[i]) << 8) | 
+	return ((0xff & b[i]) << 8) |
 	       ((0xff & b[i + 1]));
 };
 
@@ -195,21 +195,52 @@ exports.ntohlStr = function(s, i) {
 
 
 /***/ }),
-
-/***/ 23:
+/* 1 */
 /***/ (function(module, exports) {
 
-module.exports = require("path");
+var charenc = {
+  // UTF-8 encoding
+  utf8: {
+    // Convert a string to a byte array
+    stringToBytes: function(str) {
+      return charenc.bin.stringToBytes(unescape(encodeURIComponent(str)));
+    },
+
+    // Convert a byte array to a string
+    bytesToString: function(bytes) {
+      return decodeURIComponent(escape(charenc.bin.bytesToString(bytes)));
+    }
+  },
+
+  // Binary encoding
+  bin: {
+    // Convert a string to a byte array
+    stringToBytes: function(str) {
+      for (var bytes = [], i = 0; i < str.length; i++)
+        bytes.push(str.charCodeAt(i) & 0xFF);
+      return bytes;
+    },
+
+    // Convert a byte array to a string
+    bytesToString: function(bytes) {
+      for (var str = [], i = 0; i < bytes.length; i++)
+        str.push(String.fromCharCode(bytes[i]));
+      return str.join('');
+    }
+  }
+};
+
+module.exports = charenc;
+
 
 /***/ }),
-
-/***/ 24:
+/* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
 (function() {
-  var crypt = __webpack_require__(30),
-      utf8 = __webpack_require__(25).utf8,
-      bin = __webpack_require__(25).bin,
+  var crypt = __webpack_require__(3),
+      utf8 = __webpack_require__(1).utf8,
+      bin = __webpack_require__(1).bin,
 
   // The core
   sha1 = function (message) {
@@ -291,357 +322,7 @@ module.exports = require("path");
 
 
 /***/ }),
-
-/***/ 25:
-/***/ (function(module, exports) {
-
-var charenc = {
-  // UTF-8 encoding
-  utf8: {
-    // Convert a string to a byte array
-    stringToBytes: function(str) {
-      return charenc.bin.stringToBytes(unescape(encodeURIComponent(str)));
-    },
-
-    // Convert a byte array to a string
-    bytesToString: function(bytes) {
-      return decodeURIComponent(escape(charenc.bin.bytesToString(bytes)));
-    }
-  },
-
-  // Binary encoding
-  bin: {
-    // Convert a string to a byte array
-    stringToBytes: function(str) {
-      for (var bytes = [], i = 0; i < str.length; i++)
-        bytes.push(str.charCodeAt(i) & 0xFF);
-      return bytes;
-    },
-
-    // Convert a byte array to a string
-    bytesToString: function(bytes) {
-      for (var str = [], i = 0; i < bytes.length; i++)
-        str.push(String.fromCharCode(bytes[i]));
-      return str.join('');
-    }
-  }
-};
-
-module.exports = charenc;
-
-
-/***/ }),
-
-/***/ 26:
-/***/ (function(module, exports, __webpack_require__) {
-
-/* WEBPACK VAR INJECTION */(function(__filename) {/**
- * Module dependencies.
- */
-
-var fs = __webpack_require__(28),
-  path = __webpack_require__(23),
-  fileURLToPath = __webpack_require__(29),
-  join = path.join,
-  dirname = path.dirname,
-  exists =
-    (fs.accessSync &&
-      function(path) {
-        try {
-          fs.accessSync(path);
-        } catch (e) {
-          return false;
-        }
-        return true;
-      }) ||
-    fs.existsSync ||
-    path.existsSync,
-  defaults = {
-    arrow: process.env.NODE_BINDINGS_ARROW || ' → ',
-    compiled: process.env.NODE_BINDINGS_COMPILED_DIR || 'compiled',
-    platform: process.platform,
-    arch: process.arch,
-    nodePreGyp:
-      'node-v' +
-      process.versions.modules +
-      '-' +
-      process.platform +
-      '-' +
-      process.arch,
-    version: process.versions.node,
-    bindings: 'bindings.node',
-    try: [
-      // node-gyp's linked version in the "build" dir
-      ['module_root', 'build', 'bindings'],
-      // node-waf and gyp_addon (a.k.a node-gyp)
-      ['module_root', 'build', 'Debug', 'bindings'],
-      ['module_root', 'build', 'Release', 'bindings'],
-      // Debug files, for development (legacy behavior, remove for node v0.9)
-      ['module_root', 'out', 'Debug', 'bindings'],
-      ['module_root', 'Debug', 'bindings'],
-      // Release files, but manually compiled (legacy behavior, remove for node v0.9)
-      ['module_root', 'out', 'Release', 'bindings'],
-      ['module_root', 'Release', 'bindings'],
-      // Legacy from node-waf, node <= 0.4.x
-      ['module_root', 'build', 'default', 'bindings'],
-      // Production "Release" buildtype binary (meh...)
-      ['module_root', 'compiled', 'version', 'platform', 'arch', 'bindings'],
-      // node-qbs builds
-      ['module_root', 'addon-build', 'release', 'install-root', 'bindings'],
-      ['module_root', 'addon-build', 'debug', 'install-root', 'bindings'],
-      ['module_root', 'addon-build', 'default', 'install-root', 'bindings'],
-      // node-pre-gyp path ./lib/binding/{node_abi}-{platform}-{arch}
-      ['module_root', 'lib', 'binding', 'nodePreGyp', 'bindings']
-    ]
-  };
-
-/**
- * The main `bindings()` function loads the compiled bindings for a given module.
- * It uses V8's Error API to determine the parent filename that this function is
- * being invoked from, which is then used to find the root directory.
- */
-
-function bindings(opts) {
-  // Argument surgery
-  if (typeof opts == 'string') {
-    opts = { bindings: opts };
-  } else if (!opts) {
-    opts = {};
-  }
-
-  // maps `defaults` onto `opts` object
-  Object.keys(defaults).map(function(i) {
-    if (!(i in opts)) opts[i] = defaults[i];
-  });
-
-  // Get the module root
-  if (!opts.module_root) {
-    opts.module_root = exports.getRoot(exports.getFileName());
-  }
-
-  // Ensure the given bindings name ends with .node
-  if (path.extname(opts.bindings) != '.node') {
-    opts.bindings += '.node';
-  }
-
-  // https://github.com/webpack/webpack/issues/4175#issuecomment-342931035
-  var requireFunc =
-     true
-      ? require
-      : undefined;
-
-  var tries = [],
-    i = 0,
-    l = opts.try.length,
-    n,
-    b,
-    err;
-
-  for (; i < l; i++) {
-    n = join.apply(
-      null,
-      opts.try[i].map(function(p) {
-        return opts[p] || p;
-      })
-    );
-    tries.push(n);
-    try {
-      b = opts.path ? requireFunc.resolve(n) : requireFunc(n);
-      if (!opts.path) {
-        b.path = n;
-      }
-      return b;
-    } catch (e) {
-      if (e.code !== 'MODULE_NOT_FOUND' &&
-          e.code !== 'QUALIFIED_PATH_RESOLUTION_FAILED' &&
-          !/not find/i.test(e.message)) {
-        throw e;
-      }
-    }
-  }
-
-  err = new Error(
-    'Could not locate the bindings file. Tried:\n' +
-      tries
-        .map(function(a) {
-          return opts.arrow + a;
-        })
-        .join('\n')
-  );
-  err.tries = tries;
-  throw err;
-}
-module.exports = exports = bindings;
-
-/**
- * Gets the filename of the JavaScript file that invokes this function.
- * Used to help find the root directory of a module.
- * Optionally accepts an filename argument to skip when searching for the invoking filename
- */
-
-exports.getFileName = function getFileName(calling_file) {
-  var origPST = Error.prepareStackTrace,
-    origSTL = Error.stackTraceLimit,
-    dummy = {},
-    fileName;
-
-  Error.stackTraceLimit = 10;
-
-  Error.prepareStackTrace = function(e, st) {
-    for (var i = 0, l = st.length; i < l; i++) {
-      fileName = st[i].getFileName();
-      if (fileName !== __filename) {
-        if (calling_file) {
-          if (fileName !== calling_file) {
-            return;
-          }
-        } else {
-          return;
-        }
-      }
-    }
-  };
-
-  // run the 'prepareStackTrace' function above
-  Error.captureStackTrace(dummy);
-  dummy.stack;
-
-  // cleanup
-  Error.prepareStackTrace = origPST;
-  Error.stackTraceLimit = origSTL;
-
-  // handle filename that starts with "file://"
-  var fileSchema = 'file://';
-  if (fileName.indexOf(fileSchema) === 0) {
-    fileName = fileURLToPath(fileName);
-  }
-
-  return fileName;
-};
-
-/**
- * Gets the root directory of a module, given an arbitrary filename
- * somewhere in the module tree. The "root directory" is the directory
- * containing the `package.json` file.
- *
- *   In:  /home/nate/node-native-module/lib/index.js
- *   Out: /home/nate/node-native-module
- */
-
-exports.getRoot = function getRoot(file) {
-  var dir = dirname(file),
-    prev;
-  while (true) {
-    if (dir === '.') {
-      // Avoids an infinite loop in rare cases, like the REPL
-      dir = process.cwd();
-    }
-    if (
-      exists(join(dir, 'package.json')) ||
-      exists(join(dir, 'node_modules'))
-    ) {
-      // Found the 'package.json' file or 'node_modules' dir; we're done
-      return dir;
-    }
-    if (prev === dir) {
-      // Got to the top
-      throw new Error(
-        'Could not find module root given file: "' +
-          file +
-          '". Do you have a `package.json` file? '
-      );
-    }
-    // Try the parent dir next
-    prev = dir;
-    dir = join(dir, '..');
-  }
-};
-
-/* WEBPACK VAR INJECTION */}.call(this, "/index.js"))
-
-/***/ }),
-
-/***/ 28:
-/***/ (function(module, exports) {
-
-module.exports = require("fs");
-
-/***/ }),
-
-/***/ 29:
-/***/ (function(module, exports, __webpack_require__) {
-
-
-/**
- * Module dependencies.
- */
-
-var sep = __webpack_require__(23).sep || '/';
-
-/**
- * Module exports.
- */
-
-module.exports = fileUriToPath;
-
-/**
- * File URI to Path function.
- *
- * @param {String} uri
- * @return {String} path
- * @api public
- */
-
-function fileUriToPath (uri) {
-  if ('string' != typeof uri ||
-      uri.length <= 7 ||
-      'file://' != uri.substring(0, 7)) {
-    throw new TypeError('must pass in a file:// URI to convert to a file path');
-  }
-
-  var rest = decodeURI(uri.substring(7));
-  var firstSlash = rest.indexOf('/');
-  var host = rest.substring(0, firstSlash);
-  var path = rest.substring(firstSlash + 1);
-
-  // 2.  Scheme Definition
-  // As a special case, <host> can be the string "localhost" or the empty
-  // string; this is interpreted as "the machine from which the URL is
-  // being interpreted".
-  if ('localhost' == host) host = '';
-
-  if (host) {
-    host = sep + sep + host;
-  }
-
-  // 3.2  Drives, drive letters, mount points, file system root
-  // Drive letters are mapped into the top of a file URI in various ways,
-  // depending on the implementation; some applications substitute
-  // vertical bar ("|") for the colon after the drive letter, yielding
-  // "file:///c|/tmp/test.txt".  In some cases, the colon is left
-  // unchanged, as in "file:///c:/tmp/test.txt".  In other cases, the
-  // colon is simply omitted, as in "file:///c/tmp/test.txt".
-  path = path.replace(/^(.+)\|/, '$1:');
-
-  // for Windows, we need to invert the path separators from what a URI uses
-  if (sep == '\\') {
-    path = path.replace(/\//g, '\\');
-  }
-
-  if (/^.+\:/.test(path)) {
-    // has Windows drive at beginning of path
-  } else {
-    // unix path…
-    path = sep + path;
-  }
-
-  return host + path;
-}
-
-
-/***/ }),
-
-/***/ 30:
+/* 3 */
 /***/ (function(module, exports) {
 
 (function() {
@@ -743,8 +424,7 @@ function fileUriToPath (uri) {
 
 
 /***/ }),
-
-/***/ 31:
+/* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -758,8 +438,7 @@ module.exports = atob.atob = atob;
 
 
 /***/ }),
-
-/***/ 32:
+/* 5 */
 /***/ (function(module, exports) {
 
 (function () {
@@ -782,31 +461,19 @@ module.exports = atob.atob = atob;
 
 
 /***/ }),
-
-/***/ 34:
+/* 6 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 
-// EXTERNAL MODULE: ./node_modules/bindings/bindings.js
-var bindings = __webpack_require__(26);
-var bindings_default = /*#__PURE__*/__webpack_require__.n(bindings);
-
-// CONCATENATED MODULE: ./src/bindings.ts
-
-// Special case handling for node native layer.
-// @ts-ignore
-var bindings_b = bindings_default()('native-sockets');
-/* harmony default export */ var src_bindings = (bindings_b);
-
 // CONCATENATED MODULE: ./src/nrdp.ts
 var exportObj;
 if (false) {}
 if (true) {
-    var sha1_1 = __webpack_require__(24);
-    var atob_1 = __webpack_require__(31);
-    var btoa_1 = __webpack_require__(32);
+    var sha1_1 = __webpack_require__(2);
+    var atob_1 = __webpack_require__(4);
+    var btoa_1 = __webpack_require__(5);
     exportObj = {
         hash: function (type, data) {
             var outStr = sha1_1(data);
@@ -905,28 +572,6 @@ function uint8ArrayConcat() {
     }));
     return Uint8Array.from(buf);
 }
-
-// CONCATENATED MODULE: ./src/http/types.ts
-;
-var HeaderKey;
-(function (HeaderKey) {
-    HeaderKey["Upgrade"] = "Upgrade";
-    HeaderKey["Connection"] = "Connection";
-    HeaderKey["SecWebSocketKey"] = "Sec-WebSocket-Key";
-    HeaderKey["SecWebSocketAccept"] = "Sec-WebSocket-Accept";
-})(HeaderKey || (HeaderKey = {}));
-;
-var Protocol;
-(function (Protocol) {
-    Protocol["HTTP1_1"] = "HTTP/1.1";
-})(Protocol || (Protocol = {}));
-;
-var RequestTypes;
-(function (RequestTypes) {
-    RequestTypes["GET"] = "GET";
-    RequestTypes["POST"] = "POST";
-})(RequestTypes || (RequestTypes = {}));
-;
 
 // CONCATENATED MODULE: ./src/http/buffer.ts
 
@@ -1043,167 +688,6 @@ function getHTTPHeaderEndOffset(buf, offset, maxLength) {
 }
 ;
 
-// CONCATENATED MODULE: ./src/http/ws.utils.ts
-var WS_KEY = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-function switchProtocolResponse(key) {
-    return [
-        "HTTP/1.1 101 Switching Protocols",
-        "Upgrade: websocket",
-        "Connection: Upgrade",
-        "Sec-WebSocket-Accept: " + key,
-    ];
-}
-function getResponseWSKey(incomingKey) {
-    var shadKey;
-    if (false) {}
-    else {
-        var sha1 = __webpack_require__(24);
-        shadKey = sha1(incomingKey + WS_KEY);
-        return Buffer.from(shadKey, 'hex').toString('base64');
-    }
-}
-function validateUpgradeResponse(requestKey, responseKey) {
-    return getResponseWSKey(requestKey) === responseKey;
-}
-;
-function generateWSUpgradeKey() {
-    return 'dGhlIHNhbXBsZSBub25jZQ==';
-}
-
-// CONCATENATED MODULE: ./src/http/index.ts
-// TODO: Come back to the HTTP frame builder
-
-// 1117 aabb aabb 7b22636f756e74223a307d
-// 1117
-// 0001 0001 0001 1110 1010 1010 1011 1011
-//      rrrf
-//      sssi
-//      vvvn
-//      123
-
-
-
-
-
-var switchingProtocolsStr = "HTTP/1.1 101 Switching Protocols";
-var switchingProtocolsBuf = new Uint8Array(switchingProtocolsStr.length);
-uint8ArrayWriteString(switchingProtocolsBuf, switchingProtocolsStr);
-var http_HTTP = /** @class */ (function () {
-    function HTTP() {
-    }
-    HTTP.isWSUpgradeRequest = function (packet) {
-        return packet.headers[HeaderKey.Upgrade] === 'websocket' &&
-            !!packet.headers[HeaderKey.SecWebSocketKey];
-    };
-    HTTP.prototype.getWsKeyGenerated = function () {
-        return this.wsKeyGenerated;
-    };
-    HTTP.prototype.upgradeToWS = function (socketId, host, path) {
-        var wsUpgrade = createBufferBuilder(1024);
-        var key = this.wsKeyGenerated = generateWSUpgradeKey();
-        wsUpgrade.addString("GET ");
-        wsUpgrade.addString(path);
-        wsUpgrade.addString(" HTTP/1.1");
-        wsUpgrade.addNewLine();
-        wsUpgrade.addString("Host: ");
-        wsUpgrade.addString(host);
-        wsUpgrade.addNewLine();
-        wsUpgrade.addString("Upgrade: websocket");
-        wsUpgrade.addNewLine();
-        wsUpgrade.addString("Connection: Upgrade");
-        wsUpgrade.addNewLine();
-        wsUpgrade.addString("Sec-WebSocket-Key: ");
-        wsUpgrade.addString(key);
-        wsUpgrade.addNewLine();
-        wsUpgrade.addString("Sec-WebSocket-Version: 13");
-        wsUpgrade.addNewLine();
-        wsUpgrade.addNewLine();
-        var buf = wsUpgrade.getBuffer();
-        var len = wsUpgrade.length();
-        console.log("Sending", ab2str(uint8ArraySlice(buf, 0, len)));
-        src_bindings.send(socketId, buf, len, 0);
-    };
-    HTTP.prototype.respondToWSUpgrade = function (socketId, incoming) {
-        var key = incoming.headers[HeaderKey.SecWebSocketKey];
-        var base64Key = getResponseWSKey(key);
-        var buffer = createBufferBuilder(1024);
-        switchProtocolResponse(base64Key).forEach(function (str) {
-            buffer.addString(str);
-            buffer.addNewLine();
-        });
-        src_bindings.send(socketId, buffer.getBuffer(), buffer.length(), 0);
-    };
-    HTTP.prototype.validateUpgrade = function (httpRequest) {
-        var base64Key = getResponseWSKey(this.wsKeyGenerated);
-        return base64Key === httpRequest.headers[HeaderKey.SecWebSocketAccept];
-    };
-    return HTTP;
-}());
-/* harmony default export */ var http = (http_HTTP);
-function isUpgradeToWebsockets(buf) {
-    var isEqual = true;
-    for (var i = 0; i < switchingProtocolsBuf.byteLength && isEqual; ++i) {
-        isEqual = isEqual && buf[i] === switchingProtocolsBuf[i];
-    }
-    return isEqual;
-}
-function getSlowCasePath(buf, offset, maxLength) {
-    var out = {};
-    var ptr = offset;
-    var spaceIdx = getSpaceIdx(buf, ptr);
-    var requestType = ab2str(uint8ArraySlice(buf, ptr, spaceIdx));
-    if (requestType !== RequestTypes.GET &&
-        requestType !== RequestTypes.POST) {
-        throw new Error('Unsupported HTTP types');
-    }
-    out.requestType = requestType;
-    ptr = spaceIdx + 1;
-    spaceIdx = getSpaceIdx(buf, ptr);
-    out.uri = ab2str(uint8ArraySlice(buf, ptr, spaceIdx));
-    ptr = spaceIdx + 1;
-    var protocol = ab2str(uint8ArraySlice(buf, ptr, maxLength));
-    if (protocol !== Protocol.HTTP1_1) {
-        throw new Error("Unsupported Protocol " + protocol);
-    }
-    out.protocol = protocol;
-    return out;
-}
-function slowCaseParseHttp(buf, offset, maxLength) {
-    var ptr = offset;
-    var out = { headers: {} };
-    var headers = out.headers;
-    var endLineIdx = getEndLineOffset(buf, ptr, maxLength);
-    if (endLineIdx === NotFound) {
-        throw new Error("Not valid HTTP");
-    }
-    if (!isUpgradeToWebsockets(uint8ArraySlice(buf, offset))) {
-        var path = uint8ArraySlice(buf, offset, endLineIdx);
-        out.path = getSlowCasePath(buf, offset, endLineIdx);
-    }
-    ptr += endLineIdx + 2;
-    do {
-        endLineIdx = getEndLineOffset(buf, ptr, maxLength);
-        // We just got the ol 2 in a row (\r\n\r\n)
-        if (endLineIdx === ptr) {
-            ptr += 2;
-            // DONE WITH BODY, Baby
-            break;
-        }
-        var colonIdx = getColonIdx(buf, ptr, maxLength);
-        var key = ab2str(uint8ArraySlice(buf, ptr, colonIdx));
-        ptr = colonIdx + 1;
-        var value = ab2str(uint8ArraySlice(buf, ptr, endLineIdx));
-        if (value[0] === ' ') {
-            value = value.substring(1);
-        }
-        ptr = endLineIdx + 2;
-        headers[key] = value;
-    } while (true);
-    out.body = uint8ArraySlice(buf, ptr, maxLength);
-    return out;
-}
-;
-
 // CONCATENATED MODULE: ./src/http/ws/mask.ts
 function mask_mask(buf, offset, length, mask) {
     for (var i = offset, j = 0; j < length; ++j, ++i) {
@@ -1226,7 +710,7 @@ var Opcodes;
 ;
 
 // EXTERNAL MODULE: ./node_modules/network-byte-order/lib/index.js
-var lib = __webpack_require__(22);
+var lib = __webpack_require__(0);
 
 // CONCATENATED MODULE: ./src/http/ws/framer.ts
 
@@ -1638,258 +1122,8 @@ var ws_WS = /** @class */ (function () {
     };
     return WS;
 }());
-/* harmony default export */ var http_ws = (ws_WS);
-
-// CONCATENATED MODULE: ./src/utils/onSelect.ts
-function onSelect(selectFn, sockfd, fdSet) {
-    return new Promise(function (res, rej) {
-        selectFn(sockfd, fdSet, function (err, value) {
-            if (err) {
-                rej(err);
-                return;
-            }
-            res(value);
-            return;
-        });
-    });
-}
-;
-
-// CONCATENATED MODULE: ./src/http/socket.utils.ts
-// TODO: Error Handling?
-
-
-var socket_utils_bindings = src_bindings;
-var noop = function () { };
-var queue = [];
-var running = false;
-// TODO: If buffer creation is making everything slow then we will split the
-// header from the body, but ensure we can send that.
-function sendWithQueue() {
-    if (queue.length === 0) {
-        return;
-    }
-    var item = queue[0];
-    var buf = uint8ArraySlice(item.buffer, item.idx, item.buffer.byteLength);
-    var len = item.buffer.byteLength - item.idx;
-    var sentBytes = socket_utils_bindings.send(item.socketId, buf, len, item.flags);
-    // TODO: write yourself a damn linked listn already.
-    if (sentBytes === len) {
-        var sf = queue.shift();
-        sf.cb && sf.cb();
-    }
-    else {
-        item.idx += sentBytes;
-    }
-    if (queue.length) {
-        setImmediate(sendWithQueue);
-    }
-}
-// uint8ArraySlice(buf, 0, length)
-function send(socketId, buffer, flags, cb) {
-    if (flags === void 0) { flags = 0; }
-    if (cb === void 0) { cb = null; }
-    var sF = {
-        socketId: socketId,
-        buffer: buffer,
-        idx: 0,
-        flags: flags,
-        cb: cb
-    };
-    queue.push(sF);
-    sendWithQueue();
-}
-;
-
-// CONCATENATED MODULE: ./src/ws-server/client.ts
-var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __generator = (undefined && undefined.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-    function verb(n) { return function (v) { return step([n, v]); }; }
-    function step(op) {
-        if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
-            switch (op[0]) {
-                case 0: case 1: t = op; break;
-                case 4: _.label++; return { value: op[1], done: false };
-                case 5: _.label++; y = op[1]; op = [0]; continue;
-                case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                default:
-                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                    if (t[2]) _.ops.pop();
-                    _.trys.pop(); continue;
-            }
-            op = body.call(thisArg, _);
-        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-    }
-};
-
-
-
-
-
-var SOCK_STREAM = src_bindings.SOCK_STREAM, AF_INET = src_bindings.AF_INET, AI_PASSIVE = src_bindings.AI_PASSIVE, socket = src_bindings.socket, getaddrinfo = src_bindings.getaddrinfo, connect = src_bindings.connect, client_send = src_bindings.send, recv = src_bindings.recv, accept = src_bindings.accept, client_select = src_bindings.select, client_close = src_bindings.close, FD_CLR = src_bindings.FD_CLR, FD_SET = src_bindings.FD_SET, FD_ZERO = src_bindings.FD_ZERO, FD_ISSET = src_bindings.FD_ISSET, newAddrInfo = src_bindings.newAddrInfo, isValidSocket = src_bindings.isValidSocket, getErrorString = src_bindings.getErrorString, gai_strerror = src_bindings.gai_strerror, addrInfoToObject = src_bindings.addrInfoToObject;
-var addrHints = {
-    ai_socktype: SOCK_STREAM,
-    ai_family: AF_INET
-};
-var hintsId = newAddrInfo(addrHints);
-var bindId = newAddrInfo();
-console.log("XXXX - localhost", "8080");
-var addrInfoResult = getaddrinfo(0, "8080", hintsId, bindId);
-if (addrInfoResult) {
-    console.error("Unable to getaddrinfo.  Also stop using this method you dingus");
-    process.abort();
-}
-var bindData = addrInfoToObject(bindId);
-var client_socketId = socket(bindData.ai_family, bindData.ai_socktype, bindData.ai_protocol);
-console.log("Sacket id", client_socketId);
-if (!isValidSocket(client_socketId)) {
-    console.error("Unable to create the socket", getErrorString());
-    process.abort();
-}
-console.log("about to connect");
-var connectStatus = connect(client_socketId, bindId);
-console.log("connectStatus", connectStatus);
-if (connectStatus) {
-    console.error("Unable to connect to the socket", getErrorString());
-    process.abort();
-}
-// TODO: This interface kind of sucks...
-/*
-rl.on('line', function(line) {
-    const len = buf.write(line);
-
-    console.log("onLine", uint8ArraySlice(buf, 0, len), len);
-    send(socketId, buf, len);
-});
- */
-var client_http = new http();
-var client_host = "localhost:8080";
-var client_path = "/";
-client_http.upgradeToWS(client_socketId, client_host, client_path);
-function run() {
-    return __awaiter(this, void 0, void 0, function () {
-        var buf, fdSet, count, connected, bytesRead, parsedMsg, bytesReadOffset, pipe, ws, dataCount, then, bytesReceived, packetBytesReceived;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    buf = new Uint8Array(4096 * 32);
-                    fdSet = src_bindings.fd_set();
-                    count = 0;
-                    connected = false;
-                    _a.label = 1;
-                case 1:
-                    FD_ZERO(fdSet);
-                    FD_SET(client_socketId, fdSet);
-                    return [4 /*yield*/, onSelect(client_select, client_socketId, fdSet)];
-                case 2:
-                    _a.sent();
-                    connected = FD_ISSET(client_socketId, fdSet);
-                    _a.label = 3;
-                case 3:
-                    if (!connected && ++count < 5) return [3 /*break*/, 1];
-                    _a.label = 4;
-                case 4:
-                    if (!connected) {
-                        throw new Error("You are dumb");
-                    }
-                    bytesRead = recv(client_socketId, buf, 4096);
-                    if (bytesRead === 0) {
-                        throw new Error("How did you get closed so fast?");
-                    }
-                    parsedMsg = slowCaseParseHttp(buf, 0, bytesRead);
-                    if (!client_http.validateUpgrade(parsedMsg)) {
-                        throw new Error("Not a valid rvsp");
-                    }
-                    console.log("We actually really did it.  Like for real, ws are connected.");
-                    bytesReadOffset = 0;
-                    pipe = {
-                        read: function (dat, offset, length) {
-                            var amountToRead = Math.min(length, bytesRead);
-                            var readBuf = (dat instanceof ArrayBuffer ? new Uint8Array(dat) : dat);
-                            readBuf.set(buf.subarray(bytesReadOffset, bytesReadOffset + amountToRead), offset);
-                            // Adjust the bytes.
-                            bytesRead -= amountToRead;
-                            bytesReadOffset += amountToRead;
-                            return amountToRead;
-                        },
-                        write: function (dat, offset, length) {
-                            var buf;
-                            if (typeof dat === 'string') {
-                                buf = null;
-                            }
-                            else if (dat instanceof ArrayBuffer) {
-                                buf = new Uint8Array(dat).subarray(offset, offset + length);
-                            }
-                            else {
-                                buf = dat.subarray(offset, offset + length);
-                            }
-                            send(client_socketId, buf, 0);
-                        },
-                        close: function () {
-                            client_close(client_socketId);
-                        }
-                    };
-                    ws = new http_ws(pipe);
-                    dataCount = 0;
-                    then = Date.now();
-                    bytesReceived = 0;
-                    packetBytesReceived = 0;
-                    ws.send("send");
-                    ws.onData(function parseWSData(state, buffer) {
-                        bytesReceived += buffer.byteLength;
-                        packetBytesReceived = 0;
-                        if (++dataCount === 1000) {
-                            var now = Date.now();
-                            console.log("Total Bytes Received:", bytesReceived);
-                            console.log("Time Spent:", now - then);
-                            console.log("Mbps:", (bytesReceived / (now - then)) * 1000);
-                            return;
-                        }
-                        else if (dataCount < 1000) {
-                            ws.send("send");
-                        }
-                    });
-                    _a.label = 5;
-                case 5:
-                    if (false) {}
-                    FD_ZERO(fdSet);
-                    FD_SET(client_socketId, fdSet);
-                    return [4 /*yield*/, onSelect(client_select, client_socketId, fdSet)];
-                case 6:
-                    _a.sent();
-                    if (FD_ISSET(client_socketId, fdSet)) {
-                        bytesRead = recv(client_socketId, buf, 4096, 0);
-                        bytesReadOffset = 0;
-                        packetBytesReceived += bytesRead;
-                        // denoting pipe is ready to be read.
-                        pipe.ondata();
-                    }
-                    return [3 /*break*/, 5];
-                case 7: return [2 /*return*/];
-            }
-        });
-    });
-}
-run();
+/* harmony default export */ var ws = __webpack_exports__["default"] = (ws_WS);
 
 
 /***/ })
-
-/******/ });
+/******/ ]);

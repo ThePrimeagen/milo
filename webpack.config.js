@@ -13,20 +13,18 @@ function getCopyPaths() {
     }];
 }
 
-module.exports = {
-    target: 'node',
-    entry: {
-        websockets: './src/http/ws/index.ts',
-        wsServer: './src/ws-server/server.ts',
-        clientHTTP: './src/ws-server/client.ts',
-        clientHTTPReal: './src/ws-server/client-real.ts',
-    },
+const target = process.env.NRDP && undefined || 'node';
+
+
+const config = {
+
     plugins: [
         new CopyPlugin(getCopyPaths()),
         new webpack.DefinePlugin({
             'process.env.NRDP': process.env.NRDP && true || false,
         })
     ],
+
     module: {
         rules: [{
             test: /.tsx|ts$/,
@@ -57,3 +55,24 @@ module.exports = {
     }
 };
 
+module.exports = [
+    Object.assign({}, config, {
+        target: 'node',
+        entry: {
+            wsServer: './src/ws-server/server.ts',
+            clientHTTP: './src/ws-server/client.ts',
+            clientHTTPReal: './src/ws-server/client-real.ts',
+        },
+    }),
+
+    Object.assign({}, config, {
+        target: 'node',
+        entry: './src/http/ws/index.ts',
+        output: {
+            path: path.resolve(__dirname, "dist"),
+            filename: '[name].bundle.js',
+            library: 'ws',
+            libraryTarget: 'commonjs',
+        }
+    }),
+];
