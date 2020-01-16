@@ -41,10 +41,14 @@ export interface Platform
 {
     sha1(input: string): Uint8Array;
     // base64 encode
-    btoa(buffer: Uint8Array | ArrayBuffer | string): string;
+    btoa(buffer: Uint8Array|ArrayBuffer|string, returnUint8Array: true): Uint8Array;
+    btoa(buffer: Uint8Array|ArrayBuffer|string, returnUint8Array: false|undefined): string;
+    btoa(buffer: Uint8Array|ArrayBuffer|string): string;
 
     // base64 decode
-    atob(buffer: Uint8Array | ArrayBuffer | string): string;
+    atob(buffer: Uint8Array|ArrayBuffer|string, returnUint8Array: true): Uint8Array;
+    atob(buffer: Uint8Array|ArrayBuffer|string, returnUint8Array: false|undefined): string;
+    atob(buffer: Uint8Array|ArrayBuffer|string): string;
 
     // string to uint8array
     atoutf8(input: Uint8Array | ArrayBuffer | string): Uint8Array;

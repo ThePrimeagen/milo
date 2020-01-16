@@ -18,7 +18,6 @@ interface nrdp {
     atob(buffer: Uint8Array|ArrayBuffer|string, returnUint8Array: true): Uint8Array;
     atob(buffer: Uint8Array|ArrayBuffer|string, returnUint8Array: false|undefined): string;
     atob(buffer: Uint8Array|ArrayBuffer|string): string;
-    random(len: number): Uint8Array
 }
 
 // @ts-ignore
