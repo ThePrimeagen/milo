@@ -5,10 +5,7 @@ import nrdp_platform from "./nrdp_platform";
 
 
 class NrdpPlatform implements Platform {
-    sha1(input: string): Uint8Array
-    {
-        return nrdp.hash("sha1", input);
-    }
+    sha1(input: string): Uint8Array { return nrdp.hash("sha1", input); }
 
     log(...args: any[]): void { nrdp.l(...args); }
     assert(cond: any, message?: string) { nrdp.assert(cond, message); }
