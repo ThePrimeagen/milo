@@ -1,5 +1,6 @@
 // rollup.config.js
 
+import replace from '@rollup/plugin-replace';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 
@@ -11,5 +12,9 @@ export default {
         name: "milo-sockets",
         exports: "named"
     },
-    plugins: [resolve(), commonjs()]
+    plugins: [
+        replace({ 'process.env.NRDP': true }),
+        resolve(),
+        commonjs()
+    ]
 };
