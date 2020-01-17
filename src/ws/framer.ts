@@ -1,7 +1,9 @@
+import Platform from '../Platform';
+
 import {
     BufferPool,
     parse64BigInt,
-} from '../buffer';
+} from './buffer';
 
 import {
     NetworkPipe
@@ -10,27 +12,11 @@ import {
 import maskFn from './mask';
 
 import {
-    uint8ArraySlice,
-    uint8ArrayConcat
-} from "../../utils";
-
-import {
-    Socket,
-} from '../../types';
-
-import {
-    SlowParsedHttp,
-    HeaderKey,
-} from '../types';
-
-import {
     Opcodes
 } from './types';
 
 // @ts-ignore
 import {
-    htonl,
-    ntohl,
     htons,
     ntohs,
 // @ts-ignore
@@ -278,7 +264,7 @@ export default class WSFramer {
 
                     headerBuf.set(state.payload);
                     headerBuf.set(
-                        packet.subarray(0, headerBuf.length - payloadByteLength),
+                        packet.subarray(offset, offset + headerBuf.length - payloadByteLength),
                         payloadByteLength);
 
                     nextPtrOffset =
@@ -295,13 +281,17 @@ export default class WSFramer {
                 if (nextPtrOffset === false) {
 
                     state.state = State.WaitingForCompleteHeader;
-                    state.payload = uint8ArraySlice(packet, ptr, endIdx);
+
+                    // TODO: Copies in the whole header as its an incomplete
+                    // header so we don't know the length.
+                    state.payload = packet.slice(ptr, endIdx);
+
                     break;
                 }
 
                 else {
                     // @ts-ignore
-                    ptr = nextPtrOffset;
+                    ptr = offset + nextPtrOffset;
                 }
             }
 
@@ -473,7 +463,7 @@ export default class WSFramer {
             state.payloads.push(state.payload);
 
             // buf = Buffer.concat(state.payloads);
-            buf = uint8ArrayConcat.apply(undefined, state.payloads);
+            buf = Platform.concatBuffers.apply(undefined, state.payloads);
             state.payloads = null;
         }
 

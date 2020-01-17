@@ -9,7 +9,7 @@ const requests = new Map();
 export function _load(data: RequestData, callback: Function): number
 {
     // @ts-ignore
-    nrdp.l("got here", Platform, Object.keys(Platform));
+    Platform.log("got here", Platform, Object.keys(Platform));
     Platform.log("got here", data);
     const req = new Request(data);
     req.send().then(response => {

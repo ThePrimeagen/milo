@@ -2,7 +2,7 @@ import N from "./ScriptSocket";
 import nrdp from "./nrdp";
 import { NetworkPipe, OnData, OnClose, OnError, DnsResult } from "../types";
 
-class NrdpTCPNetworkPipe implements NetworkPipe
+export default class NrdpTCPNetworkPipe implements NetworkPipe
 {
     private sock: number;
     private writeBuffers: (Uint8Array|ArrayBuffer|string)[] = [];
@@ -124,6 +124,8 @@ class NrdpTCPNetworkPipe implements NetworkPipe
     }
 };
 
+// TODO: We only allow ipv4
+// we should create an opts
 export default function connectTCPNetworkPipe(hostOrIpAddress: string, port: number): Promise<NetworkPipe> {
     return new Promise<NetworkPipe>((resolve, reject) => {
         new Promise<N.Sockaddr>(innerResolve => {

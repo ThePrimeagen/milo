@@ -1,10 +1,11 @@
 import { Platform } from "./types";
 
-let exportObject;
+let exportObject: Platform;
+
 if (process.env.NRDP) {
     exportObject = require("./nrdp/NrdpPlatform").default;
 } else {
-    exportObject = {} as Platform;
+    exportObject = require("./node/NodePlatform").default;
 }
 
-export default exportObject as Platform;
+export default exportObject;

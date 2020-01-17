@@ -1,15 +1,27 @@
+import Platform from "../../Platform";
 import { NetworkPipe } from "../../types";
-import nrdp, { utils as crossSystemUtils } from "../../../nrdp";
 import WSFramer, {constructFrameHeader} from '../framer';
 import {Opcodes} from '../types';
 import maskFn from '../mask';
 import * as NBO from 'network-byte-order';
-import { uint8ArraySlice, uint8ArrayWriteString } from "../../../utils";
 
 // @ts-ignore
 const pipe = {
     write: jest.fn()
 } as NetworkPipe;
+
+function copyInto(from: Uint8Array | string, to: Uint8Array, targetStart: number, sourceIdx?: number, sourceEndIdx?: number): number {
+
+    // Once again, this is another one of those things that ts keeps breaking.
+    // It is weird.  Buffer.from(string) = Buffer
+    // Buffer.from(ArrayBuffer) = Buffer
+    // Buffer.from(string | ArrayBuffer) = bad
+    // @ts-ignore
+    const fromBuf = Buffer.from(typeof from === 'string' ? from : from.buffer);
+    const toBuf = Buffer.from(to.buffer);
+
+    return fromBuf.copy(toBuf, targetStart, sourceIdx, sourceEndIdx);
+}
 
 /*
       0                   1                   2                   3
@@ -41,18 +53,20 @@ maskView.setUint32(0, mask, true);
 const countObj = {"count": 0};
 const countObj2 = {"count": 2};
 
-const countBuf = nrdp.atoutf8(JSON.stringify(countObj));
-const countBuf2 = nrdp.atoutf8(JSON.stringify(countObj2));
+const countBuf = Platform.atoutf8(JSON.stringify(countObj));
+const countBuf2 = Platform.atoutf8(JSON.stringify(countObj2));
 const countLen = countBuf.byteLength;
 const countLen2 = countBuf2.byteLength;
 
-const maskedCountBuf = nrdp.atoutf8(JSON.stringify(countObj));
-const maskedCountBuf2 = nrdp.atoutf8(JSON.stringify(countObj2));
-maskFn(maskedCountBuf, 0, countLen, maskBuf);
-maskFn(maskedCountBuf2, 0, countLen2, maskBuf);
+const maskedCountBuf = Platform.atoutf8(JSON.stringify(countObj));
+const maskedCountBuf2 = Platform.atoutf8(JSON.stringify(countObj2));
+maskFn(maskedCountBuf, 0, countLen, maskBuf); maskFn(maskedCountBuf2, 0, countLen2, maskBuf);
+
+function getBufferFromSend(sendMock: any, i: number): Uint8Array {
+    return sendMock.mock.calls[i][0];
+}
 
 describe("WS", function() {
-
     beforeEach(function() {
         // @ts-ignore
         pipe.write.mockClear();
@@ -64,13 +78,13 @@ describe("WS", function() {
         const ptr = constructFrameHeader(
             buf, true, Opcodes.TextFrame, countLen, maskBuf);
 
-        crossSystemUtils.copyUint8Array(countBuf, buf, ptr);
+        buf.set(countBuf, ptr);
         maskFn(buf, 6, countLen, maskBuf);
 
         const ws = new WSFramer(pipe);
 
         ws.onFrame((contents: Uint8Array) => {
-            expect(JSON.parse(nrdp.utf8toa(contents))).toEqual(countObj);
+            expect(JSON.parse(Platform.utf8toa(contents))).toEqual(countObj);
         });
 
         ws.processStreamData(buf, 0, ptr + countLen);
@@ -80,7 +94,7 @@ describe("WS", function() {
         // TODO: I think buf gets mutated with the mask... I think that is ok... maybe?
         const buf = new Uint8Array(1000);
 
-        crossSystemUtils.copyUint8Array(countBuf, buf, 0);
+        buf.set(countBuf, 0);
 
         const ws = new WSFramer(pipe);
 
@@ -94,10 +108,6 @@ describe("WS", function() {
 
         // expect(send).toHaveBeenNthCalledWith(1, 3, new Uint8Array(ArrayBuffer.concat(hBuf, buf.buffer.slice(0, countLen)));
     });
-
-    function getBufferFromSend(sendMock: any, i: number): Uint8Array {
-        return sendMock.mock.calls[i][0];
-    }
 
     it("should send a large packet through send.", function() {
         // TODO: I think buf gets mutated with the mask... I think that is ok... maybe?
@@ -133,13 +143,13 @@ describe("WS", function() {
         maskFn(b2, 0, 2, maskBuf);
 
         const sendBuf0: Uint8Array = getBufferFromSend(pipe.write, 0);
-        expect(uint8ArraySlice(sendBuf0, 6)).toEqual(b0);
+        expect(sendBuf0.subarray(6)).toEqual(b0);
 
         const sendBuf1: Uint8Array = getBufferFromSend(pipe.write, 1);
-        expect(uint8ArraySlice(sendBuf1, 6)).toEqual(b1);
+        expect(sendBuf1.subarray(6)).toEqual(b1);
 
         const sendBuf2: Uint8Array = getBufferFromSend(pipe.write, 2);
-        expect(uint8ArraySlice(sendBuf2, 6)).toEqual(b2);
+        expect(sendBuf2.subarray(6)).toEqual(b2);
     });
 
     it("should parse the two frames from a single payload", function() {
@@ -149,14 +159,13 @@ describe("WS", function() {
         let bufPtr = constructFrameHeader(
             buf, true, Opcodes.BinaryFrame, countLen, maskBuf);
 
-        crossSystemUtils.copyUint8Array(countBuf, buf, bufPtr);
-        bufPtr += crossSystemUtils.copyUint8Array(countBuf, buf, bufPtr);
+        bufPtr += copyInto(countBuf, buf, bufPtr);
         maskFn(buf, bufPtr - countLen, countLen, maskBuf);
 
         bufPtr += constructFrameHeader(
-            uint8ArraySlice(buf, bufPtr), true, Opcodes.BinaryFrame, countLen, maskBuf);
+            buf.subarray(bufPtr), true, Opcodes.BinaryFrame, countLen, maskBuf);
 
-        bufPtr += crossSystemUtils.copyUint8Array(countBuf2, buf, bufPtr);
+        bufPtr += copyInto(countBuf2, buf, bufPtr);
         maskFn(buf, bufPtr - countLen2, countLen2, maskBuf);
 
         const ws = new WSFramer(pipe);
@@ -167,7 +176,7 @@ describe("WS", function() {
             if (i === 1) {
                 obj = countObj2;
             }
-            expect(JSON.parse(nrdp.utf8toa(contents))).toEqual(obj);
+            expect(JSON.parse(Platform.utf8toa(contents))).toEqual(obj);
 
             i++;
         });
@@ -188,14 +197,14 @@ describe("WS", function() {
         let ptrH = constructFrameHeader(
             bufHello, false, Opcodes.BinaryFrame, part1Len, maskBuf);
 
-        uint8ArrayWriteString(uint8ArraySlice(bufHello, ptrH), "Hello");
+        copyInto("Hello", bufHello, ptrH);
         maskFn(bufHello, ptrH, part1Len, maskBuf);
         ptrH += part1Len;
 
         let ptrW = constructFrameHeader(
             bufWorld, true, Opcodes.ContinuationFrame, part2Len, maskBuf);
 
-        uint8ArrayWriteString(uint8ArraySlice(bufWorld, ptrW), " World");
+        copyInto(" World", bufWorld, ptrW);
         maskFn(bufWorld, ptrW, part2Len, maskBuf);
         ptrW += part2Len;
 
@@ -203,7 +212,7 @@ describe("WS", function() {
 
         let i = 0;
         ws.onFrame((contents) => {
-            expect(nrdp.utf8toa(contents)).toEqual("Hello World");
+            expect(Platform.utf8toa(contents)).toEqual("Hello World");
             done();
         });
 
@@ -211,25 +220,25 @@ describe("WS", function() {
         ws.processStreamData(bufWorld, 0, ptrW);
     });
 
+
     it("should parse the one frame from 2 payload", function(done) {
         // TODO: I think buf gets mutated with the mask... I think that is ok... maybe?
         const buf = new Uint8Array(1000);
         let bufPtr = constructFrameHeader(
             buf, true, Opcodes.BinaryFrame, countLen, maskBuf);
 
-        bufPtr += crossSystemUtils.copyUint8Array(countBuf, buf, bufPtr);
+        bufPtr += copyInto(countBuf, buf, bufPtr);
         maskFn(buf, bufPtr - countLen, countLen, maskBuf);
         const ws = new WSFramer(pipe);
 
         ws.onFrame((contents) => {
-            expect(JSON.parse(nrdp.utf8toa(contents))).toEqual(countObj);
+            expect(JSON.parse(Platform.utf8toa(contents))).toEqual(countObj);
             done();
         });
 
         const breakPoint = 10;
-        ws.processStreamData(uint8ArraySlice(buf, 0, breakPoint), 0, breakPoint);
-        ws.processStreamData(
-            uint8ArraySlice(buf, breakPoint, bufPtr), 0, bufPtr - breakPoint);
+        ws.processStreamData(buf, 0, breakPoint);
+        ws.processStreamData(buf, breakPoint, bufPtr);
     });
 
     it("should parse the one frame from 2 payload, header broken", function(done) {
@@ -238,20 +247,20 @@ describe("WS", function() {
         let bufPtr = constructFrameHeader(
             buf, true, Opcodes.BinaryFrame, countLen, maskBuf);
 
-        bufPtr += crossSystemUtils.copyUint8Array(countBuf, buf, bufPtr);
+        bufPtr += copyInto(countBuf, buf, bufPtr);
         maskFn(buf, bufPtr - countLen, countLen, maskBuf);
 
         const ws = new WSFramer(pipe);
 
         ws.onFrame((contents) => {
-            expect(JSON.parse(nrdp.utf8toa(contents))).toEqual(countObj);
+            debugger;
+            expect(JSON.parse(Platform.utf8toa(contents))).toEqual(countObj);
             done();
         });
 
         const breakPoint = 2;
-        ws.processStreamData(uint8ArraySlice(buf, 0, breakPoint), 0, breakPoint);
-        ws.processStreamData(
-            uint8ArraySlice(buf, breakPoint, bufPtr), 0, bufPtr - breakPoint);
+        ws.processStreamData(buf, 0, breakPoint);
+        ws.processStreamData(buf, breakPoint, bufPtr);
     });
 
     it("should allow for interleaved control frames, close", function() {
@@ -264,7 +273,7 @@ describe("WS", function() {
         let ptrH = constructFrameHeader(
             bufHello, false, Opcodes.BinaryFrame, part1Len, maskBuf);
 
-        uint8ArrayWriteString(uint8ArraySlice(bufHello, ptrH), "Hello");
+        copyInto("Hello", bufHello, ptrH);
         maskFn(bufHello, ptrH, part1Len, maskBuf);
         ptrH += part1Len;
 
@@ -290,9 +299,4 @@ describe("WS", function() {
 
 
 });
-
-
-
-
-
 

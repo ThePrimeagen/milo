@@ -1,5 +1,5 @@
 import WSFramer, {WSState} from './framer';
-import nrdp from "../../nrdp";
+import Platform from "../Platform";
 import {
     NetworkPipe
 } from '../types';
@@ -8,10 +8,6 @@ import {
     Opcodes,
     WSOptions
 } from './types';
-
-import {
-    Socket
-} from '../../types';
 
 type CloseCB = (buf: Uint8Array) => void;
 
@@ -89,12 +85,12 @@ export default class WS {
 
         else if (typeof obj === 'object' || obj === null) {
             const str = JSON.stringify(obj);
-            bufOut = nrdp.atoutf8(str);
+            bufOut = Platform.atoutf8(str);
             opcode = Opcodes.TextFrame;
         }
 
         else {
-            bufOut = nrdp.atoutf8(obj);
+            bufOut = Platform.atoutf8(obj);
             opcode = Opcodes.TextFrame;
         }
 
