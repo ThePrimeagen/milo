@@ -2,7 +2,7 @@ import N from "./ScriptSocket";
 import nrdp from "./nrdp";
 import { NetworkPipe, OnData, OnClose, OnError, DnsResult } from "../types";
 
-export default class NrdpTCPNetworkPipe implements NetworkPipe
+class NrdpTCPNetworkPipe implements NetworkPipe
 {
     private sock: number;
     private writeBuffers: (Uint8Array|ArrayBuffer|string)[] = [];

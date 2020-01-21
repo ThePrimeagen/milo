@@ -11,21 +11,53 @@ declare namespace nrdsocket {
         clear(): void;
     }
 
-    interface MsgHdr {
+    class BIO
+    {
+        flags: number;
+
+        ctrl: (cmd: number, num: number, ptr: undefined|DataPointer) => number;
+
+        read: (bufferSize: number) => number; // this is called when the buffer wants to read, e.g. you need to call writeData in the callback
+        write: (bufferSize: number) => number; // this is called when the buffer wants to write, e.g. you need to call readData in the callback
+
+        readData(offset:number, buffer: ArrayBuffer|Uint8Array, buffeOffset: number, bufferLength: number): void; // this reads from the bio
+        writeData(offset:number, buffer: ArrayBuffer|Uint8Array|string, buffeOffset: number, bufferLength: number): void; // this writes to the bio
+
+        eq(other: BIO|Struct): boolean;
+    }
+
+    interface Struct
+    {
+        readonly null: boolean;
+        free: string;
+        release(): void;
+        eq(other: BIO|Struct): boolean;
+    }
+
+    interface MsgHdr
+    {
         name?: ConstBuffer;
         iov?: [ Buffer ] | Buffer;
         control?: Buffer;
         flags?: number;
     }
 
-    interface ConstMsgHdr {
+    interface ConstMsgHdr
+    {
         name?: ConstBuffer;
         iov?: [ ConstBuffer ] | ConstBuffer;
         control?: ConstBuffer;
         flags?: number;
     }
 
-    class DataPointer {
+    interface BindFunctionOptions
+    {
+        no_trace?: boolean;
+        allow_null_struct?: boolean;
+    }
+
+    class DataPointer
+    {
         constructor(arg?: DataPointer);
 
         readonly valid: boolean;
@@ -37,7 +69,8 @@ declare namespace nrdsocket {
         clear(): void;
     }
 
-    class ConstDataPointer {
+    class ConstDataPointer
+    {
         constructor(arg?: ConstDataPointer | DataPointer);
 
         readonly valid: boolean;
@@ -48,7 +81,8 @@ declare namespace nrdsocket {
         clear(): void;
     }
 
-    class UnorderedMap {
+    class UnorderedMap
+    {
         constructor(arg?: [ [] ] | UnorderedMap);
         clone(): UnorderedMap;
         has(key: any): boolean;
@@ -383,7 +417,10 @@ declare namespace nrdsocket {
     const SO_TYPE: number;
     const SO_WIFI_STATUS: number;
 
+
     // functions
+    function bindFunction(signature: string, options?: BindFunctionOptions): Function;
+    function unbindFunction(signature: string): boolean;
     function socket(domain: int, type: int, protocol: int): number;
     function close(fd: int): number;
     function bind(sockfd: int, addr: Sockaddr): number;
