@@ -26,7 +26,7 @@ interface nrdp {
     }
 
     exit(exitCode: number): void;
-
+    stacktrace(): string;
     now(): number;
     trustStoreHash: string;
     trustStore: ArrayBuffer;

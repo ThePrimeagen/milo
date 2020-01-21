@@ -177,6 +177,7 @@ export class NrdpPlatform implements Platform {
     atoutf8 = nrdp.atoutf8;
     utf8toa = nrdp.utf8toa;
     randomBytes = nrdp_platform.random;
+    stacktrace = nrdp.stacktrace;
 
     createTCPNetworkPipe(options: CreateTCPNetworkPipeOptions): Promise<NetworkPipe> {
         return createNrdpTCPNetworkPipe(options, this);

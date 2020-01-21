@@ -305,7 +305,7 @@ Accept: */*\r\n`;
     }
 
     private _onNetworkPipeClose() {
-        Platform.log("got closed");
+        Platform.log("got closed", Platform.stacktrace());
         this.transition(RequestState.Finished);
     }
 

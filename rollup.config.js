@@ -5,7 +5,7 @@ import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 
 export default {
-    input: 'build/milo.js',
+    input: 'build/src/milo.js',
     output: {
         dir: 'dist/',
         format: 'umd',

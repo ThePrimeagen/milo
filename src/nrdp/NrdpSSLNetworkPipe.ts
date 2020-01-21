@@ -2,6 +2,7 @@ import { NetworkPipe, OnData, OnClose, OnError, DnsResult, Platform, CreateSSLNe
 import { NrdpPlatform } from "./NrdpPlatform";
 import N from "./ScriptSocket";
 import nrdp from "./nrdp";
+import { assert } from "../utils";
 
 function set_mem_eof_return(platform: NrdpPlatform, bio: N.Struct) {
     platform.BIO_ctrl(bio, platform.BIO_C_SET_BUF_MEM_EOF_RETURN, -1, undefined);
@@ -16,13 +17,19 @@ class NrdpSSLNetworkPipe implements NetworkPipe
     private outputBio: N.Struct;
     private pipe: NetworkPipe;
     private platform: NrdpPlatform
-    private connected: boolean = false;
+    private connected: boolean;
+    private writeBuffers: (Uint8Array|ArrayBuffer|string)[];
+    private writeBufferOffsets: number[];
+    private writeBufferLengths: number[];
 
     constructor(options: CreateSSLNetworkPipeOptions, platform: Platform)
     {
+        this.connected = false;
         this.platform = <NrdpPlatform>(platform);
-        platform.log("shit");
-        platform.log("shit", Object.keys(platform));
+        this.writeBuffers = [];
+        this.writeBufferOffsets = [];
+        this.writeBufferLengths = [];
+
         this.pipe = options.pipe;
         const meth = this.platform.TLS_client_method();
         this.ssl_ctx = this.platform.SSL_CTX_new(meth);
@@ -54,69 +61,67 @@ class NrdpSSLNetworkPipe implements NetworkPipe
             // // this.platform.BIO_set_read_buffer_size(this.bio, 16384);
             // 	this.platform.log("ball", this.platform.BIO_int_ctrl(this.bio, this.platform.BIO_C_SET_BUFF_SIZE, 16384, 0));
 
-            // this.platform.SSL_set_bio(this.ssl, this.inputBio, this.inputBio);
-        // } else if (0) {
-            // const that = this;
-            // this.bio = new N.BIO;
-            // this.bio.onread = function(this: N.BIO, len: number) {
-            //     that.platform.log("got called", len);
-            //      // ### GOTTA write the
-            //     return -1;
-            // };
-            // this.bio.onwrite = function(this: N.BIO, len: number) {
-            //     // 	this.platform.log("fucking here", len, this, this.bio, this === this.bio);
-            //     var ab = new ArrayBuffer(len);
-            //     that.platform.log("fucking here2", len);
-            //     // how to get
-            //     this.readData(0, ab, 0, len);
-            //     that.platform.log("fucking here3", len, ab);
-            //     // addSocketWriteBytes(ab);
-            //     that.platform.log("fucking here4", len);
-            //     // 	this.platform.log("got called write", len, ab, socketWriteBuf);
-            //     return len;
-            // };
+        const memMethod = this.platform.BIO_s_mem();
+        this.inputBio = this.platform.BIO_new(memMethod);
+        set_mem_eof_return(this.platform, this.inputBio);
 
-            // this.bio.onctrl = function(this: N.BIO, cmd: number, num: number, ptr: N.DataPointer|undefined) {
-            //     that.platform.log("fucking ctrl", cmd, num, ptr);
-            //     return 1;
-            // };
+        this.inputBio.free = "BIO_free";
 
-            // this.platform.SSL_set_bio(this.ssl, this.bio, this.bio);
-        // } else {
-            const memMethod = this.platform.BIO_s_mem();
-            this.inputBio = this.platform.BIO_new(memMethod);
-            set_mem_eof_return(this.platform, this.inputBio);
+        this.outputBio = this.platform.BIO_new(memMethod);
+        set_mem_eof_return(this.platform, this.outputBio);
+        this.outputBio.free = "BIO_free";
+        this.pipe.ondata = () => {
+            this.platform.log("FAEN");
+            const read = this.pipe.read(this.platform.scratch, 0, this.platform.scratch.byteLength);
+            if (!read) {
+                assert(this.pipe.closed, "Should be closed already");
+                return;
+            }
+            this.platform.log("got data", read);
+            this.platform.assert(read > 0, "This should be > 0");
+            nrdp.l("wrote", read, "bytes to inputBio");
+            this.platform.BIO_write(this.inputBio, this.platform.scratch, read);
+            if (!this.connected) {
+                this._connect();
+            } else {
+                this._readFromBIO();
+            }
+        };
+        this.pipe.onclose = () => {
+            this.platform.log("got close", this.platform.stacktrace());
+        };
+        this.pipe.onerror = (code: number, message?: string) => {
+            this.platform.log("got error", code, message || "");
+        };
 
-            this.inputBio.free = "BIO_free";
-
-            this.outputBio = this.platform.BIO_new(memMethod);
-            set_mem_eof_return(this.platform, this.outputBio);
-            this.outputBio.free = "BIO_free";
-            this.pipe.ondata = () => {
-                this.platform.log("got data");
-                const read = this.pipe.read(this.platform.scratch, 0, this.platform.scratch.byteLength);
-                this.platform.assert(read > 0, "This should be > 0");
-                nrdp.l("wrote", read, "bytes to inputBio");
-                this.platform.BIO_write(this.inputBio, this.platform.scratch, read);
-                if (!this.connected) {
-                    this.connect();
-                }
-            };
-            this.pipe.onclose = () => {
-                this.platform.log("got close");
-            };
-            this.pipe.onerror = (code: number, message?: string) => {
-                this.platform.log("got error", code, message || "");
-            };
-
-            this.platform.SSL_set_bio(this.ssl, this.inputBio, this.outputBio);
-        // }
-        this.connect();
+        this.platform.SSL_set_bio(this.ssl, this.inputBio, this.outputBio);
+        this._connect();
     }
+
+    get closed() { return this.pipe.closed; }
 
     write(buf: Uint8Array | ArrayBuffer | string, offset?: number, length?: number): void
     {
-        this.writeToNetworkPipe();
+        if (typeof buf === 'string') {
+            length = buf.length;
+        } else if (length === undefined) {
+            length = buf.byteLength;
+        }
+        offset = offset || 0;
+
+        if (!length)
+            throw new Error("0 length write");
+
+        if (!this.connected) {
+            throw new Error("SSLNetworkPipe is not connected");
+        }
+        if (this.writeBuffers.length) {
+            this.writeBuffers.push(buf);
+            this.writeBufferOffsets.push(offset || 0);
+            this.writeBufferLengths.push(offset || 0);
+        } else {
+
+        }
     }
 
     read(buf: Uint8Array | ArrayBuffer, offset: number, length: number): number
@@ -129,17 +134,16 @@ class NrdpSSLNetworkPipe implements NetworkPipe
 
     }
 
-    private writeToNetworkPipe()
+    private _readFromBIO()
     {
-
 
     }
 
-    private connect()
+    private _connect()
     {
         let ret = this.platform.SSL_connect(this.ssl);
         this.platform.log("CALLED CONNECT", ret);
-        if (ret < 0) {
+        if (ret <= 0) {
             this.platform.log("GOT ERROR FROM SSL_CONNECT", this.platform.SSL_get_error(this.ssl, ret),
                               this.platform.ERR_error_string(this.platform.SSL_get_error(this.ssl, ret)));
             if (this.platform.SSL_get_error(this.ssl, ret) == this.platform.SSL_ERROR_WANT_READ) {
@@ -156,10 +160,11 @@ class NrdpSSLNetworkPipe implements NetworkPipe
                 // N.setFD(sock, N.READ, onConnected.bind(this, host));
             } else {
                 this.platform.log("BIG FAILURE", this.platform.SSL_get_error(this.ssl, ret), N.errno);
-                // this.platform.quit(1);
+                this.platform.quit(1);
             }
         } else {
-            this.platform.assert(ret === 0, "This should be 0");
+            this.platform.log("sheeeet", ret);
+            this.platform.assert(ret === 1, "This should be 1");
             this.platform.log("we're connected");
             this.connected = true;
         }
@@ -174,7 +179,6 @@ class NrdpSSLNetworkPipe implements NetworkPipe
 export default function connectSSLNetworkPipe(options: CreateSSLNetworkPipeOptions, platform: Platform): Promise<NetworkPipe> {
     return new Promise<NetworkPipe>((resolve, reject) => {
         const sslPipe = new NrdpSSLNetworkPipe(options, platform);
-
 
     });
 };

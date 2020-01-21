@@ -43,6 +43,8 @@ export interface NetworkPipe
 
     close(): void;
 
+    readonly closed: boolean;
+
     ondata?: OnData;
     onclose?: OnClose;
     onerror?: OnError;
@@ -68,6 +70,8 @@ export interface Platform
     utf8toa(input: Uint8Array | ArrayBuffer | string, offset?: number, length?: number): string;
 
     randomBytes(len: number): Uint8Array
+
+    stacktrace(): string;
 
     assert(cond: any, message?: string): void;
 

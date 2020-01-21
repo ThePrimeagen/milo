@@ -4,17 +4,23 @@ import { NetworkPipe, OnData, OnClose, OnError, DnsResult, CreateTCPNetworkPipeO
 
 export class NrdpTCPNetworkPipe implements NetworkPipe {
     private sock: number;
-    private writeBuffers: (Uint8Array|ArrayBuffer|string)[] = [];
-    private writeBufferOffsets: number[] = [];
-    private writeBufferLengths: number[] = [];
-    private selectMode: number = 0;
+    private writeBuffers: (Uint8Array|ArrayBuffer|string)[];
+    private writeBufferOffsets: number[];
+    private writeBufferLengths: number[];
+    private selectMode: number;
 
     constructor(socket: number)
     {
         this.sock = socket;
+        this.writeBuffers = [];
+        this.writeBufferOffsets = [];
+        this.writeBufferLengths = [];
+        this.selectMode = 0;
     }
 
     get fd() { return this.sock; }
+
+    get closed() { return this.sock === -1; }
 
     write(buf: Uint8Array | ArrayBuffer | string, offset?: number, length?: number): void
     {
@@ -33,7 +39,7 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
         this.writeBuffers.push(buf);
         this.writeBufferOffsets.push(offset);
         this.writeBufferLengths.push(length);
-        if (this.writeBuffers.length == 1) {
+        if (this.writeBuffers.length == 1) { // don't really need these arrays when writebuffers is empty
             this._write();
         } else {
             nrdp.assert(this.selectMode == N.READWRITE);

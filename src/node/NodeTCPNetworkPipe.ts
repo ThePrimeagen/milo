@@ -37,6 +37,9 @@ class NodeTCPNetworkPipe implements NetworkPipe {
     public onclose?: OnClose;
     public onerror?: OnError;
 
+    // FIXME
+    public readonly closed: boolean = false;
+
     public connection: Promise<NodeTCPNetworkPipe>;
 
     constructor(host: string, port: number, onConnect?: () => void) {
