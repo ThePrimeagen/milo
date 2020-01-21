@@ -2,6 +2,7 @@ import { NetworkPipe, OnData, OnClose, OnError, DnsResult } from "../types";
 import { NrdpPlatform } from "./NrdpPlatform";
 import N from "./ScriptSocket";
 import nrdp from "./nrdp";
+import Platform from "../Platform";
 
 class NrdpSSLNetworkPipe implements NetworkPipe
 {
@@ -11,10 +12,10 @@ class NrdpSSLNetworkPipe implements NetworkPipe
     private pipe: NetworkPipe;
     private platform: NrdpPlatform
 
-    constructor(pipe: NetworkPipe, platform: NrdpPlatform)
+    constructor(pipe: NetworkPipe)
     {
+        const platform: NrdpPlatform = <NrdpPlatform>(Platform);
         this.pipe = pipe;
-        this.platform = platform;
         const meth = platform.TLS_client_method();
         this.ssl_ctx = platform.SSL_CTX_new(meth);
         this.ssl_ctx.free = "SSL_CTX_free";
@@ -94,9 +95,9 @@ class NrdpSSLNetworkPipe implements NetworkPipe
 };
 
 
-export default function connectSSLNetworkPipe(pipe: NetworkPipe, platform: NrdpPlatform): Promise<NetworkPipe> {
+export default function connectSSLNetworkPipe(pipe: NetworkPipe): Promise<NetworkPipe> {
     return new Promise<NetworkPipe>((resolve, reject) => {
-        const sslPipe = new NrdpSSLNetworkPipe(pipe, platform);
+        const sslPipe = new NrdpSSLNetworkPipe(pipe);
 
 
     });

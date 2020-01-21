@@ -114,6 +114,7 @@ export class NrdpPlatform implements Platform {
     randomBytes = nrdp_platform.random;
 
     createTCPNetworkPipe = createNrdpTCPNetworkPipe;
+    createSSLNetworkPipe = createNrdpSSLNetworkPipe;
     concatBuffers(...args: ArrayBuffer[]|Uint8Array[]) {
         // @ts-ignore
         return ArrayBuffer.concat(...args);

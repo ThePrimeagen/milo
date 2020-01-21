@@ -70,3 +70,15 @@ export function createWS(url: string): Promise<WS>
     });
 }
 */
+
+export function _ssl(): void
+{
+    Platform.createTCPNetworkPipe("www.google.com", 443).then((pipe: NetworkPipe) => {
+        Platform.log("got pipe");
+        return Platform.createSSLNetworkPipe(pipe);
+    }).then((sslPipe: NetworkPipe) => {
+        Platform.log("Got ssl pipe");
+    }).catch((err: Error) => {
+        Platform.log("got error", err);
+    });
+}
