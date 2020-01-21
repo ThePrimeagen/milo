@@ -1,3 +1,0 @@
-npx webpack
-npx node-gyp --verbose build
-

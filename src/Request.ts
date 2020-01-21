@@ -129,9 +129,10 @@ export class Request
     private chunks?: ArrayBuffer[] | undefined;
     private bytesReceived: number = 0;
     private connection?: string;
+    private onConnections: Array<() => void>;
 
-    constructor(data: RequestData | string)
-    {
+    constructor(data: RequestData | string) {
+        this.onConnections = [];
         this.requestResponse = new RequestResponse;
         this.id = ++nextId;
         if (typeof data === "string") {
@@ -145,14 +146,23 @@ export class Request
         return this;
     }
 
-    send(): Promise<RequestResponse>
-        {
+    onConnection(cb: () => void) {
+        if (this.state === RequestState.Connected) {
+            cb();
+            return;
+        }
+        this.onConnections.push(cb);
+    }
+
+    send(): Promise<RequestResponse> {
         // Platform.log("send called", this.state, this.url);
         if (this.state != RequestState.Initial) {
             throw new Error("Bad state transition");
         }
 
+        console.log("Request#send");
         const ret = new Promise<RequestResponse>((resolve, reject) => {
+            console.log("Request#send return promise");
             this.resolve = resolve;
             this.reject = reject;
         });
@@ -162,6 +172,7 @@ export class Request
             port = parseInt(this.url.port);
         }
 
+        console.log("Request#send port", port);
         if (!port) {
             switch (this.url.protocol) {
                 case "https:":
@@ -173,15 +184,22 @@ export class Request
                     break;
             }
         }
+        debugger;
+        console.log("Request#send creating TCP pipe");
         Platform.createTCPNetworkPipe(this.url.hostname, port).then((pipe: NetworkPipe) => {
+            console.log("Request#send#createTCPNetworkPipe pipe");
+
             this.networkPipe = pipe;
             this.networkPipe.onclose = this._onNetworkPipeClose.bind(this);
             this.networkPipe.onerror = this._onNetworkPipeError.bind(this);
             this.networkPipe.ondata = this._onNetworkPipeData.bind(this);
+
             this.transition(RequestState.Connected);
         }, (err: Error) => {
+            console.log("Request#send#createTCPNetworkPipe error", err);
             this._httpError(-1, err.toString());
         });
+
         return ret;
     }
 
@@ -206,6 +224,7 @@ Accept: */*\r\n`;
                 str += "\r\n";
 
                 this.networkPipe.write(str);
+
                 break;
             case RequestState.Closed:
                 this.transition(RequestState.Finished);
@@ -280,12 +299,14 @@ Accept: */*\r\n`;
                         this.headerBuffer = recvBuffer.buffer.slice(0, read);
                     }
                     const rnrn = Platform.bufferIndexOf(this.headerBuffer, 0, undefined, "\r\n\r\n");
+                        debugger;
                     if (rnrn != -1 && this._parseHeaders(rnrn)) {
                         this.transition(RequestState.ReceivedHeaders);
                         const remaining = this.headerBuffer.byteLength - (rnrn + 4);
                         if (remaining)
                             this._processResponseData(this.headerBuffer, this.headerBuffer.byteLength - remaining, remaining);
                         this.headerBuffer = undefined;
+                        debugger;
                         if (this.connection == "Upgrade") {
                             this.transition(RequestState.Finished);
                         }
@@ -331,6 +352,11 @@ Accept: */*\r\n`;
         this.requestResponse.headers = [];
 
         for (var i=1; i<split.length; ++i) {
+            // split \r\n\r\n by \r\n causes 2 empty lines.
+            if (split.length === 0) {
+                console.log("IGNORING LINE....");
+                continue;
+            }
             let idx = split[i].indexOf(":");
             if (idx <= 0) {
                 this._httpError(-1, "Bad header " + split[i]);

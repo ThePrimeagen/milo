@@ -20,12 +20,13 @@ export function _load(data: RequestData, callback: Function): number
     return req.id;
 }
 
-export function _wsUpgrade(data: RequestData): Promise<NetworkPipe>
-{
+export function _wsUpgrade(data: RequestData): Promise<NetworkPipe> {
     return new Promise((resolve, reject) => {
         Platform.log("GOT SHIT", data);
-        if (!data.headers)
+        if (!data.headers) {
             data.headers = {};
+        }
+
         const arrayBufferKey = Platform.randomBytes(16);
         const key = Platform.btoa(arrayBufferKey);
         Platform.log("key is", key, arrayBufferKey);
@@ -35,6 +36,7 @@ export function _wsUpgrade(data: RequestData): Promise<NetworkPipe>
         data.headers["Sec-WebSocket-Version"] = "13";
         const req = new Request(data);
         req.send().then(response => {
+            Platform.log("Got response", response);
             if (response.statusCode !== 101)
                 throw new Error("status code");
 
@@ -47,7 +49,7 @@ export function _wsUpgrade(data: RequestData): Promise<NetworkPipe>
             if (shadkey !== upgradeKeyResponse)
                 throw new Error(`Key mismatch expected: ${shadkey} got: ${upgradeKeyResponse}`);
 
-            // Platform.log("successfully upgraded");
+            Platform.log("successfully upgraded");
             resolve(req.networkPipe);
         }).catch(error => {
             Platform.log("Got error", error);

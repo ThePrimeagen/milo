@@ -1,7 +1,8 @@
 import ws from 'ws';
 
+console.log("We are about to server.", 1337);
 const wss = new ws.Server({
-    port: 8080
+    port: 1337
 });
 
 const reallyLargeBuffer = Buffer.alloc(1024 * 1024);
@@ -18,6 +19,7 @@ function getBigAssBufferSlice() {
 }
 
 let payloadHeadersReceived = 0;
+console.log("We are about to connection.");
 wss.on('connection', function(ws) {
     console.log("OHHHH MY WE ARE CONNECTED.");
 
@@ -47,5 +49,7 @@ wss.on('connection', function(ws) {
         }
     });
 });
+
+console.log(Object.keys(wss));
 
 

@@ -16,13 +16,21 @@ function bufferToString(buf: Uint8Array | ArrayBuffer): string {
     return String.fromCharCode.apply(null, new Uint8Array(buf));
 }
 
+function normalizeLength(buf: string | Uint8Array | ArrayBuffer): number {
+    if (typeof buf === 'string') {
+        return buf.length;
+    }
+
+    return buf.byteLength;
+}
+
 class NodePlatform implements Platform {
     constructor() {}
 
     // One down, 40 to go
     sha1(input: string): Uint8Array {
-        const str = sha1(input);
-        return toUint8Array(str);
+        const buf = Buffer.from(sha1(input), 'hex');
+        return buf;
     }
 
     // base64 encode
@@ -82,6 +90,11 @@ class NodePlatform implements Platform {
             buf = input;
         }
 
+        if (offset !== undefined) {
+            const l = length === undefined ? normalizeLength(input) : length;
+            buf = buf.slice(offset, l);
+        }
+
         return String.fromCharCode.apply(null, buf);
     }
 
@@ -106,9 +119,7 @@ class NodePlatform implements Platform {
     }
 
     createTCPNetworkPipe(hostOrIpAddress: string, port: number): Promise<NetworkPipe> {
-        return new Promise((res, rej) => {
-
-        });
+        return createTCPNetworkPipe(hostOrIpAddress, port);
     }
 
     concatBuffers(...args: ArrayBuffer[] | Uint8Array[]): ArrayBuffer {
@@ -129,6 +140,7 @@ class NodePlatform implements Platform {
 
     // "heremybigHHTTP string\r\n"
     bufferIndexOf(haystack: Uint8Array | ArrayBuffer | string, haystackOffset: number, haystackLength: number|undefined, needle: Uint8Array | ArrayBuffer | string, needleOffset?: number, needleLength?: number|undefined): number {
+        haystackLength = haystackLength !== undefined ? haystackLength : normalizeLength(haystack);
 
         const needleStr = typeof needle === 'string' ?
             needle : bufferToString(needle);
@@ -154,6 +166,8 @@ class NodePlatform implements Platform {
     }
 
     bufferLastIndexOf(haystack: Uint8Array | ArrayBuffer | string, haystackOffset: number, haystackLength: number|undefined, needle: Uint8Array | ArrayBuffer | string, needleOffset?: number, needleLength?: number|undefined): number {
+        haystackLength = haystackLength !== undefined ? haystackLength : normalizeLength(haystack);
+
         const needleStr = typeof needle === 'string' ?
             needle : bufferToString(needle);
 

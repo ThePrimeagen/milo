@@ -1,3 +1,7 @@
+export function bufferToUint8Array(buf: Buffer) {
+    return new Uint8Array(
+        buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
+}
 
 export function normalizeBufferLen(buf: string | Uint8Array | ArrayBuffer, offset?: number, length?: number): Buffer {
     return normalizeBuffer(buf, offset, offset + length);
@@ -17,16 +21,17 @@ export function normalizeBuffer(buf: string | Uint8Array | ArrayBuffer, offset?:
     }
      * This works, why wont this one below work.
      */
+
     // @ts-ignore
-    return Buffer.from(buf).slice(offset, endIdx);
+    return Buffer.from(buf).slice(offset, isNaN(endIdx) ? undefined : endIdx);
 };
 
 export function normalizeUint8Array(buf: string | Uint8Array | ArrayBuffer, offset?: number, endIdx?: number): Uint8Array {
-    return new Uint8Array(normalizeBuffer(buf, offset, endIdx).buffer);
+    return bufferToUint8Array(normalizeBuffer(buf, offset, endIdx));
 };
 
 export function normalizeUint8ArrayLen(buf: string | Uint8Array | ArrayBuffer, offset?: number, length?: number): Uint8Array {
-    return new Uint8Array(normalizeBufferLen(buf, offset, length).buffer);
+    return bufferToUint8Array(normalizeBufferLen(buf, offset, length));
 };
 
 function stringToUint8Array(str: string): Uint8Array {

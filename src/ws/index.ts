@@ -21,6 +21,10 @@ const defaultOptions = {
 const readBuffer = new ArrayBuffer(4096);
 const readView = new Uint8Array(readBuffer);
 
+export {
+    WSState
+};
+
 export default class WS {
     private frame: WSFramer;
     private pipe: NetworkPipe;

@@ -22,8 +22,7 @@ enum State {
     Destroyed = "Destroyed",
 };
 
-class NrdpTCPNetworkPipe implements NetworkPipe
-{
+class NrdpTCPNetworkPipe implements NetworkPipe {
     private sock: net.Socket;
     private bufferPool: Buffer[];
     private bufferIdx: number;
@@ -33,46 +32,53 @@ class NrdpTCPNetworkPipe implements NetworkPipe
     public onclose: OnClose;
     public onerror: OnError;
 
+    public connection: Promise<NrdpTCPNetworkPipe>;
+
     constructor(host: string, port: number, onConnect?: () => void) {
         this.bufferIdx = 0;
         this.state = State.Connecting;
+        this.bufferPool = [];
 
-        // it defaults to tcp socket
-        this.sock = net.connect({
-            host,
-            port,
-            onread: {
-                // Reuses a 16KiB Buffer for every read from the socket.
-                buffer: Buffer.alloc(16 * 1024),
-                callback: (nread: number, buf: Buffer): boolean => {
-                    const copiedBuf = Buffer.allocUnsafe(nread);
-                    buf.copy(copiedBuf, 0, 0, nread);
-                    this.bufferPool.push(copiedBuf);
+        this.connection = new Promise((res, rej) => {
+            // it defaults to tcp socket
+            this.sock = net.connect({
+                host,
+                port,
+                onread: {
+                    // Reuses a 16KiB Buffer for every read from the socket.
+                    buffer: Buffer.alloc(16 * 1024),
+                    callback: (nread: number, buf: Buffer): boolean => {
+                        const copiedBuf = Buffer.allocUnsafe(nread);
+                        buf.copy(copiedBuf, 0, 0, nread);
+                        this.bufferPool.push(copiedBuf);
 
-                    if (this.ondata) {
-                        this.ondata();
+                        if (this.ondata) {
+                            this.ondata();
+                        }
+
+                        return true;
                     }
-
-                    return true;
                 }
-            }
-        }, () => {
-            this.state = State.Alive;
-            onConnect();
-        });
+            }, () => {
+                this.state = State.Alive;
+                res(this);
+            });
 
-        this.sock.on('end', () => {
-            this.state = State.Destroyed;
-            if (this.onclose) {
-                this.onclose();
-            }
-        });
+            this.sock.on('end', () => {
+                console.log("tcp sock end");
+                this.state = State.Destroyed;
+                if (this.onclose) {
+                    this.onclose();
+                }
+            });
 
-        this.sock.on('error', function(e) {
-            this.state = State.Destroyed;
-            if (this.onerror) {
-                this.onerror(e);
-            }
+            this.sock.on('error', function(e) {
+                this.state = State.Destroyed;
+                rej(e);
+                if (this.onerror) {
+                    this.onerror(e);
+                }
+            });
         });
     }
 
@@ -84,6 +90,12 @@ class NrdpTCPNetworkPipe implements NetworkPipe
         if (this.state != State.Alive) {
             throw new Error(`Unable to write sockets in current state, ${this.state}`);
         }
+
+        /*
+        if (typeof buf === 'string') {
+            this.sock.write(buf);
+        }
+         */
 
         this.sock.write(normalizeUint8ArrayLen(buf, offset, length));
     }
@@ -134,7 +146,11 @@ class NrdpTCPNetworkPipe implements NetworkPipe
 // TODO: We only allow ipv4
 // we should create an opts
 export default function createTCPNetworkPipe(host: string, port: number): Promise<NetworkPipe> {
+    console.log("Crea,ting TCP Network Pipe");
     return new Promise((res, rej) => {
+        console.log("new Promise Crea,ting TCP Network Pipe");
+        const pipe = new NrdpTCPNetworkPipe(host, port);
+        pipe.connection.then(res).catch(rej);
     });
 };
 
