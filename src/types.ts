@@ -19,9 +19,20 @@ export interface DnsResult
     type: string;
 };
 
+export interface CreateTCPNetworkPipeOptions
+{
+    host: string; // could be an ip literal
+    port: number;
+};
+
+export interface CreateSSLNetworkPipeOptions
+{
+    pipe: NetworkPipe;
+};
+
 export type OnData = () => void;
 export type OnClose = () => void;
-export type OnError = (code: number, message: string) => void;
+export type OnError = (code: number, message?: string) => void;
 
 export interface NetworkPipe
 {
@@ -32,9 +43,9 @@ export interface NetworkPipe
 
     close(): void;
 
-    ondata: OnData;
-    onclose: OnClose;
-    onerror: OnError;
+    ondata?: OnData;
+    onclose?: OnClose;
+    onerror?: OnError;
 };
 
 export interface Platform
@@ -62,8 +73,8 @@ export interface Platform
 
     log(...args: any[]): void;
 
-    createTCPNetworkPipe(hostOrIpAddress: string, port: number): Promise<NetworkPipe>;
-    createSSLNetworkPipe(pipe: NetworkPipe): Promise<NetworkPipe>;
+    createTCPNetworkPipe(options: CreateTCPNetworkPipeOptions): Promise<NetworkPipe>;
+    createSSLNetworkPipe(options: CreateSSLNetworkPipeOptions): Promise<NetworkPipe>;
 
     concatBuffers(...args: ArrayBuffer[]|Uint8Array[]): ArrayBuffer;
 
@@ -75,4 +86,9 @@ export interface Platform
                   ipVersion: IpVersion,
                   timeout: number,
                   callback: (result: DnsResult) => void): void;
+
+    UILanguages: string[];
+    location: string;
+
+    quit(exitCode?: number): void;
 };

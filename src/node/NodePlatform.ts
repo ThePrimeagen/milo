@@ -1,7 +1,7 @@
 import dns from "dns";
 
 import { toUint8Array } from './utils';
-import { DnsResult, IpVersion, Platform, NetworkPipe } from "../types";
+import { DnsResult, IpVersion, Platform, NetworkPipe, CreateTCPNetworkPipeOptions } from "../types";
 import createTCPNetworkPipe from "./NodeTCPNetworkPipe";
 
 import sha1 from "sha1";
@@ -10,9 +10,11 @@ import atob from "atob";
 
 function bufferToString(buf: Uint8Array | ArrayBuffer): string {
     if (buf instanceof Uint8Array) {
+        // @ts-ignore
         return String.fromCharCode.apply(null, buf);
     }
 
+    // @ts-ignore
     return String.fromCharCode.apply(null, new Uint8Array(buf));
 }
 
@@ -79,7 +81,7 @@ class NodePlatform implements Platform {
     // TODO: Assumes Ascii
     utf8toa(input: Uint8Array | ArrayBuffer | string, offset?: number, length?: number): string {
         if (typeof input === 'string') {
-            return input.substr(offset, length);
+            return input.substr(offset || 0, length || 0);
         }
 
         let buf: Uint8Array;
@@ -95,6 +97,7 @@ class NodePlatform implements Platform {
             buf = buf.slice(offset, l);
         }
 
+        // @ts-ignore
         return String.fromCharCode.apply(null, buf);
     }
 
@@ -114,12 +117,12 @@ class NodePlatform implements Platform {
         }
     }
 
-    log(...args: any[]): void {
+    log(...args: any): void {
         console.log.apply(console, args);
     }
 
-    createTCPNetworkPipe(hostOrIpAddress: string, port: number): Promise<NetworkPipe> {
-        return createTCPNetworkPipe(hostOrIpAddress, port);
+    createTCPNetworkPipe(options: CreateTCPNetworkPipeOptions): Promise<NetworkPipe> {
+        return createTCPNetworkPipe(options);
     }
 
     concatBuffers(...args: ArrayBuffer[] | Uint8Array[]): ArrayBuffer {
@@ -141,6 +144,8 @@ class NodePlatform implements Platform {
     // "heremybigHHTTP string\r\n"
     bufferIndexOf(haystack: Uint8Array | ArrayBuffer | string, haystackOffset: number, haystackLength: number|undefined, needle: Uint8Array | ArrayBuffer | string, needleOffset?: number, needleLength?: number|undefined): number {
         haystackLength = haystackLength !== undefined ? haystackLength : normalizeLength(haystack);
+        needleLength = needleLength !== undefined ? needleLength : normalizeLength(needle);
+        needleOffset = needleOffset || 0;
 
         const needleStr = typeof needle === 'string' ?
             needle : bufferToString(needle);
@@ -167,6 +172,8 @@ class NodePlatform implements Platform {
 
     bufferLastIndexOf(haystack: Uint8Array | ArrayBuffer | string, haystackOffset: number, haystackLength: number|undefined, needle: Uint8Array | ArrayBuffer | string, needleOffset?: number, needleLength?: number|undefined): number {
         haystackLength = haystackLength !== undefined ? haystackLength : normalizeLength(haystack);
+        needleLength = needleLength !== undefined ? needleLength : normalizeLength(needle);
+        needleOffset = needleOffset || 0;
 
         const needleStr = typeof needle === 'string' ?
             needle : bufferToString(needle);
@@ -174,7 +181,7 @@ class NodePlatform implements Platform {
         if (typeof haystack === 'string') {
             return haystack.
                 substr(haystackOffset, haystackLength).
-                lastIndexOf(needleStr.substr(needleOffset, needleLength));
+                lastIndexOf(needleStr.substr(needleOffset || 0, needleLength));
         }
 
         const buffer = Buffer.from(haystack).
@@ -197,6 +204,7 @@ class NodePlatform implements Platform {
         }, (err, address, family) => {
             const res = { } as DnsResult;
             if (err) {
+                // @ts-ignore
                 res.errorCode = err.errno;
                 res.error = err.message;
                 return res;

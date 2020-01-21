@@ -7,6 +7,7 @@ interface nrdp {
                    timeout: number,
                    callback: (result: DnsResult) => void): void;
     }
+
     log: {
         error: (msg: string,
                 area?: string,
@@ -15,6 +16,16 @@ interface nrdp {
                 critical?: boolean,
                 sendtoAppboot?: boolean) => void;
     }
+
+    device: {
+        UILanguages: string[];
+    }
+
+    gibbon: {
+        location: string;
+    }
+
+    exit(exitCode: number): void;
 
     now(): number;
     trustStoreHash: string;

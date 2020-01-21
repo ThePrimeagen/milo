@@ -1,6 +1,6 @@
 import N from "./ScriptSocket";
 import nrdp from "./nrdp";
-import { NetworkPipe, OnData, OnClose, OnError, DnsResult } from "../types";
+import { NetworkPipe, OnData, OnClose, OnError, DnsResult, CreateTCPNetworkPipeOptions, Platform } from "../types";
 
 export class NrdpTCPNetworkPipe implements NetworkPipe {
     private sock: number;
@@ -20,10 +20,10 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
     {
         if (typeof buf === "string") {
             const u8: Uint8Array = nrdp.atoutf8(buf);
-            offset = 0;
             length = u8.byteLength;
             buf = u8;
         }
+        offset = offset || 0;
 
         if (!length)
             throw new Error("0 length write");
@@ -69,9 +69,9 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
             this.onclose();
     }
 
-    public ondata: OnData;
-    public onclose: OnClose;
-    public onerror: OnError;
+    public ondata?: OnData;
+    public onclose?: OnClose;
+    public onerror?: OnError;
 
     private _write(): void
     {
@@ -125,26 +125,26 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
 
 // TODO: We only allow ipv4
 // we should create an opts
-export default function connectTCPNetworkPipe(hostOrIpAddress: string, port: number): Promise<NetworkPipe> {
+export default function connectTCPNetworkPipe(options: CreateTCPNetworkPipeOptions, platform: Platform): Promise<NetworkPipe> {
     return new Promise<NetworkPipe>((resolve, reject) => {
         new Promise<N.Sockaddr>(innerResolve => {
-            let ipAddress = hostOrIpAddress;
-            if (typeof port != "undefined")
-                ipAddress += ":" + port;
+            let ipAddress = options.host;
+            if (typeof options.port != "undefined")
+                ipAddress += ":" + options.port;
 
             let sockAddr: N.Sockaddr;
             try {
                 sockAddr = new N.Sockaddr(ipAddress);
                 innerResolve(sockAddr);
             } catch (err) {
-                nrdp.dns.lookupHost(hostOrIpAddress, 4, 10000, (dnsResult: DnsResult) => {
+                nrdp.dns.lookupHost(options.host, 4, 10000, (dnsResult: DnsResult) => {
                     // console.log("got dns result");
                     if (!dnsResult.addresses.length) {
                         reject(new Error("Failed to lookup host"));
                         return;
                     }
                     try {
-                        sockAddr = new N.Sockaddr(`${dnsResult.addresses[0]}:${port}`);
+                        sockAddr = new N.Sockaddr(`${dnsResult.addresses[0]}:${options.port}`);
                         innerResolve(sockAddr);
                     } catch (err) {
                         reject(new Error("Failed to parse ip address"));

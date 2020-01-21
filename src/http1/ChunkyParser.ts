@@ -1,4 +1,5 @@
 import Platform from "../Platform";
+import { assert } from "../utils";
 
 export class ChunkyParser
 {
@@ -57,7 +58,8 @@ export class ChunkyParser
                                 if (buf[i] === 10) {
                                     const len = parseInt(str, 16);
                                     if (isNaN(len)) {
-                                        this.onerror(-1, "Failed to chunky parse [" + str + "] " + len);
+                                        if (this.onerror)
+                                            this.onerror(-1, "Failed to chunky parse [" + str + "] " + len);
                                         return;
                                     }
                                     this.dataNeeded = len;
@@ -78,25 +80,27 @@ export class ChunkyParser
                         break;
             } else if (!this.dataNeeded && this.available >= 2) {
                 this._consume(2);
-                const buffer = this._extractChunk(this.available);
+                const buffer = this.available ? this._extractChunk(this.available) : undefined;
                 Platform.assert(!this.available, "Nothing should be left");
                 Platform.assert(!this.buffers.length, "No buffers here");
-                this.ondone(buffer);
+                if (this.ondone)
+                    this.ondone(buffer);
             } else if (this.dataNeeded + 2 <= this.available) {
                 const chunk = this._extractChunk(this.dataNeeded);
                 // Platform.log("extracted a chunk", Platform.utf8toa(chunk));
                 this._consume(2);
                 this.dataNeeded = -1;
-                this.onchunk(chunk);
+                if (this.onchunk)
+                    this.onchunk(chunk);
             } else {
                 break;
             }
         }
     }
 
-    ondone: (buffer: Uint8Array) => void;
-    onchunk: (chunk: Uint8Array) => void;
-    onerror: (code: number, message: string) => void;
+    ondone?: (buffer: Uint8Array | undefined) => void;
+    onchunk?: (chunk: Uint8Array) => void;
+    onerror?: (code: number, message: string) => void;
 
     private _consume(bytes: number): void
     {
@@ -123,13 +127,13 @@ export class ChunkyParser
 
     private _extractChunk(size: number): Uint8Array
     {
-        if (!size)
-            return undefined;
         Platform.assert(this.available >= size, "available's gotta be more than size");
         // grab the whole first chunk
         if (!this.offset && this.buffers[0].byteLength === size) {
             this.available -= size;
-            return this.buffers.shift();
+            const ret = this.buffers.shift();
+            assert(ret !== undefined, "Must have buffers");
+            return ret;
         }
 
         const ret = new Uint8Array(size);
@@ -190,7 +194,7 @@ chunks.\r
             Platform.log("got error", size, code, message);
             return;
         };
-        balls.ondone = (buf: Uint8Array) => {
+        balls.ondone = (buf: Uint8Array|undefined) => {
             Platform.log("Got done with", size, buf);
             let str = "";
             chunks.forEach((a: Uint8Array) => {

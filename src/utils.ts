@@ -1,3 +1,5 @@
+import Platform from "./Platform";
+
 export function headerValue(headers: string[], header: string): string
 {
     const lower = header.toLowerCase() + ": ";
@@ -8,4 +10,11 @@ export function headerValue(headers: string[], header: string): string
         }
     }
     return "";
+}
+
+export function assert(condition: any, msg?: string): asserts condition
+{
+    if (!condition) {
+        Platform.assert(condition, msg);
+    }
 }

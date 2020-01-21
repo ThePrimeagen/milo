@@ -3,6 +3,7 @@ import Url = require("url-parse");
 import Platform from "./Platform";
 import { NetworkPipe, DnsResult } from "./types";
 import { ChunkyParser } from "./http1/ChunkyParser";
+import { assert } from "./utils"
 
 let recvBuffer = new Uint8Array(8192);
 let nextId = 0;
@@ -64,38 +65,43 @@ export interface RequestData
 
 export class RequestResponse
 {
+    constructor(id: number)
+    {
+        this.id = id;
+        this.headers = [];
+    }
     id: number;
-    state: string;
-    cacheKey: ArrayBuffer;
-    statusCode: number;
-    errorCode: number;
-    reason: number;
-    errorcode: number;
-    errorgroup: number;
-    nativeErrorCode: number;
-    headersSize: number;
-    errorString: string;
-    dnsTime: number;
-    connectTime: number;
-    transactionTime: number;
-    duration: number;
-    timeToFirstByteRead: number;
-    timeToFirstByteWritten: number;
-    networkStartTime: number;
-    metricsPrecision: "us" | "ms" | "none";
-    requestSize: number;
-    serverIp: string;
-    sslSessionResumed: boolean;
-    sslHandshakeTime: number;
-    sslVersion: string|undefined;
-    dns: string;
-    dnsChannel: string;
-    socket: number;
-    data: string|{}|Uint8Array;
-    size: number;
-    urls: string[];
+    state?: string;
+    cacheKey?: ArrayBuffer;
+    statusCode?: number;
+    errorCode?: number;
+    reason?: number;
+    errorcode?: number;
+    errorgroup?: number;
+    nativeErrorCode?: number;
+    headersSize?: number;
+    errorString?: string;
+    dnsTime?: number;
+    connectTime?: number;
+    transactionTime?: number;
+    duration?: number;
+    timeToFirstByteRead?: number;
+    timeToFirstByteWritten?: number;
+    networkStartTime?: number;
+    metricsPrecision?: "us" | "ms" | "none";
+    requestSize?: number;
+    serverIp?: string;
+    sslSessionResumed?: boolean;
+    sslHandshakeTime?: number;
+    sslVersion?: string|undefined;
+    dns?: string;
+    dnsChannel?: string;
+    socket?: number;
+    data?: string|{}|Uint8Array;
+    size?: number;
+    urls?: string[];
     headers: string[];
-    httpVersion: string;
+    httpVersion?: string;
 };
 
 enum RequestState
@@ -112,7 +118,7 @@ export class Request
 {
     state?: RequestState;
     requestData: RequestData;
-    url?: Url;
+    url: Url;
     id: number;
     networkPipe?: NetworkPipe;
 
@@ -122,26 +128,31 @@ export class Request
     private writeBuffer?: Uint8Array;
     private writeBufferOffset?: number;
     private requestResponse: RequestResponse;
-    private headerBuffer?: ArrayBuffer | undefined;
-    private responseData?: Uint8Array | undefined;
-    private responseDataOffset?: number = 0;
-    private responseDataArray?: ArrayBuffer[] | undefined;
-    private chunks?: ArrayBuffer[] | undefined;
+    private headerBuffer?: ArrayBuffer;
+    private responseData?: Uint8Array;
+    private responseDataOffset: number = 0;
+    private responseDataArray?: ArrayBuffer[];
+    private chunks?: ArrayBuffer[];
+    private chunkyParser?: ChunkyParser
     private bytesReceived: number = 0;
     private connection?: string;
     private onConnections: Array<() => void>;
 
-    constructor(data: RequestData | string) {
+    constructor(data: RequestData | string)
+    {
         this.onConnections = [];
-        this.requestResponse = new RequestResponse;
         this.id = ++nextId;
+        this.requestResponse = new RequestResponse(this.id);
         if (typeof data === "string") {
             data = { url: data };
         }
+        if (data.http2) {
+            throw new Error("http2 not implemented yet");
+        }
+
 
         this.requestData = data;
-        // ### need to do resolveUrl, pass the current location as the second parameter
-        this.url = new Url(this.requestData.url, this.requestData.baseUrl || "");
+        this.url = new Url(this.requestData.url, this.requestData.baseUrl || Platform.location);
         this.state = RequestState.Initial;
         return this;
     }
@@ -160,9 +171,9 @@ export class Request
             throw new Error("Bad state transition");
         }
 
-        console.log("Request#send");
+        Platform.log("Request#send");
         const ret = new Promise<RequestResponse>((resolve, reject) => {
-            console.log("Request#send return promise");
+            Platform.log("Request#send return promise");
             this.resolve = resolve;
             this.reject = reject;
         });
@@ -172,7 +183,7 @@ export class Request
             port = parseInt(this.url.port);
         }
 
-        console.log("Request#send port", port);
+        Platform.log("Request#send port", port);
         if (!port) {
             switch (this.url.protocol) {
                 case "https:":
@@ -185,10 +196,9 @@ export class Request
             }
         }
         debugger;
-        console.log("Request#send creating TCP pipe");
-        Platform.createTCPNetworkPipe(this.url.hostname, port).then((pipe: NetworkPipe) => {
-            console.log("Request#send#createTCPNetworkPipe pipe");
-
+        Platform.log("Request#send creating TCP pipe");
+        Platform.createTCPNetworkPipe({ host: this.url.hostname, port: port }).then((pipe: NetworkPipe) => {
+            Platform.log("Request#send#createTCPNetworkPipe pipe");
             this.networkPipe = pipe;
             this.networkPipe.onclose = this._onNetworkPipeClose.bind(this);
             this.networkPipe.onerror = this._onNetworkPipeError.bind(this);
@@ -196,7 +206,7 @@ export class Request
 
             this.transition(RequestState.Connected);
         }, (err: Error) => {
-            console.log("Request#send#createTCPNetworkPipe error", err);
+            Platform.log("Request#send#createTCPNetworkPipe error", err);
             this._httpError(-1, err.toString());
         });
 
@@ -221,8 +231,18 @@ Accept: */*\r\n`;
                         str += `${key}: ${this.requestData.headers[key]}\r\n`;
                     }
                 }
+                if (this.requestData.cache) {
+                    str += `X-Gibbon-Cache-Control: ${this.requestData.cache}\r\n`;
+                }
+
+                const lang = Platform.UILanguages;
+                if (lang && lang.length) {
+                    str += `Language: ${lang.join(",")}\r\n`;
+                }
+
                 str += "\r\n";
 
+                assert(this.networkPipe, "Must have network pipe");
                 this.networkPipe.write(str);
 
                 break;
@@ -241,7 +261,8 @@ Accept: */*\r\n`;
                 } else if (this.responseData) {
                     Platform.log("GOT HERE 2", this.responseData);
                     responseArrayBuffer = this.responseData;
-
+                } else {
+                    responseArrayBuffer = new ArrayBuffer(0);
                 }
                 Platform.log("BALLS", this.requestData.format, responseArrayBuffer);
                 switch (this.requestData.format) {
@@ -265,17 +286,21 @@ Accept: */*\r\n`;
                         }
                         break;
                 }
+                assert(this.resolve, "Must have resolve");
                 this.resolve(this.requestResponse);
                 break;
         }
     }
     private _httpError(code: number, text: string): void {
         Platform.log("got error", code, text);
-        this.networkPipe.close();
+        assert(this.reject, "Must have reject");
+        if (this.networkPipe)
+            this.networkPipe.close();
         this.reject(code, text);
     }
 
-    private _onNetworkPipeError(code: number, message: string) {
+    private _onNetworkPipeError(code: number, message?: string) {
+        assert(this.reject, "Must have reject");
         this.reject(code, message);
     }
 
@@ -286,6 +311,7 @@ Accept: */*\r\n`;
 
     private _onNetworkPipeData(): void {
         while (true) {
+            assert(this.networkPipe, "Must have network pipe");
             const read = this.networkPipe.read(recvBuffer, 0, recvBuffer.byteLength);
             if (read <= 0) {
                 break;
@@ -320,6 +346,7 @@ Accept: */*\r\n`;
     }
 
     private _parseHeaders(rnrn: number): boolean {
+        assert(this.headerBuffer, "Must have headerBuffer");
         const str = Platform.utf8toa(this.headerBuffer, 0, rnrn);
         const split = str.split("\r\n");
         // Platform.log("got string\n", split);
@@ -347,14 +374,14 @@ Accept: */*\r\n`;
         }
 
         // this.requestResponse.headers = new ResponseHeaders;
-        let contentLength: string;
-        let transferEncoding: string;
+        let contentLength: string | undefined;
+        let transferEncoding: string | undefined;
         this.requestResponse.headers = [];
 
         for (var i=1; i<split.length; ++i) {
             // split \r\n\r\n by \r\n causes 2 empty lines.
             if (split.length === 0) {
-                console.log("IGNORING LINE....");
+                Platform.log("IGNORING LINE....");
                 continue;
             }
             let idx = split[i].indexOf(":");
@@ -393,6 +420,7 @@ Accept: */*\r\n`;
             }
         } else if (transferEncoding === "chunked") {
             this.chunks = [];
+            this.chunkyParser = new ChunkyParser;
         } else {
             this.responseDataArray = [];
         }

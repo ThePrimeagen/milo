@@ -3,11 +3,11 @@ export function bufferToUint8Array(buf: Buffer) {
         buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
 }
 
-export function normalizeBufferLen(buf: string | Uint8Array | ArrayBuffer, offset?: number, length?: number): Buffer {
+export function normalizeBufferLen(buf: string | Uint8Array | ArrayBuffer, offset: number, length: number): Buffer {
     return normalizeBuffer(buf, offset, offset + length);
 };
 
-export function normalizeBuffer(buf: string | Uint8Array | ArrayBuffer, offset?: number, endIdx?: number): Buffer {
+export function normalizeBuffer(buf: string | Uint8Array | ArrayBuffer, offset: number, endIdx?: number): Buffer {
     /*
     let outBuf;
     if (typeof buf === 'string') {
@@ -26,11 +26,12 @@ export function normalizeBuffer(buf: string | Uint8Array | ArrayBuffer, offset?:
     return Buffer.from(buf).slice(offset, isNaN(endIdx) ? undefined : endIdx);
 };
 
-export function normalizeUint8Array(buf: string | Uint8Array | ArrayBuffer, offset?: number, endIdx?: number): Uint8Array {
+export function normalizeUint8Array(buf: string | Uint8Array | ArrayBuffer, offset: number, endIdx?: number): Uint8Array {
     return bufferToUint8Array(normalizeBuffer(buf, offset, endIdx));
 };
 
-export function normalizeUint8ArrayLen(buf: string | Uint8Array | ArrayBuffer, offset?: number, length?: number): Uint8Array {
+export function normalizeUint8ArrayLen(buf: string | Uint8Array | ArrayBuffer, offset: number, length?: number): Uint8Array {
+    // @ts-ignore
     return bufferToUint8Array(normalizeBufferLen(buf, offset, length));
 };
 

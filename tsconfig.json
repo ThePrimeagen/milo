@@ -8,7 +8,10 @@
         "module": "commonjs",
         "target": "es5",
         "esModuleInterop": true,
-        "allowJs": false
+        "allowJs": false,
+        "strictNullChecks": true,
+        "strictPropertyInitialization": true,
+        "strict": true
     }
 }
 

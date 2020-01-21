@@ -1,7 +1,7 @@
 import { Request, RequestData } from "./Request";
 import Platform from "./Platform";
 import { NetworkPipe } from "./types";
-import { headerValue } from "./Utils";
+import { headerValue } from "./utils";
 // @ts-ignore
 
 const requests = new Map();
@@ -75,9 +75,9 @@ export function createWS(url: string): Promise<WS>
 
 export function _ssl(): void
 {
-    Platform.createTCPNetworkPipe("www.google.com", 443).then((pipe: NetworkPipe) => {
+    Platform.createTCPNetworkPipe({ host: "www.google.com", port: 443 }).then((pipe: NetworkPipe) => {
         Platform.log("got pipe");
-        return Platform.createSSLNetworkPipe(pipe);
+        return Platform.createSSLNetworkPipe({ pipe: pipe });
     }).then((sslPipe: NetworkPipe) => {
         Platform.log("Got ssl pipe");
     }).catch((err: Error) => {

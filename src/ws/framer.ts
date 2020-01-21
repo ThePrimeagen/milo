@@ -9,11 +9,16 @@ import {
     NetworkPipe
 } from '../types';
 
+import {
+    assert
+} from '../utils';
+
 import maskFn from './mask';
 
 import {
     Opcodes
 } from './types';
+
 
 // @ts-ignore
 import {
@@ -123,11 +128,12 @@ export type WSState = {
     payload: Uint8Array;
     isControlFrame: boolean;
     payloadPtr: number;
-    payloads: Uint8Array[];
+    payloads?: Uint8Array[];
     state: State;
 };
 
 function createDefaultState(isControlFrame = false) {
+    // @ts-ignore
     return {
         isFinished: false,
         opcode: 0,
@@ -184,6 +190,7 @@ export default class WSFramer {
         let count = 0;
 
         const header = headerPool.malloc();
+        assert(header, "Gotta have header");
         header[0] = 0;
 
         do {
@@ -262,6 +269,7 @@ export default class WSFramer {
                     const headerBuf = headerPool.malloc();
                     const payloadByteLength = state.payload.byteLength;
 
+                    assert(headerBuf, "Gotta have headerBuf");
                     headerBuf.set(state.payload);
                     headerBuf.set(
                         packet.subarray(offset, offset + headerBuf.length - payloadByteLength),
@@ -314,6 +322,8 @@ export default class WSFramer {
 
             // TODO: we about to go into contiuation mode, so get it baby!
             else if (!state.isFinished && endOfPayload) {
+                if (!state.payloads)
+                    state.payloads = [];
                 state.payloads.push(state.payload);
                 state.state = State.Waiting;
             }
@@ -459,12 +469,12 @@ export default class WSFramer {
 
         //console.log("PushFrame", buf.byteLength, fState);
 
-        if (state.payloads.length) {
+        if (state.payloads && state.payloads.length) {
             state.payloads.push(state.payload);
 
             // buf = Buffer.concat(state.payloads);
-            buf = Platform.concatBuffers.apply(undefined, state.payloads);
-            state.payloads = null;
+            buf = new Uint8Array(Platform.concatBuffers.apply(undefined, state.payloads));
+            state.payloads = undefined;
         }
 
         // TODO: Continuation Frame
