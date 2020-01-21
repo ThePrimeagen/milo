@@ -1,6 +1,5 @@
 {
     "include": ["src", "examples"],
-    "exclude": ["src/_http", "src/node/_legacy_utils"],
     "compilerOptions": {
         "outDir": "./build/",
         "sourceMap": true,
