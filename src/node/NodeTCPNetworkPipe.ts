@@ -27,7 +27,7 @@ enum State {
     Destroyed = "Destroyed",
 };
 
-class NrdpTCPNetworkPipe implements NetworkPipe {
+class NodeTCPNetworkPipe implements NetworkPipe {
     private sock?: net.Socket;
     private bufferPool: Buffer[];
     private bufferIdx: number;
@@ -37,18 +37,16 @@ class NrdpTCPNetworkPipe implements NetworkPipe {
     public onclose?: OnClose;
     public onerror?: OnError;
 
-    public connection: Promise<NrdpTCPNetworkPipe>;
+    public connection: Promise<NodeTCPNetworkPipe>;
 
     constructor(host: string, port: number, onConnect?: () => void) {
         this.bufferIdx = 0;
         this.state = State.Connecting;
         this.bufferPool = [];
 
-        let that = this;
-
         this.connection = new Promise((res, rej) => {
             // it defaults to tcp socket
-            that.sock = net.connect({
+            this.sock = net.connect({
                 host,
                 port,
                 onread: {
@@ -57,33 +55,33 @@ class NrdpTCPNetworkPipe implements NetworkPipe {
                     callback: (nread: number, buf: Buffer): boolean => {
                         const copiedBuf = Buffer.allocUnsafe(nread);
                         buf.copy(copiedBuf, 0, 0, nread);
-                        that.bufferPool.push(copiedBuf);
+                        this.bufferPool.push(copiedBuf);
 
-                        if (that.ondata) {
-                            that.ondata();
+                        if (this.ondata) {
+                            this.ondata();
                         }
 
                         return true;
                     }
                 }
             }, () => {
-                that.state = State.Alive;
-                res(that);
+                this.state = State.Alive;
+                res(this);
             });
 
-            that.sock.on('end', () => {
+            this.sock.on('end', () => {
                 console.log("tcp sock end");
-                that.state = State.Destroyed;
-                if (that.onclose) {
-                    that.onclose();
+                this.state = State.Destroyed;
+                if (this.onclose) {
+                    this.onclose();
                 }
             });
 
-            that.sock.on('error', function(e) {
-                that.state = State.Destroyed;
+            this.sock.on('error', e => {
+                this.state = State.Destroyed;
                 rej(e);
-                if (that.onerror) {
-                    that.onerror(-1, e.toString());
+                if (this.onerror) {
+                    this.onerror(-1, e.toString());
                 }
             });
         });
@@ -158,7 +156,7 @@ export default function createTCPNetworkPipe(options: CreateTCPNetworkPipeOption
     console.log("Crea,ting TCP Network Pipe");
     return new Promise((res, rej) => {
         console.log("new Promise Crea,ting TCP Network Pipe");
-        const pipe = new NrdpTCPNetworkPipe(options.host, options.port);
+        const pipe = new NodeTCPNetworkPipe(options.host, options.port);
         pipe.connection.then(res).catch(rej);
     });
 };
