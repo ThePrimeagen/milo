@@ -9,8 +9,6 @@ const requests = new Map();
 export function _load(data: RequestData, callback: Function): number
 {
     // @ts-ignore
-    Platform.log("got here", Platform, Object.keys(Platform));
-    Platform.log("got here", data);
     const req = new Request(data);
     req.send().then(response => {
         Platform.log("Got resolved", response);

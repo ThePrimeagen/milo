@@ -46,18 +46,17 @@ class NrdpSSLNetworkPipe implements NetworkPipe
             // platform.SSL_set_bio(this.ssl, this.bio, this.bio);
         } else {
             this.bio = new N.BIO;
-            this.bio.read = (len: number) => {
+            this.bio.onread = function(this: N.BIO, len: number) {
                 nrdp.l("got called", len);
                 // ### GOTTA write the
                 return -1;
             };
-            let bio = this.bio;
-            this.bio.write = (len: number) => {
+            this.bio.onwrite = function(this: N.BIO, len: number) {
                 // nrdp.l("fucking here", len, this, this.bio, this === this.bio);
                 var ab = new ArrayBuffer(len);
                 nrdp.l("fucking here2", len);
                 // how to get
-                bio.readData(0, ab, 0, len);
+                this.readData(0, ab, 0, len);
                 nrdp.l("fucking here3", len, ab);
                 // addSocketWriteBytes(ab);
                 nrdp.l("fucking here4", len);
@@ -65,7 +64,7 @@ class NrdpSSLNetworkPipe implements NetworkPipe
                 return len;
             };
 
-            this.bio.ctrl = function(cmd, num, ptr) {
+            this.bio.onctrl = function(this: N.BIO, cmd: number, num: number, ptr: N.DataPointer|undefined) {
                 nrdp.l("fucking ctrl", cmd, num, ptr);
                 return 1;
             };

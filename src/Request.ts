@@ -194,7 +194,7 @@ export class Request
             case RequestState.Connected:
                 const method = this.requestData.method || (this.requestData.body ? "POST" : "GET");
                 let str =
-`${method} ${this.url.pathname} HTTP/1.1\r
+`${method} ${this.url.pathname || "/"} HTTP/1.1\r
 Host: ${this.url.hostname}\r
 User-Agent: Milo 0.1\r
 Accept: */*\r\n`;

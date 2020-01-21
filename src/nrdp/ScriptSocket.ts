@@ -15,10 +15,10 @@ declare namespace nrdsocket {
     {
         flags: number;
 
-        ctrl: (cmd: number, num: number, ptr: undefined|DataPointer) => number;
+        onctrl: (cmd: number, num: number, ptr: undefined|DataPointer) => number;
 
-        read: (bufferSize: number) => number; // this is called when the buffer wants to read, e.g. you need to call writeData in the callback
-        write: (bufferSize: number) => number; // this is called when the buffer wants to write, e.g. you need to call readData in the callback
+        onread: (bufferSize: number) => number; // this is called when the buffer wants to read, e.g. you need to call writeData in the callback
+        onwrite: (bufferSize: number) => number; // this is called when the buffer wants to write, e.g. you need to call readData in the callback
 
         readData(offset:number, buffer: ArrayBuffer|Uint8Array, buffeOffset: number, bufferLength: number): void; // this reads from the bio
         writeData(offset:number, buffer: ArrayBuffer|Uint8Array|string, buffeOffset: number, bufferLength: number): void; // this writes to the bio
