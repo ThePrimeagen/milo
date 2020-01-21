@@ -3,10 +3,22 @@ import { IpVersion, DnsResult } from "../types";
 interface nrdp {
     dns: {
         lookupHost(host: string,
-                            ipVersion: IpVersion,
-                            timeout: number,
-                            callback: (result: DnsResult) => void): void;
+                   ipVersion: IpVersion,
+                   timeout: number,
+                   callback: (result: DnsResult) => void): void;
     }
+    log: {
+        error: (msg: string,
+                area?: string,
+                type?: string,
+                tags?: { [key: string]: string },
+                critical?: boolean,
+                sendtoAppboot?: boolean) => void;
+    }
+
+    now(): number;
+    trustStoreHash: string;
+    trustStore: ArrayBuffer;
     l(...args: any[]): void;
     assert(cond: any, message?: string): void;
     atoutf8(input: Uint8Array | ArrayBuffer | string): Uint8Array;

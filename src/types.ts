@@ -63,6 +63,7 @@ export interface Platform
     log(...args: any[]): void;
 
     createTCPNetworkPipe(hostOrIpAddress: string, port: number): Promise<NetworkPipe>;
+    createSSLNetworkPipe(pipe: NetworkPipe): Promise<NetworkPipe>;
 
     concatBuffers(...args: ArrayBuffer[]|Uint8Array[]): ArrayBuffer;
 
