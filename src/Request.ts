@@ -3,7 +3,7 @@ import Url = require("url-parse");
 import Platform from "./Platform";
 import { NetworkPipe, DnsResult } from "./types";
 import { ChunkyParser } from "./http1/ChunkyParser";
-import { assert } from "./utils"
+import { assert } from "./utils";
 
 let recvBuffer = new Uint8Array(8192);
 let nextId = 0;
@@ -184,28 +184,37 @@ export class Request
         }
 
         Platform.log("Request#send port", port);
-        if (!port) {
-            switch (this.url.protocol) {
-                case "https:":
-                case "wss:":
+        let ssl = false;
+        switch (this.url.protocol) {
+            case "https:":
+            case "wss:":
+                ssl = true;
+                if (!port) {
                     port = 443;
-                    break;
-                default:
+                }
+                break;
+            default:
+                if (!port)
                     port = 80;
-                    break;
-            }
+                break;
         }
         debugger;
         Platform.log("Request#send creating TCP pipe");
         Platform.createTCPNetworkPipe({ host: this.url.hostname, port: port }).then((pipe: NetworkPipe) => {
             Platform.log("Request#send#createTCPNetworkPipe pipe");
+            if (ssl) {
+                return Platform.createSSLNetworkPipe({ pipe: pipe });
+            } else {
+                return pipe;
+            }
+        }).then((pipe: NetworkPipe) => {
             this.networkPipe = pipe;
             this.networkPipe.onclose = this._onNetworkPipeClose.bind(this);
             this.networkPipe.onerror = this._onNetworkPipeError.bind(this);
             this.networkPipe.ondata = this._onNetworkPipeData.bind(this);
 
             this.transition(RequestState.Connected);
-        }, (err: Error) => {
+        }).catch(err => {
             Platform.log("Request#send#createTCPNetworkPipe error", err);
             this._httpError(-1, err.toString());
         });
@@ -318,7 +327,6 @@ Accept: */*\r\n`;
             } else {
                 this.bytesReceived += read;
                 if (this.state === RequestState.Connected) { // waiting for headers
-                    Platform.assert(!this.requestResponse.headers, "Shouldn't have headers here");
                     if (this.headerBuffer) {
                         this.headerBuffer = Platform.concatBuffers(this.headerBuffer, read < recvBuffer.byteLength ? recvBuffer.buffer.slice(0, read) : recvBuffer);
                     } else {
@@ -338,7 +346,7 @@ Accept: */*\r\n`;
                         }
                     }
                 } else {
-                    Platform.assert(this.state === RequestState.ReceivedHeaders, "State unrest");
+                    assert(this.state === RequestState.ReceivedHeaders, "State unrest");
                     this._processResponseData(recvBuffer.buffer, 0, read);
                 }
             }
@@ -376,7 +384,6 @@ Accept: */*\r\n`;
         // this.requestResponse.headers = new ResponseHeaders;
         let contentLength: string | undefined;
         let transferEncoding: string | undefined;
-        this.requestResponse.headers = [];
 
         for (var i=1; i<split.length; ++i) {
             // split \r\n\r\n by \r\n causes 2 empty lines.

@@ -15,7 +15,7 @@ type BIO_new_socket_type = (sock: number, close_flag: number) => N.Struct;
 type BIO_new_type = (ctx: N.Struct) => N.Struct;
 type BIO_read_type = (b: N.Struct, data: ArrayBuffer | Uint8Array, dlen: number) => number;
 type BIO_s_mem_type = () => N.Struct;
-type BIO_write_type = (b: N.Struct, data: ArrayBuffer | Uint8Array | string, dlen: number) => number;
+type BIO_write_type = (b: N.Struct, data: ArrayBuffer | Uint8Array | string, offset: number, dlen: number) => number;
 type ERR_error_string_n_type = (e: number, buf: ArrayBuffer | Uint8Array, len: number) => void;
 type PEM_read_bio_X509_type = (bp: N.Struct, x: N.DataPointer | undefined, cb: N.Struct | undefined, u: ArrayBuffer | Uint8Array | undefined) => N.Struct;
 type SSL_CTX_ctrl_type = (ctx: N.Struct, cmd: number, larg: number, parg: ArrayBuffer | Uint8Array | undefined) => number;
@@ -108,7 +108,7 @@ export class NrdpPlatform implements Platform {
         this.BIO_new_socket = <BIO_new_socket_type>N.bindFunction("BIO *BIO_new_socket(int sock, int close_flag);");
         this.BIO_read = <BIO_read_type>N.bindFunction("int BIO_read(BIO *b, void *data, int dlen);");
         this.BIO_s_mem = <BIO_s_mem_type>N.bindFunction("const BIO_METHOD *BIO_s_mem();");
-        this.BIO_write = <BIO_write_type>N.bindFunction("int BIO_write(BIO *b, const void *data, int dlen);");
+        this.BIO_write = <BIO_write_type>N.bindFunction("int BIO_write(BIO *b, const Buffer *buf);");
         this.ERR_error_string_n = <ERR_error_string_n_type>N.bindFunction("void ERR_error_string_n(unsigned long e, char *buf, size_t len);");
         this.PEM_read_bio_X509 = <PEM_read_bio_X509_type>N.bindFunction("X509 *PEM_read_bio_X509(BIO *bp, X509 **x, pem_password_cb *cb, void *u);");
         this.SSL_CTX_ctrl = <SSL_CTX_ctrl_type>N.bindFunction("long SSL_CTX_ctrl(SSL_CTX *ctx, int cmd, long larg, void *parg);");

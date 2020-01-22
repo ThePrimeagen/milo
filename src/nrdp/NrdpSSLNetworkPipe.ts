@@ -1,8 +1,15 @@
-import { NetworkPipe, OnData, OnClose, OnError, DnsResult, Platform, CreateSSLNetworkPipeOptions } from "../types";
+import { NetworkPipe, OnData, OnClose, OnError, DnsResult, CreateSSLNetworkPipeOptions } from "../types";
 import { NrdpPlatform } from "./NrdpPlatform";
 import N from "./ScriptSocket";
 import nrdp from "./nrdp";
-import { assert } from "../utils";
+
+let platform: NrdpPlatform | undefined;
+function assert(condition: any, msg?: string): asserts condition
+{
+    if (!condition && platform) {
+        platform.assert(condition, msg);
+    }
+}
 
 function set_mem_eof_return(platform: NrdpPlatform, bio: N.Struct) {
     platform.BIO_ctrl(bio, platform.BIO_C_SET_BUF_MEM_EOF_RETURN, -1, undefined);
@@ -16,16 +23,19 @@ class NrdpSSLNetworkPipe implements NetworkPipe
     private inputBio: N.Struct;
     private outputBio: N.Struct;
     private pipe: NetworkPipe;
-    private platform: NrdpPlatform
     private connected: boolean;
     private writeBuffers: (Uint8Array|ArrayBuffer|string)[];
     private writeBufferOffsets: number[];
     private writeBufferLengths: number[];
+    private connectedCallback?: (error?: Error) => void;
+    private platform: NrdpPlatform;
 
-    constructor(options: CreateSSLNetworkPipeOptions, platform: Platform)
+    constructor(options: CreateSSLNetworkPipeOptions, p: NrdpPlatform, callback: (error?: Error) => void)
     {
+        platform = p;
+        this.platform = p;
+        this.connectedCallback = callback;
         this.connected = false;
-        this.platform = <NrdpPlatform>(platform);
         this.writeBuffers = [];
         this.writeBufferOffsets = [];
         this.writeBufferLengths = [];
@@ -40,6 +50,7 @@ class NrdpSSLNetworkPipe implements NetworkPipe
         let ctx_options = this.platform.SSL_OP_NO_SSLv3;
         ret = this.platform.SSL_CTX_set_options(this.ssl_ctx, ctx_options);
         this.platform.log("BALLS 2", ret);
+
         const cert_store = this.platform.SSL_CTX_get_cert_store(this.ssl_ctx);
         const shit = this.platform.trustStore();
         this.platform.log("BALLS3", typeof shit);
@@ -78,9 +89,10 @@ class NrdpSSLNetworkPipe implements NetworkPipe
                 return;
             }
             this.platform.log("got data", read);
-            this.platform.assert(read > 0, "This should be > 0");
-            nrdp.l("wrote", read, "bytes to inputBio");
-            this.platform.BIO_write(this.inputBio, this.platform.scratch, read);
+            assert(read > 0, "This should be > 0");
+            // throw new Error("fiskball");
+            const written = this.platform.BIO_write(this.inputBio, this.platform.scratch, 0, read);
+            nrdp.l("wrote", read, "bytes to inputBio =>", written);
             if (!this.connected) {
                 this._connect();
             } else {
@@ -112,15 +124,28 @@ class NrdpSSLNetworkPipe implements NetworkPipe
         if (!length)
             throw new Error("0 length write");
 
+        this.platform.log("write called 2", buf, offset, length);
+
         if (!this.connected) {
+            this.platform.log("driti?");
+
             throw new Error("SSLNetworkPipe is not connected");
         }
-        if (this.writeBuffers.length) {
+
+        this.platform.log("drit?");
+        let written;
+        try {
+            written = this.writeBuffers.length ? -1 : this.platform.BIO_write(this.inputBio, buf, offset, length);
+            this.platform.log("drit!");
+            this.platform.log("wrote to output bio", length, "=>", written);
+        } catch (err) {
+            this.platform.log("got err", err);
+        }
+
+        if (written === -1) {
             this.writeBuffers.push(buf);
             this.writeBufferOffsets.push(offset || 0);
-            this.writeBufferLengths.push(offset || 0);
-        } else {
-
+            this.writeBufferLengths.push(length);
         }
     }
 
@@ -141,6 +166,7 @@ class NrdpSSLNetworkPipe implements NetworkPipe
 
     private _connect()
     {
+        assert(this.connectedCallback);
         let ret = this.platform.SSL_connect(this.ssl);
         this.platform.log("CALLED CONNECT", ret);
         if (ret <= 0) {
@@ -148,25 +174,29 @@ class NrdpSSLNetworkPipe implements NetworkPipe
                               this.platform.ERR_error_string(this.platform.SSL_get_error(this.ssl, ret)));
             if (this.platform.SSL_get_error(this.ssl, ret) == this.platform.SSL_ERROR_WANT_READ) {
                 const pending = this.platform.BIO_ctrl_pending(this.outputBio);
-                // this.platform.assert(pending <= this.scratch.byteLength, "Pending too large. Probably have to increase scratch buffer size");
+                // assert(pending <= this.scratch.byteLength, "Pending too large. Probably have to increase scratch buffer size");
                 if (pending > 0) {
                     const buf = new ArrayBuffer(pending);
                     let read = this.platform.BIO_read(this.outputBio, buf, pending);
-                    this.platform.assert(read === pending, "Read should be pending");
+                    assert(read === pending, "Read should be pending");
                     this.pipe.write(buf, 0, read);
-                    // this.platform
+                    // Platform
                 }
                 this.platform.log("got pending", pending);
                 // N.setFD(sock, N.READ, onConnected.bind(this, host));
             } else {
                 this.platform.log("BIG FAILURE", this.platform.SSL_get_error(this.ssl, ret), N.errno);
-                this.platform.quit(1);
+                this.connectedCallback(new Error(`SSL_connect failure ${this.platform.SSL_get_error(this.ssl, ret)} ${N.errno}`));
+                this.connectedCallback = undefined;
             }
         } else {
             this.platform.log("sheeeet", ret);
-            this.platform.assert(ret === 1, "This should be 1");
+            assert(ret === 1, "This should be 1");
             this.platform.log("we're connected");
             this.connected = true;
+            assert(this.connectedCallback);
+            this.connectedCallback();
+            this.connectedCallback = undefined;
         }
     }
 
@@ -176,9 +206,14 @@ class NrdpSSLNetworkPipe implements NetworkPipe
 };
 
 
-export default function connectSSLNetworkPipe(options: CreateSSLNetworkPipeOptions, platform: Platform): Promise<NetworkPipe> {
+export default function connectSSLNetworkPipe(options: CreateSSLNetworkPipeOptions, platform: NrdpPlatform): Promise<NetworkPipe> {
     return new Promise<NetworkPipe>((resolve, reject) => {
-        const sslPipe = new NrdpSSLNetworkPipe(options, platform);
-
+        const sslPipe = new NrdpSSLNetworkPipe(options, platform, (error?: Error) => {
+            if (error) {
+                reject(error);
+            } else {
+                resolve(sslPipe);
+            }
+        });
     });
 };
