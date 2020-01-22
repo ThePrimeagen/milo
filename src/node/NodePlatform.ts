@@ -121,6 +121,10 @@ class NodePlatform implements Platform {
         console.log.apply(console, args);
     }
 
+    error(...args: any): void {
+        console.error.apply(console, args);
+    }
+
     createTCPNetworkPipe(options: CreateTCPNetworkPipeOptions): Promise<NetworkPipe> {
         return createTCPNetworkPipe(options);
     }

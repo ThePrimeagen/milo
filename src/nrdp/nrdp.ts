@@ -8,15 +8,6 @@ interface nrdp {
                    callback: (result: DnsResult) => void): void;
     }
 
-    log: {
-        error: (msg: string,
-                area?: string,
-                type?: string,
-                tags?: { [key: string]: string },
-                critical?: boolean,
-                sendtoAppboot?: boolean) => void;
-    }
-
     device: {
         UILanguages: string[];
     }
@@ -25,12 +16,17 @@ interface nrdp {
         location: string;
     }
 
+    l: {
+        success(...args: any[]): void;
+        error(...args: any[]): void;
+    }
+
     exit(exitCode: number): void;
     stacktrace(): string;
     now(): number;
     trustStoreHash: string;
     trustStore: ArrayBuffer;
-    l(...args: any[]): void;
+
     assert(cond: any, message?: string): void;
     atoutf8(input: Uint8Array | ArrayBuffer | string): Uint8Array;
     utf8toa(input: Uint8Array | ArrayBuffer | string, offset?: number, length?: number): string;

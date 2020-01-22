@@ -76,6 +76,7 @@ export interface Platform
     assert(cond: any, message?: string): void;
 
     log(...args: any[]): void;
+    error(...args: any[]): void;
 
     createTCPNetworkPipe(options: CreateTCPNetworkPipeOptions): Promise<NetworkPipe>;
     createSSLNetworkPipe(options: CreateSSLNetworkPipeOptions): Promise<NetworkPipe>;

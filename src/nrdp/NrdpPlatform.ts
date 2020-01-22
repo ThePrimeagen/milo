@@ -13,7 +13,7 @@ type BIO_int_ctrl_type = (bp: N.Struct, cmd: number, larg: number, iarg: number)
 type BIO_new_mem_buf_type = (buf: ArrayBuffer | Uint8Array, len: number) => N.Struct;
 type BIO_new_socket_type = (sock: number, close_flag: number) => N.Struct;
 type BIO_new_type = (ctx: N.Struct) => N.Struct;
-type BIO_read_type = (b: N.Struct, data: ArrayBuffer | Uint8Array, dlen: number) => number;
+type BIO_read_type = (b: N.Struct, data: ArrayBuffer | Uint8Array, offset: number, dlen: number) => number;
 type BIO_s_mem_type = () => N.Struct;
 type BIO_write_type = (b: N.Struct, data: ArrayBuffer | Uint8Array | string, offset: number, dlen: number) => number;
 type ERR_error_string_n_type = (e: number, buf: ArrayBuffer | Uint8Array, len: number) => void;
@@ -27,12 +27,12 @@ type SSL_CTX_set_options_type = (ctx: N.Struct, options: number) => number;
 type SSL_connect_type = (ssl: N.Struct) => number;
 type SSL_get_error_type = (ssl: N.Struct, ret: number) => number;
 type SSL_new_type = (ctx: N.Struct) => N.Struct;
-type SSL_read_type = (ssl: N.Struct, buf: ArrayBuffer | Uint8Array, num: number) => number;
+type SSL_read_type = (ssl: N.Struct, buf: ArrayBuffer | Uint8Array, offset: number, num: number) => number;
 type SSL_set_bio_type = (ssl: N.Struct, rbio: N.Struct | N.BIO, wbio: N.Struct | N.BIO) => void;
 type SSL_set_default_read_buffer_len_type = (s: N.Struct, len: number) => void;
 type SSL_set_read_ahead_type = (s: N.Struct, yes: number) => void;
 type SSL_up_ref_type = (s: N.Struct) => number;
-type SSL_write_type = (ssl: N.Struct, buf: ArrayBuffer | Uint8Array, num: number) => number;
+type SSL_write_type = (ssl: N.Struct, buf: ArrayBuffer | Uint8Array | string, offset: number, num: number) => number;
 type TLS_client_method_type = () => N.Struct;
 type X509_STORE_add_cert_type = (ctx: N.Struct, x: N.Struct) => number;
 type X509_VERIFY_PARAM_free_type = (param: N.Struct) => void;
@@ -106,7 +106,7 @@ export class NrdpPlatform implements Platform {
         this.BIO_new = <BIO_new_type>N.bindFunction("BIO *BIO_new(const BIO_METHOD *type);");
         this.BIO_new_mem_buf = <BIO_new_mem_buf_type>N.bindFunction("BIO *BIO_new_mem_buf(const void *buf, int len);");
         this.BIO_new_socket = <BIO_new_socket_type>N.bindFunction("BIO *BIO_new_socket(int sock, int close_flag);");
-        this.BIO_read = <BIO_read_type>N.bindFunction("int BIO_read(BIO *b, void *data, int dlen);");
+        this.BIO_read = <BIO_read_type>N.bindFunction("int BIO_read(BIO *b, Buffer *data);");
         this.BIO_s_mem = <BIO_s_mem_type>N.bindFunction("const BIO_METHOD *BIO_s_mem();");
         this.BIO_write = <BIO_write_type>N.bindFunction("int BIO_write(BIO *b, const Buffer *buf);");
         this.ERR_error_string_n = <ERR_error_string_n_type>N.bindFunction("void ERR_error_string_n(unsigned long e, char *buf, size_t len);");
@@ -120,18 +120,18 @@ export class NrdpPlatform implements Platform {
         this.SSL_connect = <SSL_connect_type>N.bindFunction("int SSL_connect(SSL *ssl);");
         this.SSL_get_error = <SSL_get_error_type>N.bindFunction("int SSL_get_error(const SSL *ssl, int ret);");
         this.SSL_new = <SSL_new_type>N.bindFunction("SSL *SSL_new(SSL_CTX *ctx);");
-        this.SSL_read = <SSL_read_type>N.bindFunction("int SSL_read(SSL *ssl, void *buf, int num);");
+        this.SSL_read = <SSL_read_type>N.bindFunction("int SSL_read(SSL *ssl, Buffer *buf);");
         this.SSL_set_bio = <SSL_set_bio_type>N.bindFunction("void SSL_set_bio(SSL *ssl, BIO *rbio, BIO *wbio);");
         this.SSL_set_default_read_buffer_len = <SSL_set_default_read_buffer_len_type>N.bindFunction("void SSL_set_default_read_buffer_len(SSL *s, size_t len);");
         this.SSL_set_read_ahead = <SSL_set_read_ahead_type>N.bindFunction("void SSL_set_read_ahead(SSL *s, int yes);");
         this.SSL_up_ref = <SSL_up_ref_type>N.bindFunction("int SSL_up_ref(SSL *s);");
-        this.SSL_write = <SSL_write_type>N.bindFunction("int SSL_write(SSL *ssl, const void *buf, int num);");
+        this.SSL_write = <SSL_write_type>N.bindFunction("int SSL_write(SSL *ssl, const Buffer *buf);");
         this.TLS_client_method = <TLS_client_method_type>N.bindFunction("const SSL_METHOD *TLS_client_method(void);");
         this.X509_STORE_add_cert = <X509_STORE_add_cert_type>N.bindFunction("int X509_STORE_add_cert(X509_STORE *ctx, X509 *x);");
         this.X509_VERIFY_PARAM_free = <X509_VERIFY_PARAM_free_type>N.bindFunction("void X509_VERIFY_PARAM_free(X509_VERIFY_PARAM *param);");
         this.X509_VERIFY_PARAM_new = <X509_VERIFY_PARAM_new_type>N.bindFunction("X509_VERIFY_PARAM *X509_VERIFY_PARAM_new(void);");
         this.X509_VERIFY_PARAM_set_time = <X509_VERIFY_PARAM_set_time_type>N.bindFunction("void X509_VERIFY_PARAM_set_time(X509_VERIFY_PARAM *param, time_t t);");
-        this.scratch = new ArrayBuffer(4096);
+        this.scratch = new ArrayBuffer(8192);
     }
 
     trustStore(): N.Struct[]
@@ -155,14 +155,14 @@ export class NrdpPlatform implements Platform {
     ERR_error_string(error:number): string
     {
         this.ERR_error_string_n(error, this.ERR_stringBuf, this.ERR_stringBuf.byteLength);
-        // nrdp.l("error", error, ERR_stringBuf);
+        // nrdp.l.success("error", error, ERR_stringBuf);
         let i;
         for (i=0; i<this.ERR_stringBuf.byteLength; ++i) {
             if (!this.ERR_stringBuf[i]) {
                 break;
             }
         }
-        // nrdp.l("balle", i);
+        // nrdp.l.success("balle", i);
         return nrdp.utf8toa(this.ERR_stringBuf, 0, i);
     }
 
@@ -170,7 +170,9 @@ export class NrdpPlatform implements Platform {
 
     public readonly scratch: ArrayBuffer;
 
-    log = nrdp.l;
+    log = nrdp.l.success;
+    error = nrdp.l.error;
+
     assert = nrdp.assert;
     btoa = nrdp.btoa;
     atob = nrdp.atob;

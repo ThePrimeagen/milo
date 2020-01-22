@@ -82,8 +82,8 @@ class NrdpSSLNetworkPipe implements NetworkPipe
         set_mem_eof_return(this.platform, this.outputBio);
         this.outputBio.free = "BIO_free";
         this.pipe.ondata = () => {
-            this.platform.log("FAEN");
             const read = this.pipe.read(this.platform.scratch, 0, this.platform.scratch.byteLength);
+            this.platform.log("FAEN", read);
             if (!read) {
                 assert(this.pipe.closed, "Should be closed already");
                 return;
@@ -92,18 +92,21 @@ class NrdpSSLNetworkPipe implements NetworkPipe
             assert(read > 0, "This should be > 0");
             // throw new Error("fiskball");
             const written = this.platform.BIO_write(this.inputBio, this.platform.scratch, 0, read);
-            nrdp.l("wrote", read, "bytes to inputBio =>", written);
+            this.platform.log("wrote", read, "bytes to inputBio =>", written);
             if (!this.connected) {
                 this._connect();
             } else {
-                this._readFromBIO();
+                const pending = this.platform.BIO_ctrl_pending(this.inputBio);
+                if (pending && this.ondata) {
+                    this.ondata();
+                }
             }
         };
         this.pipe.onclose = () => {
             this.platform.log("got close", this.platform.stacktrace());
         };
         this.pipe.onerror = (code: number, message?: string) => {
-            this.platform.log("got error", code, message || "");
+            this.platform.error("got error", code, message || "");
         };
 
         this.platform.SSL_set_bio(this.ssl, this.inputBio, this.outputBio);
@@ -124,34 +127,62 @@ class NrdpSSLNetworkPipe implements NetworkPipe
         if (!length)
             throw new Error("0 length write");
 
-        this.platform.log("write called 2", buf, offset, length);
+        this.platform.log("write called", buf, offset, length);
 
         if (!this.connected) {
-            this.platform.log("driti?");
-
             throw new Error("SSLNetworkPipe is not connected");
         }
 
-        this.platform.log("drit?");
-        let written;
-        try {
-            written = this.writeBuffers.length ? -1 : this.platform.BIO_write(this.inputBio, buf, offset, length);
-            this.platform.log("drit!");
-            this.platform.log("wrote to output bio", length, "=>", written);
-        } catch (err) {
-            this.platform.log("got err", err);
-        }
+        const written = this.writeBuffers.length ? -1 : this.platform.SSL_write(this.ssl, buf, offset, length);
+        this.platform.log("wrote to output bio", length, "=>", written);
 
         if (written === -1) {
             this.writeBuffers.push(buf);
             this.writeBufferOffsets.push(offset || 0);
             this.writeBufferLengths.push(length);
+        } else {
+            this._flushOutputBio();
         }
     }
 
     read(buf: Uint8Array | ArrayBuffer, offset: number, length: number): number
     {
-        return -1;
+        this.platform.log("someone's calling read", length);
+        const read = this.platform.SSL_read(this.ssl, buf, offset, length);
+        if (read <= 0) {
+            const err = this.platform.SSL_get_error(this.ssl, read);
+            switch (err) {
+                case this.platform.SSL_ERROR_NONE:
+                    this.platform.error("got error none");
+                    break;
+                case this.platform.SSL_ERROR_SSL:
+                    this.platform.error("got error ssl");
+                    break;
+                case this.platform.SSL_ERROR_WANT_READ:
+                    this.platform.error("got error want read");
+                    break;
+                case this.platform.SSL_ERROR_WANT_WRITE:
+                    this.platform.error("got error want write");
+                    break;
+                case this.platform.SSL_ERROR_WANT_X509_LOOKUP:
+                    this.platform.error("got error want x509 lookup");
+                    break;
+                case this.platform.SSL_ERROR_SYSCALL:
+                    this.platform.error("got error syscall");
+                    break;
+                default:
+                    this.platform.error("got error other", err);
+                    break;
+            }
+        }
+
+        this.platform.log("SSL_read called", read);
+        return read;
+        // if (read != -1) {
+
+        // }
+        // let read = SSL_
+        // return -1;
     }
 
     close(): void
@@ -159,9 +190,18 @@ class NrdpSSLNetworkPipe implements NetworkPipe
 
     }
 
-    private _readFromBIO()
+    private _flushOutputBio()
     {
-
+        const pending = this.platform.BIO_ctrl_pending(this.outputBio);
+        // assert(pending <= this.scratch.byteLength, "Pending too large. Probably have to increase scratch buffer size");
+        if (pending > 0) {
+            // should maybe pool these arraybuffers
+            const buf = new ArrayBuffer(pending);
+            let read = this.platform.BIO_read(this.outputBio, buf, 0, pending);
+            assert(read === pending, "Read should be pending");
+            this.pipe.write(buf, 0, read);
+            // Platform
+        }
     }
 
     private _connect()
@@ -173,17 +213,7 @@ class NrdpSSLNetworkPipe implements NetworkPipe
             this.platform.log("GOT ERROR FROM SSL_CONNECT", this.platform.SSL_get_error(this.ssl, ret),
                               this.platform.ERR_error_string(this.platform.SSL_get_error(this.ssl, ret)));
             if (this.platform.SSL_get_error(this.ssl, ret) == this.platform.SSL_ERROR_WANT_READ) {
-                const pending = this.platform.BIO_ctrl_pending(this.outputBio);
-                // assert(pending <= this.scratch.byteLength, "Pending too large. Probably have to increase scratch buffer size");
-                if (pending > 0) {
-                    const buf = new ArrayBuffer(pending);
-                    let read = this.platform.BIO_read(this.outputBio, buf, pending);
-                    assert(read === pending, "Read should be pending");
-                    this.pipe.write(buf, 0, read);
-                    // Platform
-                }
-                this.platform.log("got pending", pending);
-                // N.setFD(sock, N.READ, onConnected.bind(this, host));
+                this._flushOutputBio();
             } else {
                 this.platform.log("BIG FAILURE", this.platform.SSL_get_error(this.ssl, ret), N.errno);
                 this.connectedCallback(new Error(`SSL_connect failure ${this.platform.SSL_get_error(this.ssl, ret)} ${N.errno}`));
@@ -197,6 +227,7 @@ class NrdpSSLNetworkPipe implements NetworkPipe
             assert(this.connectedCallback);
             this.connectedCallback();
             this.connectedCallback = undefined;
+
         }
     }
 
@@ -206,9 +237,10 @@ class NrdpSSLNetworkPipe implements NetworkPipe
 };
 
 
-export default function connectSSLNetworkPipe(options: CreateSSLNetworkPipeOptions, platform: NrdpPlatform): Promise<NetworkPipe> {
+export default function createSSLNetworkPipe(options: CreateSSLNetworkPipeOptions, platform: NrdpPlatform): Promise<NetworkPipe> {
     return new Promise<NetworkPipe>((resolve, reject) => {
         const sslPipe = new NrdpSSLNetworkPipe(options, platform, (error?: Error) => {
+            platform.log("connected or something", error);
             if (error) {
                 reject(error);
             } else {

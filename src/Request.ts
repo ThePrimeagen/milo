@@ -208,6 +208,7 @@ export class Request
                 return pipe;
             }
         }).then((pipe: NetworkPipe) => {
+            Platform.log("GOT OUR PIPE NOW");
             this.networkPipe = pipe;
             this.networkPipe.onclose = this._onNetworkPipeClose.bind(this);
             this.networkPipe.onerror = this._onNetworkPipeError.bind(this);
@@ -233,7 +234,7 @@ export class Request
                 let str =
 `${method} ${this.url.pathname || "/"} HTTP/1.1\r
 Host: ${this.url.hostname}\r
-User-Agent: Milo 0.1\r
+User-Agent: Milo/0.1\r
 Accept: */*\r\n`;
                 if (this.requestData.headers) {
                     for (let key in this.requestData.headers) {
@@ -252,6 +253,7 @@ Accept: */*\r\n`;
                 str += "\r\n";
 
                 assert(this.networkPipe, "Must have network pipe");
+                Platform.log("CALLING WRITE", str);
                 this.networkPipe.write(str);
 
                 break;
@@ -419,11 +421,13 @@ Accept: */*\r\n`;
         Platform.log("headers", this.requestResponse.headers);
         if (contentLength) {
             const len = parseInt(contentLength);
-            if (len > 0 && len < 1024 * 1024 * 16) {
-                this.responseData = new Uint8Array(len);
-            } else {
-                this._httpError(-1, "Bad content length " + len);
-                return false;
+            if (len) {
+                if (len < 1024 * 1024 * 16) {
+                    this.responseData = new Uint8Array(len);
+                } else {
+                    this._httpError(-1, "Bad content length " + len);
+                    return false;
+                }
             }
         } else if (transferEncoding === "chunked") {
             this.chunks = [];

@@ -143,7 +143,7 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
 
 // TODO: We only allow ipv4
 // we should create an opts
-export default function connectTCPNetworkPipe(options: CreateTCPNetworkPipeOptions, platform: NrdpPlatform): Promise<NetworkPipe> {
+export default function createTCPNetworkPipe(options: CreateTCPNetworkPipeOptions, platform: NrdpPlatform): Promise<NetworkPipe> {
     return new Promise<NetworkPipe>((resolve, reject) => {
         new Promise<N.Sockaddr>(innerResolve => {
             let ipAddress = options.host;
