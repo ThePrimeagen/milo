@@ -5,7 +5,7 @@ import { NetworkPipe, DnsResult } from "./types";
 import { ChunkyParser } from "./http1/ChunkyParser";
 import { assert } from "./utils";
 
-let recvBuffer = new Uint8Array(8192);
+let recvBuffer = new Uint8Array(16 * 1024);
 let nextId = 0;
 
 export enum DnsType {
@@ -335,7 +335,7 @@ Accept: */*\r\n`;
                         this.headerBuffer = recvBuffer.buffer.slice(0, read);
                     }
                     const rnrn = Platform.bufferIndexOf(this.headerBuffer, 0, undefined, "\r\n\r\n");
-                        debugger;
+                    debugger;
                     if (rnrn != -1 && this._parseHeaders(rnrn)) {
                         this.transition(RequestState.ReceivedHeaders);
                         const remaining = this.headerBuffer.byteLength - (rnrn + 4);
@@ -418,7 +418,7 @@ Accept: */*\r\n`;
             }
             this.requestResponse.headers.push(key + ": " + value);
         }
-        Platform.log("headers", this.requestResponse.headers);
+        Platform.log("headers", this.requestResponse.headers.join("\n"));
         if (contentLength) {
             const len = parseInt(contentLength);
             if (len) {

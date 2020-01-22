@@ -44,7 +44,9 @@ class NrdpSSLNetworkPipe implements NetworkPipe
         const meth = this.platform.TLS_client_method();
         this.ssl_ctx = this.platform.SSL_CTX_new(meth);
         this.ssl_ctx.free = "SSL_CTX_free";
-        let ret = this.platform.SSL_CTX_ctrl(this.ssl_ctx, this.platform.SSL_CTRL_MODE, this.platform.SSL_MODE_RELEASE_BUFFERS, undefined);
+        let ret = this.platform.SSL_CTX_ctrl(this.ssl_ctx, this.platform.SSL_CTRL_MODE,
+                                             this.platform.SSL_MODE_RELEASE_BUFFERS,//|this.platform.SSL_MODE_AUTO_RETRY,
+                                             undefined);
         this.platform.log("BALLS", ret);
         /* SSL_SET_OPTION(0); */
         let ctx_options = this.platform.SSL_OP_NO_SSLv3;
@@ -55,7 +57,7 @@ class NrdpSSLNetworkPipe implements NetworkPipe
         const shit = this.platform.trustStore();
         this.platform.log("BALLS3", typeof shit);
         this.platform.trustStore().forEach((x509: N.Struct) => {
-            this.platform.X509_STORE_add_cert(cert_store, x509);
+            // this.platform.X509_STORE_add_cert(cert_store, x509);
         });
         const param = this.platform.X509_VERIFY_PARAM_new();
         this.platform.X509_VERIFY_PARAM_set_time(param, Math.round(nrdp.now() / 1000));
@@ -147,34 +149,60 @@ class NrdpSSLNetworkPipe implements NetworkPipe
 
     read(buf: Uint8Array | ArrayBuffer, offset: number, length: number): number
     {
-        this.platform.log("someone's calling read", length);
-        const read = this.platform.SSL_read(this.ssl, buf, offset, length);
-        if (read <= 0) {
-            const err = this.platform.SSL_get_error(this.ssl, read);
-            switch (err) {
-                case this.platform.SSL_ERROR_NONE:
-                    this.platform.error("got error none");
-                    break;
-                case this.platform.SSL_ERROR_SSL:
-                    this.platform.error("got error ssl");
-                    break;
-                case this.platform.SSL_ERROR_WANT_READ:
-                    this.platform.error("got error want read");
-                    break;
-                case this.platform.SSL_ERROR_WANT_WRITE:
-                    this.platform.error("got error want write");
-                    break;
-                case this.platform.SSL_ERROR_WANT_X509_LOOKUP:
-                    this.platform.error("got error want x509 lookup");
-                    break;
-                case this.platform.SSL_ERROR_SYSCALL:
-                    this.platform.error("got error syscall");
-                    break;
-                default:
-                    this.platform.error("got error other", err);
-                    break;
+        let retry = false;
+        let read;
+        do {
+            retry = false;
+            this.platform.log("someone's calling read", length, this.platform.SSL_pending(this.ssl));
+            read = this.platform.SSL_read(this.ssl, buf, offset, length);
+            if (read <= 0) {
+                const err = this.platform.SSL_get_error(this.ssl, read);
+                this._flushOutputBio();
+                switch (err) {
+                    case this.platform.SSL_ERROR_NONE:
+                        this.platform.error("got error none");
+                        break;
+                    case this.platform.SSL_ERROR_SSL:
+                        this.platform.error("got error ssl");
+                        break;
+                    case this.platform.SSL_ERROR_WANT_READ:
+                        if (this.platform.BIO_ctrl_pending(this.inputBio))
+                            retry = true;
+                        this.platform.error("got error want read");
+                        break;
+                    case this.platform.SSL_ERROR_WANT_WRITE:
+                        this.platform.error("got error want write");
+                        break;
+                    case this.platform.SSL_ERROR_WANT_X509_LOOKUP:
+                        this.platform.error("got error want x509 lookup");
+                        break;
+                    case this.platform.SSL_ERROR_SYSCALL:
+                        this.platform.error("got error syscall");
+                        break;
+                    case this.platform.SSL_ERROR_ZERO_RETURN:
+                        this.platform.error("got error zero return");
+                        break;
+                    case this.platform.SSL_ERROR_WANT_CONNECT:
+                        this.platform.error("got error want connect");
+                        break;
+                    case this.platform.SSL_ERROR_WANT_ACCEPT:
+                        this.platform.error("got error want accept");
+                        break;
+                    case this.platform.SSL_ERROR_WANT_ASYNC:
+                        this.platform.error("got error want async");
+                        break;
+                    case this.platform.SSL_ERROR_WANT_ASYNC_JOB:
+                        this.platform.error("got error want async job");
+                        break;
+                    case this.platform.SSL_ERROR_WANT_CLIENT_HELLO_CB:
+                        this.platform.error("got error want client hello cb");
+                        break;
+                    default:
+                        this.platform.error("got error other", err);
+                        break;
+                }
             }
-        }
+        } while (retry);
 
         this.platform.log("SSL_read called", read);
         return read;
@@ -199,6 +227,7 @@ class NrdpSSLNetworkPipe implements NetworkPipe
             const buf = new ArrayBuffer(pending);
             let read = this.platform.BIO_read(this.outputBio, buf, 0, pending);
             assert(read === pending, "Read should be pending");
+            // this.platform.log("writing", read, this.platform.BIO_ctrl_pending(this.outputBio));
             this.pipe.write(buf, 0, read);
             // Platform
         }

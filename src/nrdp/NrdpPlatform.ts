@@ -27,6 +27,7 @@ type SSL_CTX_set_options_type = (ctx: N.Struct, options: number) => number;
 type SSL_connect_type = (ssl: N.Struct) => number;
 type SSL_get_error_type = (ssl: N.Struct, ret: number) => number;
 type SSL_new_type = (ctx: N.Struct) => N.Struct;
+type SSL_pending_type = (ssl: N.Struct) => number;
 type SSL_read_type = (ssl: N.Struct, buf: ArrayBuffer | Uint8Array, offset: number, num: number) => number;
 type SSL_set_bio_type = (ssl: N.Struct, rbio: N.Struct | N.BIO, wbio: N.Struct | N.BIO) => void;
 type SSL_set_default_read_buffer_len_type = (s: N.Struct, len: number) => void;
@@ -67,6 +68,7 @@ export class NrdpPlatform implements Platform {
     public SSL_connect: SSL_connect_type;
     public SSL_get_error: SSL_get_error_type;
     public SSL_new: SSL_new_type;
+    public SSL_pending: SSL_pending_type;
     public SSL_read: SSL_read_type;
     public SSL_set_bio: SSL_set_bio_type;
     public SSL_set_default_read_buffer_len: SSL_set_default_read_buffer_len_type;
@@ -80,7 +82,6 @@ export class NrdpPlatform implements Platform {
     public X509_VERIFY_PARAM_set_time: X509_VERIFY_PARAM_set_time_type;
 
     public readonly SSL_CTRL_MODE = 33;
-    public readonly SSL_MODE_RELEASE_BUFFERS = 0x00000010
     public readonly SSL_OP_NO_SSLv3 = 0x02000000;
 
     public readonly BIO_C_SET_BUF_MEM_EOF_RETURN = 130;
@@ -91,13 +92,32 @@ export class NrdpPlatform implements Platform {
     public readonly SSL_ERROR_WANT_WRITE = 3;
     public readonly SSL_ERROR_WANT_X509_LOOKUP = 4;
     public readonly SSL_ERROR_SYSCALL = 5;
+    public readonly SSL_ERROR_ZERO_RETURN = 6;
+    public readonly SSL_ERROR_WANT_CONNECT = 7;
+    public readonly SSL_ERROR_WANT_ACCEPT = 8;
+    public readonly SSL_ERROR_WANT_ASYNC = 9;
+    public readonly SSL_ERROR_WANT_ASYNC_JOB = 10;
+    public readonly SSL_ERROR_WANT_CLIENT_HELLO_CB = 11;
+
+    public readonly SSL_MODE_ENABLE_PARTIAL_WRITE = 0x00000001;
+    public readonly SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER = 0x00000002;
+    public readonly SSL_MODE_AUTO_RETRY = 0x00000004;
+    public readonly SSL_MODE_NO_AUTO_CHAIN = 0x00000008;
+    public readonly SSL_MODE_RELEASE_BUFFERS = 0x00000010;
+    public readonly SSL_MODE_SEND_CLIENTHELLO_TIME = 0x00000020;
+    public readonly SSL_MODE_SEND_SERVERHELLO_TIME = 0x00000040;
+    public readonly SSL_MODE_SEND_FALLBACK_SCSV = 0x00000080;
+    public readonly SSL_MODE_ASYNC = 0x00000100;
+    public readonly SSL_MODE_NO_KTLS_TX = 0x00000200;
+    public readonly SSL_MODE_DTLS_SCTP_LABEL_LENGTH_BUG = 0x00000400;
+    public readonly SSL_MODE_NO_KTLS_RX = 0x00000800;
 
     constructor()
     {
         this.ERR_stringBuf = new Uint8Array(128);
         this.trustStoreHash = "";
         this.x509s = [];
-         // this.BIO_set_mem_eof_return = <BIO_set_mem_eof_return_type>N.bindFunction("void BIO_set_mem_eof_return(BIO *b, int v);");
+        // this.BIO_set_mem_eof_return = <BIO_set_mem_eof_return_type>N.bindFunction("void BIO_set_mem_eof_return(BIO *b, int v);");
         this.BIO_ctrl = <BIO_ctrl_type>N.bindFunction("long BIO_ctrl(BIO *bp, int cmd, long larg, void *parg);");
         this.BIO_ctrl_pending = <BIO_ctrl_pending_type>N.bindFunction("size_t BIO_ctrl_pending(BIO *b);");
         this.BIO_ctrl_wpending = <BIO_ctrl_wpending_type>N.bindFunction("size_t BIO_ctrl_wpending(BIO *b);");
@@ -120,6 +140,7 @@ export class NrdpPlatform implements Platform {
         this.SSL_connect = <SSL_connect_type>N.bindFunction("int SSL_connect(SSL *ssl);");
         this.SSL_get_error = <SSL_get_error_type>N.bindFunction("int SSL_get_error(const SSL *ssl, int ret);");
         this.SSL_new = <SSL_new_type>N.bindFunction("SSL *SSL_new(SSL_CTX *ctx);");
+        this.SSL_pending = <SSL_pending_type>N.bindFunction("int SSL_pending(const SSL *ssl);");
         this.SSL_read = <SSL_read_type>N.bindFunction("int SSL_read(SSL *ssl, Buffer *buf);");
         this.SSL_set_bio = <SSL_set_bio_type>N.bindFunction("void SSL_set_bio(SSL *ssl, BIO *rbio, BIO *wbio);");
         this.SSL_set_default_read_buffer_len = <SSL_set_default_read_buffer_len_type>N.bindFunction("void SSL_set_default_read_buffer_len(SSL *s, size_t len);");
@@ -131,7 +152,7 @@ export class NrdpPlatform implements Platform {
         this.X509_VERIFY_PARAM_free = <X509_VERIFY_PARAM_free_type>N.bindFunction("void X509_VERIFY_PARAM_free(X509_VERIFY_PARAM *param);");
         this.X509_VERIFY_PARAM_new = <X509_VERIFY_PARAM_new_type>N.bindFunction("X509_VERIFY_PARAM *X509_VERIFY_PARAM_new(void);");
         this.X509_VERIFY_PARAM_set_time = <X509_VERIFY_PARAM_set_time_type>N.bindFunction("void X509_VERIFY_PARAM_set_time(X509_VERIFY_PARAM *param, time_t t);");
-        this.scratch = new ArrayBuffer(8192);
+        this.scratch = new ArrayBuffer(16 * 1024);
     }
 
     trustStore(): N.Struct[]
