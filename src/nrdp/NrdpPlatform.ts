@@ -23,8 +23,11 @@ type SSL_CTX_free_type = (ctx: N.Struct) => void;
 type SSL_CTX_get_cert_store_type = (ctx: N.Struct) => N.Struct;
 type SSL_CTX_new_type = (method: N.Struct) => N.Struct;
 type SSL_CTX_set1_param_type = (ctx: N.Struct, vpm: N.Struct) => number;
+type SSL_CTX_set_cipher_list_type = (ctx: N.Struct, str: string) => number;
 type SSL_CTX_set_options_type = (ctx: N.Struct, options: number) => number;
+type SSL_CTX_set_verify_type = (ctx: N.Struct, mode: number, verify_callback: (preverify_ok: number, x509_ctx: N.Struct) => void) => number;
 type SSL_connect_type = (ssl: N.Struct) => number;
+type SSL_free_type = (ssl: N.Struct) => void;
 type SSL_get_error_type = (ssl: N.Struct, ret: number) => number;
 type SSL_new_type = (ctx: N.Struct) => N.Struct;
 type SSL_pending_type = (ssl: N.Struct) => number;
@@ -64,8 +67,11 @@ export class NrdpPlatform implements Platform {
     public SSL_CTX_get_cert_store: SSL_CTX_get_cert_store_type;
     public SSL_CTX_new: SSL_CTX_new_type;
     public SSL_CTX_set1_param: SSL_CTX_set1_param_type;
+    public SSL_CTX_set_cipher_list: SSL_CTX_set_cipher_list_type;
     public SSL_CTX_set_options: SSL_CTX_set_options_type;
+    public SSL_CTX_set_verify: SSL_CTX_set_verify_type;
     public SSL_connect: SSL_connect_type;
+    public SSL_free: SSL_free_type;
     public SSL_get_error: SSL_get_error_type;
     public SSL_new: SSL_new_type;
     public SSL_pending: SSL_pending_type;
@@ -82,7 +88,41 @@ export class NrdpPlatform implements Platform {
     public X509_VERIFY_PARAM_set_time: X509_VERIFY_PARAM_set_time_type;
 
     public readonly SSL_CTRL_MODE = 33;
+
+    public readonly SSL_OP_ALLOW_NO_DHE_KEX = 0x00000400;
+    public readonly SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION = 0x00040000;
+    public readonly SSL_OP_CIPHER_SERVER_PREFERENCE = 0x00400000;
+    public readonly SSL_OP_CISCO_ANYCONNECT = 0x00008000;
+    public readonly SSL_OP_COOKIE_EXCHANGE = 0x00002000;
+    public readonly SSL_OP_CRYPTOPRO_TLSEXT_BUG = 0x80000000;
+    public readonly SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS = 0x00000800;
+    public readonly SSL_OP_ENABLE_MIDDLEBOX_COMPAT = 0x00100000;
+    public readonly SSL_OP_LEGACY_SERVER_CONNECT = 0x00000004;
+    public readonly SSL_OP_NO_ANTI_REPLAY = 0x01000000;
+    public readonly SSL_OP_NO_COMPRESSION = 0x00020000;
+    public readonly SSL_OP_NO_DTLSv1 = 0x04000000;
+    public readonly SSL_OP_NO_DTLSv1_2 = 0x08000000;
+    public readonly SSL_OP_NO_ENCRYPT_THEN_MAC = 0x00080000;
+    public readonly SSL_OP_NO_EXTENDED_MASTER_SECRET = 0x00000001;
+    public readonly SSL_OP_NO_QUERY_MTU = 0x00001000;
+    public readonly SSL_OP_NO_RENEGOTIATION = 0x40000000;
+    public readonly SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION = 0x00010000;
+    public readonly SSL_OP_NO_SSLv2 = 0x0;
     public readonly SSL_OP_NO_SSLv3 = 0x02000000;
+    public readonly SSL_OP_NO_TICKET = 0x00004000;
+    public readonly SSL_OP_NO_TLSv1 = 0x04000000;
+    public readonly SSL_OP_NO_TLSv1_1 = 0x10000000;
+    public readonly SSL_OP_NO_TLSv1_2 = 0x08000000;
+    public readonly SSL_OP_NO_TLSv1_3 = 0x20000000;
+    public readonly SSL_OP_PRIORITIZE_CHACHA = 0x00200000;
+    public readonly SSL_OP_SAFARI_ECDHE_ECDSA_BUG = 0x00000040;
+    public readonly SSL_OP_TLSEXT_PADDING = 0x00000010;
+    public readonly SSL_OP_TLS_ROLLBACK_BUG = 0x00800000;
+    public readonly SSL_OP_ALL = (this.SSL_OP_CRYPTOPRO_TLSEXT_BUG|
+                                  this.SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS|
+                                  this.SSL_OP_LEGACY_SERVER_CONNECT|
+                                  this.SSL_OP_TLSEXT_PADDING|
+                                  this.SSL_OP_SAFARI_ECDHE_ECDSA_BUG);
 
     public readonly BIO_C_SET_BUF_MEM_EOF_RETURN = 130;
 
@@ -136,8 +176,11 @@ export class NrdpPlatform implements Platform {
         this.SSL_CTX_get_cert_store = <SSL_CTX_get_cert_store_type>N.bindFunction("X509_STORE *SSL_CTX_get_cert_store(const SSL_CTX *ctx);");
         this.SSL_CTX_new = <SSL_CTX_new_type>N.bindFunction("SSL_CTX *SSL_CTX_new(const SSL_METHOD *method);");
         this.SSL_CTX_set1_param = <SSL_CTX_set1_param_type>N.bindFunction("int SSL_CTX_set1_param(SSL_CTX *ctx, X509_VERIFY_PARAM *vpm)");
+        this.SSL_CTX_set_cipher_list = <SSL_CTX_set_cipher_list_type>N.bindFunction("int SSL_CTX_set_cipher_list(SSL_CTX *ctx, const char *str);");
         this.SSL_CTX_set_options = <SSL_CTX_set_options_type>N.bindFunction("long SSL_CTX_set_options(SSL_CTX *ctx, long options);");
+        this.SSL_CTX_set_verify = <SSL_CTX_set_verify_type>N.bindFunction("void SSL_CTX_set_verify(SSL_CTX *ctx, int mode, SSL_verify_cb verify_callback);");
         this.SSL_connect = <SSL_connect_type>N.bindFunction("int SSL_connect(SSL *ssl);");
+        this.SSL_free = <SSL_free_type>N.bindFunction("void SSL_free(SSL *ssl);");
         this.SSL_get_error = <SSL_get_error_type>N.bindFunction("int SSL_get_error(const SSL *ssl, int ret);");
         this.SSL_new = <SSL_new_type>N.bindFunction("SSL *SSL_new(SSL_CTX *ctx);");
         this.SSL_pending = <SSL_pending_type>N.bindFunction("int SSL_pending(const SSL *ssl);");

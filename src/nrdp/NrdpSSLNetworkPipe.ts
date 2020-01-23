@@ -44,20 +44,23 @@ class NrdpSSLNetworkPipe implements NetworkPipe
         const meth = this.platform.TLS_client_method();
         this.ssl_ctx = this.platform.SSL_CTX_new(meth);
         this.ssl_ctx.free = "SSL_CTX_free";
+        this.platform.log("cipher", nrdp.cipherList);
+        this.platform.SSL_CTX_set_cipher_list(this.ssl_ctx, nrdp.cipherList);
         let ret = this.platform.SSL_CTX_ctrl(this.ssl_ctx, this.platform.SSL_CTRL_MODE,
                                              this.platform.SSL_MODE_RELEASE_BUFFERS,//|this.platform.SSL_MODE_AUTO_RETRY,
                                              undefined);
-        this.platform.log("BALLS", ret);
-        /* SSL_SET_OPTION(0); */
-        let ctx_options = this.platform.SSL_OP_NO_SSLv3;
+        const ctx_options = (this.platform.SSL_OP_ALL |
+                             this.platform.SSL_OP_NO_TLSv1 |
+                             this.platform.SSL_OP_NO_SSLv2 |
+                             this.platform.SSL_OP_NO_SSLv3 |
+                             this.platform.SSL_OP_CIPHER_SERVER_PREFERENCE);
+
         ret = this.platform.SSL_CTX_set_options(this.ssl_ctx, ctx_options);
         this.platform.log("BALLS 2", ret);
 
         const cert_store = this.platform.SSL_CTX_get_cert_store(this.ssl_ctx);
-        const shit = this.platform.trustStore();
-        this.platform.log("BALLS3", typeof shit);
         this.platform.trustStore().forEach((x509: N.Struct) => {
-            // this.platform.X509_STORE_add_cert(cert_store, x509);
+            this.platform.X509_STORE_add_cert(cert_store, x509);
         });
         const param = this.platform.X509_VERIFY_PARAM_new();
         this.platform.X509_VERIFY_PARAM_set_time(param, Math.round(nrdp.now() / 1000));
@@ -66,21 +69,17 @@ class NrdpSSLNetworkPipe implements NetworkPipe
 
         this.ssl = this.platform.SSL_new(this.ssl_ctx);
         this.platform.SSL_set_default_read_buffer_len(this.ssl, 16384);
-        this.platform.SSL_up_ref(this.ssl);
         this.platform.SSL_set_read_ahead(this.ssl, 1);
-        // if (0) {
-            // this.inputBio = this.platform.BIO_new_socket(sock, this.platform.BIO_NOCLOSE);
-            // this.inputBio.free = "BIO_free";
-            // // this.platform.BIO_set_read_buffer_size(this.bio, 16384);
-            // 	this.platform.log("ball", this.platform.BIO_int_ctrl(this.bio, this.platform.BIO_C_SET_BUFF_SIZE, 16384, 0));
+        this.ssl.free = "SSL_free";
 
         const memMethod = this.platform.BIO_s_mem();
         this.inputBio = this.platform.BIO_new(memMethod);
+        // this.inputBio.free = "BIO_free";
         set_mem_eof_return(this.platform, this.inputBio);
 
-        this.inputBio.free = "BIO_free";
-
         this.outputBio = this.platform.BIO_new(memMethod);
+        // this.outputBio.free = "BIO_free";
+
         set_mem_eof_return(this.platform, this.outputBio);
         this.outputBio.free = "BIO_free";
         this.pipe.ondata = () => {
@@ -97,7 +96,8 @@ class NrdpSSLNetworkPipe implements NetworkPipe
             this.platform.log("wrote", read, "bytes to inputBio =>", written);
             if (!this.connected) {
                 this._connect();
-            } else {
+            }
+            if (this.connected) {
                 const pending = this.platform.BIO_ctrl_pending(this.inputBio);
                 if (pending && this.ondata) {
                     this.ondata();
@@ -157,6 +157,7 @@ class NrdpSSLNetworkPipe implements NetworkPipe
             read = this.platform.SSL_read(this.ssl, buf, offset, length);
             if (read <= 0) {
                 const err = this.platform.SSL_get_error(this.ssl, read);
+                this.platform.error("got err", err);
                 this._flushOutputBio();
                 switch (err) {
                     case this.platform.SSL_ERROR_NONE:
@@ -239,8 +240,8 @@ class NrdpSSLNetworkPipe implements NetworkPipe
         let ret = this.platform.SSL_connect(this.ssl);
         this.platform.log("CALLED CONNECT", ret);
         if (ret <= 0) {
-            this.platform.log("GOT ERROR FROM SSL_CONNECT", this.platform.SSL_get_error(this.ssl, ret),
-                              this.platform.ERR_error_string(this.platform.SSL_get_error(this.ssl, ret)));
+            const err = this.platform.SSL_get_error(this.ssl, ret);
+            this.platform.log("GOT ERROR FROM SSL_CONNECT", err);
             if (this.platform.SSL_get_error(this.ssl, ret) == this.platform.SSL_ERROR_WANT_READ) {
                 this._flushOutputBio();
             } else {
