@@ -74,17 +74,13 @@ class NrdpSSLNetworkPipe implements NetworkPipe
 
         const memMethod = this.platform.BIO_s_mem();
         this.inputBio = this.platform.BIO_new(memMethod);
-        // this.inputBio.free = "BIO_free";
         set_mem_eof_return(this.platform, this.inputBio);
 
         this.outputBio = this.platform.BIO_new(memMethod);
-        // this.outputBio.free = "BIO_free";
 
         set_mem_eof_return(this.platform, this.outputBio);
-        this.outputBio.free = "BIO_free";
         this.pipe.ondata = () => {
             const read = this.pipe.read(this.platform.scratch, 0, this.platform.scratch.byteLength);
-            this.platform.log("FAEN", read);
             if (!read) {
                 assert(this.pipe.closed, "Should be closed already");
                 return;

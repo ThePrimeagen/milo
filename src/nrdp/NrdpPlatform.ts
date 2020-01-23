@@ -42,6 +42,7 @@ type X509_STORE_add_cert_type = (ctx: N.Struct, x: N.Struct) => number;
 type X509_VERIFY_PARAM_free_type = (param: N.Struct) => void;
 type X509_VERIFY_PARAM_new_type = () => N.Struct;
 type X509_VERIFY_PARAM_set_time_type = (param: N.Struct, t: number) => void;
+type X509_free_type = (x509: N.Struct) => void;
 
 export class NrdpPlatform implements Platform {
 
@@ -86,6 +87,7 @@ export class NrdpPlatform implements Platform {
     public X509_VERIFY_PARAM_free: X509_VERIFY_PARAM_free_type;
     public X509_VERIFY_PARAM_new: X509_VERIFY_PARAM_new_type;
     public X509_VERIFY_PARAM_set_time: X509_VERIFY_PARAM_set_time_type;
+    public X509_free: X509_free_type;
 
     public readonly SSL_CTRL_MODE = 33;
 
@@ -195,6 +197,8 @@ export class NrdpPlatform implements Platform {
         this.X509_VERIFY_PARAM_free = <X509_VERIFY_PARAM_free_type>N.bindFunction("void X509_VERIFY_PARAM_free(X509_VERIFY_PARAM *param);");
         this.X509_VERIFY_PARAM_new = <X509_VERIFY_PARAM_new_type>N.bindFunction("X509_VERIFY_PARAM *X509_VERIFY_PARAM_new(void);");
         this.X509_VERIFY_PARAM_set_time = <X509_VERIFY_PARAM_set_time_type>N.bindFunction("void X509_VERIFY_PARAM_set_time(X509_VERIFY_PARAM *param, time_t t);");
+        this.X509_free = <X509_free_type>N.bindFunction("void X509_free(X509 *a);");
+
         this.scratch = new ArrayBuffer(16 * 1024);
     }
 
@@ -208,6 +212,7 @@ export class NrdpPlatform implements Platform {
                 const x509 = this.PEM_read_bio_X509(trustBIO, undefined, undefined, undefined);
                 if (!x509)
                     break;
+                x509.free = "X509_free";
                 this.x509s.push(x509);
             }
             this.BIO_free(trustBIO);
