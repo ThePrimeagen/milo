@@ -473,7 +473,7 @@ export default class WSFramer {
             state.payloads.push(state.payload);
 
             // buf = Buffer.concat(state.payloads);
-            buf = new Uint8Array(Platform.concatBuffers.apply(undefined, state.payloads));
+            buf = new Uint8Array(Platform.bufferConcat.apply(undefined, state.payloads));
             state.payloads = undefined;
         }
 

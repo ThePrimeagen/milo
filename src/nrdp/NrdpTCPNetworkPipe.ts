@@ -18,6 +18,7 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
     private writeBufferLengths: number[];
     private selectMode: number;
     private platform: NrdpPlatform;
+    private buffer?: ArrayBuffer;
 
     constructor(socket: number, p: NrdpPlatform)
     {
@@ -60,6 +61,22 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
 
     read(buf: Uint8Array | ArrayBuffer, offset: number, length: number): number
     {
+        let bufferRead = 0;
+        if (this.buffer) {
+            const byteLength = this.buffer.byteLength;
+            if (length >= byteLength) {
+                this.platform.bufferSet(buf, offset, this.buffer, 0, byteLength);
+                offset += byteLength;
+                length -= byteLength;
+                bufferRead = byteLength;
+                this.buffer = undefined;
+                // ### maybe pool these buffers?
+            } else {
+                this.platform.bufferSet(buf, offset, this.buffer, 0, length);
+                this.buffer = this.buffer.slice(length);
+                return length;
+            }
+        }
         // ### loop?
         const read = N.read(this.sock, buf, offset, length);
         switch (read) {
@@ -76,7 +93,18 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
             default:
                 break;
         }
-        return read;
+        return read + bufferRead;
+    }
+
+    unread(buf: ArrayBuffer): void
+    {
+        if (this.buffer) {
+            this.buffer = this.platform.bufferConcat(this.buffer, buf);
+        } else {
+            this.buffer = buf;
+        }
+        if (this.ondata)
+            this.ondata();
     }
 
     close(): void
@@ -99,7 +127,7 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
         while (this.writeBuffers.length) {
             assert(this.writeBufferOffsets[0] < this.writeBufferLengths[0], "Nothing to write");
             const written = N.write(this.sock, this.writeBuffers[0], this.writeBufferOffsets[0], this.writeBufferLengths[0]);
-            this.platform.log("wrote", written, "of", this.writeBufferLengths[0]);
+            this.platform.trace("wrote", written, "of", this.writeBufferLengths[0]);
             if (written > 0) {
                 this.writeBufferOffsets[0] += written;
                 this.writeBufferLengths[0] -= written;

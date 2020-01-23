@@ -41,18 +41,18 @@ export class ChunkyParser
     private _process(): void
     {
         while (true) {
-            // Platform.log("processing balls", this.dataNeeded, this.buffers.length, this.offset, this.available, "\n" + this.dump());
+            // Platform.trace("processing balls", this.dataNeeded, this.buffers.length, this.offset, this.available, "\n" + this.dump());
             if (this.dataNeeded == -1) {
                 if (this.available > 2) {
                     let lastWasBackslashR = false;
                     let consumed = 0;
                     let str = "";
                     for (let bi=0; bi<this.buffers.length && this.dataNeeded === -1; ++bi) {
-                        // Platform.log("shit", bi, this.buffers.length);
+                        // Platform.trace("shit", bi, this.buffers.length);
                         let buf = this.buffers[bi];
-                        // Platform.log("this is", buf, Platform.utf8toa(buf));
+                        // Platform.trace("this is", buf, Platform.utf8toa(buf));
                         for (let i=bi ? 0 : this.offset; i<buf.length; ++i) {
-                            // Platform.log("looking at", i, bi, buf[i], String.fromCharCode(buf[i]), str);
+                            // Platform.trace("looking at", i, bi, buf[i], String.fromCharCode(buf[i]), str);
                             ++consumed;
                             if (lastWasBackslashR) {
                                 if (buf[i] === 10) {
@@ -63,7 +63,7 @@ export class ChunkyParser
                                         return;
                                     }
                                     this.dataNeeded = len;
-                                    // Platform.log("got len", len, "for", str, consumed + "\n" + this.dump());
+                                    // Platform.trace("got len", len, "for", str, consumed + "\n" + this.dump());
                                     this._consume(consumed);
                                     break;
                                 }
@@ -87,7 +87,7 @@ export class ChunkyParser
                     this.ondone(buffer);
             } else if (this.dataNeeded + 2 <= this.available) {
                 const chunk = this._extractChunk(this.dataNeeded);
-                // Platform.log("extracted a chunk", Platform.utf8toa(chunk));
+                // Platform.trace("extracted a chunk", Platform.utf8toa(chunk));
                 this._consume(2);
                 this.dataNeeded = -1;
                 if (this.onchunk)
@@ -98,14 +98,14 @@ export class ChunkyParser
         }
     }
 
-    ondone?: (buffer: Uint8Array | undefined) => void;
-    onchunk?: (chunk: Uint8Array) => void;
+    ondone?: (buffer: ArrayBuffer | undefined) => void;
+    onchunk?: (chunk: ArrayBuffer) => void;
     onerror?: (code: number, message: string) => void;
 
     private _consume(bytes: number): void
     {
         Platform.assert(bytes <= this.available, "Not enough bytes to consume");
-        // Platform.log("consuoming", bytes, "from", this.buffers, this.available);
+        // Platform.trace("consuoming", bytes, "from", this.buffers, this.available);
         let consumed = 0;
         while (consumed < bytes) {
             const bufferAvailable = this.buffers[0].byteLength - this.offset;
@@ -125,7 +125,7 @@ export class ChunkyParser
         this.available -= consumed;
     }
 
-    private _extractChunk(size: number): Uint8Array
+    private _extractChunk(size: number): ArrayBuffer
     {
         Platform.assert(this.available >= size, "available's gotta be more than size");
         // grab the whole first chunk
@@ -136,27 +136,27 @@ export class ChunkyParser
             return ret;
         }
 
-        const ret = new Uint8Array(size);
+        const ret = new ArrayBuffer(size);
         let idx = 0;
         while (idx < size) {
             const buf = this.buffers[0];
             const wanted = size - idx;
             const bufferAvailable = buf.byteLength - this.offset;
             if (bufferAvailable > size - idx) {
-                ret.set(buf.subarray(this.offset, this.offset + wanted), idx);
+                Platform.bufferSet(ret, idx, buf, this.offset, wanted);
                 idx += wanted;
                 this.offset += wanted;
                 break;
             } else if (this.offset) {
                 Platform.assert(bufferAvailable <= wanted, "foo");
-                ret.set(buf.subarray(this.offset, this.offset + bufferAvailable), idx);
+                Platform.bufferSet(ret, idx, buf, this.offset, bufferAvailable);
                 this.offset = 0;
                 this.buffers.shift();
                 idx += bufferAvailable;
             } else {
                 Platform.assert(bufferAvailable <= wanted, "bar");
                 Platform.assert(!this.offset, "zot");
-                ret.set(buf, idx);
+                Platform.bufferSet(ret, idx, buf);
                 this.buffers.shift();
                 idx += bufferAvailable;
             }
@@ -169,7 +169,7 @@ export class ChunkyParser
 
 };
 
-export function fuck()
+export function chunkyTest()
 {
     const shit = `4\r
 Wiki\r
@@ -182,33 +182,33 @@ chunks.\r
 0\r
 \r\n`;
 
-    // Platform.log("fuck start");
+    // Platform.trace("fuck start");
     for (let size = 1; size<shit.length; ++size) {
         const balls = new ChunkyParser;
-        let chunks: Uint8Array[] = [];
-        balls.onchunk = (chunk: Uint8Array) => {
-            // Platform.log("got chunk", size, Platform.utf8toa(chunk));
+        let chunks: ArrayBuffer[] = [];
+        balls.onchunk = (chunk: ArrayBuffer) => {
+            // Platform.trace("got chunk", size, Platform.utf8toa(chunk));
             chunks.push(chunk);
         };
         balls.onerror = (code: number, message: string) => {
-            Platform.log("got error", size, code, message);
+            Platform.trace("got error", size, code, message);
             return;
         };
-        balls.ondone = (buf: Uint8Array|undefined) => {
-            Platform.log("Got done with", size, buf);
+        balls.ondone = (buf?: ArrayBuffer) => {
+            Platform.trace("Got done with", size, buf);
             let str = "";
-            chunks.forEach((a: Uint8Array) => {
+            chunks.forEach((a: ArrayBuffer) => {
                 str += Platform.utf8toa(a);
             });
-            // Platform.log("shit is done");
-            Platform.log(str);
+            // Platform.trace("shit is done");
+            Platform.trace(str);
         };
 
         let idx = 0;
         while (idx < shit.length) {
             const sub = shit.substr(idx, size);
             const chunk = Platform.atoutf8(sub);
-            // Platform.log("feeding", idx, shit.length);
+            // Platform.trace("feeding", idx, shit.length);
             balls.feed(chunk, 0, chunk.byteLength);
             idx += size;
         }

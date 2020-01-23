@@ -41,6 +41,8 @@ export interface NetworkPipe
 
     read(buf: Uint8Array | ArrayBuffer, offset: number, length: number): number;
 
+    unread(buf: ArrayBuffer): void;
+
     close(): void;
 
     readonly closed: boolean;
@@ -71,22 +73,41 @@ export interface Platform
 
     randomBytes(len: number): Uint8Array
 
+    writeFile(fileName: string, contents: Uint8Array | ArrayBuffer | string): boolean;
+
     stacktrace(): string;
 
     assert(cond: any, message?: string): void;
 
+    trace(...args: any[]): void;
     log(...args: any[]): void;
     error(...args: any[]): void;
 
     createTCPNetworkPipe(options: CreateTCPNetworkPipeOptions): Promise<NetworkPipe>;
     createSSLNetworkPipe(options: CreateSSLNetworkPipeOptions): Promise<NetworkPipe>;
 
-    concatBuffers(...args: ArrayBuffer[]|Uint8Array[]): ArrayBuffer;
+    bufferConcat(...args: ArrayBuffer[]|Uint8Array[]): ArrayBuffer;
 
-    bufferIndexOf(haystack: Uint8Array | ArrayBuffer | string, haystackOffset: number, haystackLength: number|undefined,
-                  needle: Uint8Array | ArrayBuffer | string, needleOffset?: number, needleLength?: number|undefined): number;
-    bufferLastIndexOf(haystack: Uint8Array | ArrayBuffer | string, haystackOffset: number, haystackLength: number|undefined,
-                      needle: Uint8Array | ArrayBuffer | string, needleOffset?: number, needleLength?: number|undefined): number;
+    bufferIndexOf(haystack: Uint8Array | ArrayBuffer | string,
+                  haystackOffset: number,
+                  haystackLength: number|undefined,
+                  needle: Uint8Array | ArrayBuffer | string,
+                  needleOffset?: number,
+                  needleLength?: number|undefined,
+                  caseInsensitive?: boolean): number;
+    bufferLastIndexOf(haystack: Uint8Array | ArrayBuffer | string,
+                      haystackOffset: number,
+                      haystackLength: number|undefined,
+                      needle: Uint8Array | ArrayBuffer | string,
+                      needleOffset?: number,
+                      needleLength?: number|undefined,
+                      caseInsensitive?: boolean): number;
+    bufferSet(dest: Uint8Array | ArrayBuffer,
+              destOffset: number,
+              src: Uint8Array | ArrayBuffer | string,
+              srcOffset?: number,
+              srcLength?: number | undefined): void;
+
     lookupDnsHost(host: string,
                   ipVersion: IpVersion,
                   timeout: number,

@@ -30,6 +30,12 @@ export interface RequestTimeouts
     delay?: number;
 };
 
+export interface OnHeadersData
+{
+    statusCode: number;
+    headers: string[];
+};
+
 export interface RequestData
 {
     url: string;
@@ -61,6 +67,10 @@ export interface RequestData
     weight?: number;
     exclusiveDepends?: boolean;
     dependsOn?: string | ArrayBuffer | Uint8Array | number;
+
+    onChunk?: (chunk: ArrayBuffer) => void;
+    onHeaders?: (data: OnHeadersData) => void;
+    onData?: (data: ArrayBuffer) => void;
 };
 
 export class RequestResponse
@@ -97,7 +107,7 @@ export class RequestResponse
     dns?: string;
     dnsChannel?: string;
     socket?: number;
-    data?: string|{}|Uint8Array;
+    data?: string|ArrayBuffer|Uint8Array;
     size?: number;
     urls?: string[];
     headers: string[];
@@ -130,16 +140,21 @@ export class Request
     private requestResponse: RequestResponse;
     private headerBuffer?: ArrayBuffer;
     private responseData?: Uint8Array;
-    private responseDataOffset: number = 0;
+    private responseDataOffset: number;
     private responseDataArray?: ArrayBuffer[];
+    private responseDataLength: number;
     private chunks?: ArrayBuffer[];
     private chunkyParser?: ChunkyParser
-    private bytesReceived: number = 0;
+    private bytesReceived: number;
     private connection?: string;
     private onConnections: Array<() => void>;
+    private contentLength?: number;
 
     constructor(data: RequestData | string)
     {
+        this.bytesReceived = 0;
+        this.responseDataOffset = 0;
+        this.responseDataLength = 0;
         this.onConnections = [];
         this.id = ++nextId;
         this.requestResponse = new RequestResponse(this.id);
@@ -166,14 +181,14 @@ export class Request
     }
 
     send(): Promise<RequestResponse> {
-        // Platform.log("send called", this.state, this.url);
+        // Platform.trace("send called", this.state, this.url);
         if (this.state != RequestState.Initial) {
             throw new Error("Bad state transition");
         }
 
-        Platform.log("Request#send");
+        // Platform.trace("Request#send");
         const ret = new Promise<RequestResponse>((resolve, reject) => {
-            Platform.log("Request#send return promise");
+            // Platform.trace("Request#send return promise");
             this.resolve = resolve;
             this.reject = reject;
         });
@@ -183,7 +198,7 @@ export class Request
             port = parseInt(this.url.port);
         }
 
-        Platform.log("Request#send port", port);
+        // Platform.trace("Request#send port", port);
         let ssl = false;
         switch (this.url.protocol) {
             case "https:":
@@ -199,16 +214,16 @@ export class Request
                 break;
         }
         debugger;
-        Platform.log("Request#send creating TCP pipe");
+        // Platform.trace("Request#send creating TCP pipe");
         Platform.createTCPNetworkPipe({ host: this.url.hostname, port: port }).then((pipe: NetworkPipe) => {
-            Platform.log("Request#send#createTCPNetworkPipe pipe");
+            // Platform.trace("Request#send#createTCPNetworkPipe pipe");
             if (ssl) {
                 return Platform.createSSLNetworkPipe({ pipe: pipe });
             } else {
                 return pipe;
             }
         }).then((pipe: NetworkPipe) => {
-            Platform.log("GOT OUR PIPE NOW");
+            // Platform.trace("GOT OUR PIPE NOW");
             this.networkPipe = pipe;
             this.networkPipe.onclose = this._onNetworkPipeClose.bind(this);
             this.networkPipe.onerror = this._onNetworkPipeError.bind(this);
@@ -216,7 +231,7 @@ export class Request
 
             this.transition(RequestState.Connected);
         }).catch(err => {
-            Platform.log("Request#send#createTCPNetworkPipe error", err);
+            // Platform.trace("Request#send#createTCPNetworkPipe error", err);
             this._httpError(-1, err.toString());
         });
 
@@ -224,7 +239,7 @@ export class Request
     }
 
     private transition(state: RequestState): void {
-        Platform.log("transition", this.state, "to", state);
+        // Platform.trace("transition", this.state, "to", state);
         this.state = state;
         switch (state) {
             case RequestState.Initial:
@@ -235,6 +250,7 @@ export class Request
 `${method} ${this.url.pathname || "/"} HTTP/1.1\r
 Host: ${this.url.hostname}\r
 User-Agent: Milo/0.1\r
+Connection: close\r
 Accept: */*\r\n`;
                 if (this.requestData.headers) {
                     for (let key in this.requestData.headers) {
@@ -253,7 +269,7 @@ Accept: */*\r\n`;
                 str += "\r\n";
 
                 assert(this.networkPipe, "Must have network pipe");
-                Platform.log("CALLING WRITE", str);
+                // Platform.trace("CALLING WRITE", str);
                 this.networkPipe.write(str);
 
                 break;
@@ -265,17 +281,17 @@ Accept: */*\r\n`;
             case RequestState.Finished:
                 let responseArrayBuffer: ArrayBuffer;
                 if (this.chunks) {
-                    responseArrayBuffer = Platform.concatBuffers.apply(undefined, this.chunks);
+                    responseArrayBuffer = Platform.bufferConcat.apply(undefined, this.chunks);
                 } else if (this.responseDataArray) {
-                    Platform.log("GOT HERE 1", this.responseDataArray);
-                    responseArrayBuffer = Platform.concatBuffers.apply(undefined, this.responseDataArray);
+                    // Platform.trace("GOT HERE 1", this.responseDataArray);
+                    responseArrayBuffer = Platform.bufferConcat.apply(undefined, this.responseDataArray);
                 } else if (this.responseData) {
-                    Platform.log("GOT HERE 2", this.responseData);
+                    // Platform.trace("GOT HERE 2", this.responseData);
                     responseArrayBuffer = this.responseData;
                 } else {
                     responseArrayBuffer = new ArrayBuffer(0);
                 }
-                Platform.log("BALLS", this.requestData.format, responseArrayBuffer);
+                // Platform.trace("BALLS", this.requestData.format, responseArrayBuffer);
                 switch (this.requestData.format) {
                     case "xml":
                     case "json":
@@ -293,7 +309,6 @@ Accept: */*\r\n`;
                     default:
                         if (responseArrayBuffer) {
                             this.requestResponse.data = Platform.utf8toa(responseArrayBuffer);
-                            Platform.log("fuck", this.requestResponse.data);
                         }
                         break;
                 }
@@ -303,7 +318,7 @@ Accept: */*\r\n`;
         }
     }
     private _httpError(code: number, text: string): void {
-        Platform.log("got error", code, text);
+        // Platform.trace("got error", code, text);
         assert(this.reject, "Must have reject");
         if (this.networkPipe)
             this.networkPipe.close();
@@ -316,7 +331,7 @@ Accept: */*\r\n`;
     }
 
     private _onNetworkPipeClose() {
-        Platform.log("got closed", Platform.stacktrace());
+        Platform.trace("got closed", Platform.stacktrace());
         this.transition(RequestState.Finished);
     }
 
@@ -328,9 +343,10 @@ Accept: */*\r\n`;
                 break;
             } else {
                 this.bytesReceived += read;
+                Platform.log("bytes received", this.bytesReceived, this.responseDataLength, this.contentLength);
                 if (this.state === RequestState.Connected) { // waiting for headers
                     if (this.headerBuffer) {
-                        this.headerBuffer = Platform.concatBuffers(this.headerBuffer, read < recvBuffer.byteLength ? recvBuffer.buffer.slice(0, read) : recvBuffer);
+                        this.headerBuffer = Platform.bufferConcat(this.headerBuffer, read < recvBuffer.byteLength ? recvBuffer.buffer.slice(0, read) : recvBuffer);
                     } else {
                         this.headerBuffer = recvBuffer.buffer.slice(0, read);
                     }
@@ -359,24 +375,24 @@ Accept: */*\r\n`;
         assert(this.headerBuffer, "Must have headerBuffer");
         const str = Platform.utf8toa(this.headerBuffer, 0, rnrn);
         const split = str.split("\r\n");
-        // Platform.log("got string\n", split);
+        // Platform.trace("got string\n", split);
         const statusLine = split[0];
-        Platform.log("got status", statusLine);
+        // Platform.trace("got status", statusLine);
         if (statusLine.lastIndexOf("HTTP/1.", 0) != 0) {
             this._httpError(-1, "Bad status line " + statusLine);
             return false;
         }
         if (statusLine[7] == "1") {
-
+            this.requestResponse.httpVersion = "1.1";
         } else if (statusLine[7] == "0") {
-
+            this.requestResponse.httpVersion = "1.0";
         } else {
             this._httpError(-1, "Bad status line " + statusLine);
             return false;
         }
 
         const space = statusLine.indexOf(' ', 9);
-        // Platform.log("got status", space, statusLine.substring(9, space))
+        // Platform.trace("got status", space, statusLine.substring(9, space))
         this.requestResponse.statusCode = parseInt(statusLine.substring(9, space));
         if (isNaN(this.requestResponse.statusCode) || this.requestResponse.statusCode < 0) {
             this._httpError(-1, "Bad status line " + statusLine);
@@ -390,7 +406,7 @@ Accept: */*\r\n`;
         for (var i=1; i<split.length; ++i) {
             // split \r\n\r\n by \r\n causes 2 empty lines.
             if (split.length === 0) {
-                Platform.log("IGNORING LINE....");
+                // Platform.trace("IGNORING LINE....");
                 continue;
             }
             let idx = split[i].indexOf(":");
@@ -418,37 +434,77 @@ Accept: */*\r\n`;
             }
             this.requestResponse.headers.push(key + ": " + value);
         }
-        Platform.log("headers", this.requestResponse.headers.join("\n"));
-        if (contentLength) {
-            const len = parseInt(contentLength);
-            if (len) {
-                if (len < 1024 * 1024 * 16) {
-                    this.responseData = new Uint8Array(len);
-                } else {
-                    this._httpError(-1, "Bad content length " + len);
-                    return false;
+        // Platform.trace("headers", this.requestResponse.headers.join("\n"));
+        if (this.requestData.onHeaders) {
+            this.requestData.onHeaders({ statusCode: this.requestResponse.statusCode, headers: this.requestResponse.headers });
+        }
+        if (!this.requestData.onData) {
+            if (contentLength) {
+                const len = parseInt(contentLength);
+                if (len) {
+                    if (len < 1024 * 1024 * 16 && len > 0) {
+                        this.responseData = new Uint8Array(len);
+                        this.contentLength = len;
+                    } else {
+                        this._httpError(-1, "Bad content length " + len);
+                        return false;
+                    }
                 }
+                Platform.log("SHITTY", contentLength);
+            } else if (transferEncoding === "chunked") {
+                if (!this.requestData.onChunk)
+                    this.chunks = [];
+                this.chunkyParser = new ChunkyParser;
+                this.chunkyParser.onchunk = (chunk: ArrayBuffer) => {
+                    if (this.chunks) {
+                        this.chunks.push(chunk);
+                    } else {
+                        assert(this.requestData.onChunk);
+                        this.requestData.onChunk(chunk);
+                    }
+                };
+                this.chunkyParser.onerror = (code: number, message: string) => {
+                    Platform.error(`Got error in the chunky parser - code: ${code} message: ${message}`);
+                    this._httpError(code, message);
+                };
+
+                this.chunkyParser.ondone = (buffer: ArrayBuffer | undefined) => {
+                    this._finish();
+                    if (buffer) {
+                        assert(this.networkPipe, "Must have networkPipe");
+                        this.networkPipe.unread(buffer);
+                    }
+                };
+            } else {
+                this.responseDataArray = [];
             }
-        } else if (transferEncoding === "chunked") {
-            this.chunks = [];
-            this.chunkyParser = new ChunkyParser;
-        } else {
-            this.responseDataArray = [];
         }
         return true;
     }
 
     private _processResponseData(data: ArrayBuffer, offset: number, length: number): void {
-        // Platform.log("got some data here", length, Platform.utf8toa(data.slice(offset, offset + length)));
-        if (this.chunks) {
-            throw new Error("Gotta implment chunks");
+        this.responseDataLength += length;
+        // Platform.trace("got some data here", length, Platform.utf8toa(data.slice(offset, offset + length)));
+        if (this.requestData.onData) {
+            this.requestData.onData(data.slice(offset, length));
+        } else if (this.chunkyParser) {
+            this.chunkyParser.feed(data, offset, length);
         } else if (this.responseData) {
             // ### should make this more efficient, also should make it okay to set an arraybuffer
-            this.responseData.set(new Uint8Array(data, offset, length), this.responseDataOffset);
+            if (offset || length != data.byteLength) {
+                this.responseData.set(new Uint8Array(data, offset, length), this.responseDataOffset);
+            } else {
+                // this.responseData.set(data, this.responseDataOffset);
+            }
             this.responseDataOffset += length;
         } else if (this.responseDataArray) {
             this.responseDataArray.push(data.slice(offset, offset + length));
             // this.responseDataArray(data
         }
+    }
+
+    private _finish()
+    {
+        this.transition(RequestState.Finished);
     }
 }

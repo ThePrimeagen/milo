@@ -239,8 +239,21 @@ export class NrdpPlatform implements Platform {
 
     public readonly scratch: ArrayBuffer;
 
-    log = nrdp.l.success;
-    error = nrdp.l.error;
+    log(...args: any[]): void
+    {
+        args.unshift({ traceArea: "MILO" });
+        nrdp.l.success.apply(nrdp.l, args);
+    }
+    error(...args: any[]): void
+    {
+        args.unshift({ traceArea: "MILO" });
+        nrdp.l.error.apply(nrdp.l, args);
+    }
+    trace(...args: any[]): void
+    {
+        args.unshift({ traceArea: "MILO" });
+        nrdp.l.trace.apply(nrdp.l, args);
+    }
 
     assert = nrdp.assert;
     btoa = nrdp.btoa;
@@ -250,18 +263,36 @@ export class NrdpPlatform implements Platform {
     randomBytes = nrdp_platform.random;
     stacktrace = nrdp.stacktrace;
 
+    writeFile(fileName: string, contents: Uint8Array | ArrayBuffer | string): boolean {
+        const fd = N.open(fileName, N.O_CREAT|N.O_WRONLY, 0o0664);
+        if (fd === -1) {
+            this.error(`Failed to open ${fileName} for writing`);
+            return false;
+        }
+        const len = typeof contents === "string" ? contents.length : contents.byteLength;
+        const w = N.write(fd, contents);
+        N.close(fd);
+        if (w != len) {
+            this.error(`Failed to open ${fileName} for writing`);
+            return false;
+        }
+        return true;
+    }
+
     createTCPNetworkPipe(options: CreateTCPNetworkPipeOptions): Promise<NetworkPipe> {
         return createNrdpTCPNetworkPipe(options, this);
     }
     createSSLNetworkPipe(options: CreateSSLNetworkPipeOptions): Promise<NetworkPipe> {
         return createNrdpSSLNetworkPipe(options, this);
     }
-    concatBuffers(...args: ArrayBuffer[] | Uint8Array[]) {
+    bufferConcat(...args: ArrayBuffer[] | Uint8Array[]) {
         // @ts-ignore
         return ArrayBuffer.concat(...args);
     }
-    bufferIndexOf = nrdp_platform.indexOf;
-    bufferLastIndexOf = nrdp_platform.lastIndexOf;
+
+    bufferSet = nrdp_platform.bufferSet;
+    bufferIndexOf = nrdp_platform.bufferIndexOf;
+    bufferLastIndexOf = nrdp_platform.bufferLastIndexOf;
     lookupDnsHost = nrdp.dns.lookupHost.bind(nrdp.dns);
 
     get UILanguages(): string[] { return nrdp.device.UILanguages; }

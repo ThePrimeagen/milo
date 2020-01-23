@@ -102,7 +102,6 @@ declare namespace nrdsocket {
     // types
     type Buffer = ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | Uint16Array | Int16Array | Uint32Array | Int32Array | Float32Array | Float64Array | DataView | DataPointer;
     type ConstBuffer = string | ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | Uint16Array | Int16Array | Uint32Array | Int32Array | Float32Array | Float64Array | DataView | ConstDataPointer | DataPointer;
-    type int = number;
 
     type ForEachCallback = (key: any, value: any) => boolean;
     type SelectCallback = (fds: UnorderedMap) => void;
@@ -421,23 +420,24 @@ declare namespace nrdsocket {
     // functions
     function bindFunction(signature: string, options?: BindFunctionOptions): Function;
     function unbindFunction(signature: string): boolean;
-    function socket(domain: int, type: int, protocol: int): number;
-    function close(fd: int): number;
-    function bind(sockfd: int, addr: Sockaddr): number;
-    function listen(sockfd: int, backlog: int): number;
-    function connect(sockfd: int, addr: Sockaddr): number;
-    function accept(sockfd: int, addr: Sockaddr | undefined): number;
-    function send(sockfd: int, buf: ConstBuffer, bufOffset: number, bufLength: number, flags: int): number;
-    function sendto(sockfd: int, buf: ConstBuffer, bufOffset: number, bufLength: number, flags: int, addr: Sockaddr): number;
-    function sendmsg(sockfd: int, msg: ConstMsgHdr, flags: int): number;
-    function write(fd: int, buf: ConstBuffer, bufOffset?: number, bufLength?: number): number;
-    function recv(sockfd: int, buf: Buffer, bufOffset: number, bufLength: number, flags: int): number;
-    function recvfrom(sockfd: int, buf: Buffer, bufOffset: number, bufLength: number, flags: int, addr: Sockaddr | undefined): number;
-    function recvmsg(sockfd: int, msg: MsgHdr, flags: int): number;
-    function read(fd: int, buf: Buffer, bufOffset?: number, bufLength?: number): number;
-    function fcntl(fd: int, cmd: int, arg?: ConstBuffer|undefined|number|boolean): number;
-    function getsockopt(fd: int, level: int, optname: int, optval: Buffer | undefined, optvalOffset?: number, optvalLength?: number): number;
-    function setsockopt(fd: int, level: int, optname: int, optval: ConstBuffer | undefined, optvalOffset?: number, optvalLength?: number): number;
+    function socket(domain: number, type: number, protocol: number): number;
+    function open(pathname: ConstBuffer, flags: number, mode: number): number;
+    function close(fd: number): number;
+    function bind(sockfd: number, addr: Sockaddr): number;
+    function listen(sockfd: number, backlog: number): number;
+    function connect(sockfd: number, addr: Sockaddr): number;
+    function accept(sockfd: number, addr: Sockaddr | undefined): number;
+    function send(sockfd: number, buf: ConstBuffer, bufOffset: number, bufLength: number, flags: number): number;
+    function sendto(sockfd: number, buf: ConstBuffer, bufOffset: number, bufLength: number, flags: number, addr: Sockaddr): number;
+    function sendmsg(sockfd: number, msg: ConstMsgHdr, flags: number): number;
+    function write(fd: number, buf: ConstBuffer, bufOffset?: number, bufLength?: number): number;
+    function recv(sockfd: number, buf: Buffer, bufOffset: number, bufLength: number, flags: number): number;
+    function recvfrom(sockfd: number, buf: Buffer, bufOffset: number, bufLength: number, flags: number, addr: Sockaddr | undefined): number;
+    function recvmsg(sockfd: number, msg: MsgHdr, flags: number): number;
+    function read(fd: number, buf: Buffer, bufOffset?: number, bufLength?: number): number;
+    function fcntl(fd: number, cmd: number, arg?: ConstBuffer|undefined|number|boolean): number;
+    function getsockopt(fd: number, level: number, optname: number, optval: Buffer | undefined, optvalOffset?: number, optvalLength?: number): number;
+    function setsockopt(fd: number, level: number, optname: number, optval: ConstBuffer | undefined, optvalOffset?: number, optvalLength?: number): number;
 }
 
 export default nrdsocket;

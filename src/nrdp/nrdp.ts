@@ -19,6 +19,7 @@ interface nrdp {
     l: {
         success(...args: any[]): void;
         error(...args: any[]): void;
+        trace(...args: any[]): void;
     }
 
     exit(exitCode: number): void;

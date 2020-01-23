@@ -11,30 +11,34 @@ export function _load(data: RequestData, callback: Function): number
     // @ts-ignore
     const req = new Request(data);
     req.send().then(response => {
-        Platform.log("Got resolved", response);
+        Platform.trace("Got resolved", response);
+        if (response.data) {
+            Platform.writeFile("/tmp/dl", response.data);
+
+        }
     }).catch(error => {
-        Platform.log("Got error", error);
+        Platform.trace("Got error", error);
     });
     return req.id;
 }
 
 export function _wsUpgrade(data: RequestData): Promise<NetworkPipe> {
     return new Promise((resolve, reject) => {
-        Platform.log("GOT SHIT", data);
+        Platform.trace("GOT SHIT", data);
         if (!data.headers) {
             data.headers = {};
         }
 
         const arrayBufferKey = Platform.randomBytes(16);
         const key = Platform.btoa(arrayBufferKey);
-        Platform.log("key is", key, arrayBufferKey);
+        Platform.trace("key is", key, arrayBufferKey);
         data.headers["Upgrade"] = "websocket";
         data.headers["Connection"] = "Upgrade";
         data.headers["Sec-WebSocket-Key"] = key;
         data.headers["Sec-WebSocket-Version"] = "13";
         const req = new Request(data);
         req.send().then(response => {
-            Platform.log("Got response", response);
+            Platform.trace("Got response", response);
             if (response.statusCode !== 101)
                 throw new Error("status code");
 
@@ -47,10 +51,10 @@ export function _wsUpgrade(data: RequestData): Promise<NetworkPipe> {
             if (shadkey !== upgradeKeyResponse)
                 throw new Error(`Key mismatch expected: ${shadkey} got: ${upgradeKeyResponse}`);
 
-            Platform.log("successfully upgraded");
+            Platform.trace("successfully upgraded");
             resolve(req.networkPipe);
         }).catch(error => {
-            Platform.log("Got error", error);
+            Platform.trace("Got error", error);
             reject(error);
         });
     });
@@ -62,12 +66,12 @@ export function createWS(url: string): Promise<WS>
 {
     return _wsUpgrade({url: url}).then((networkPipe: NetworkPipe) => {
         // @ts-ignore
-        Platform.log("foo", WS);
-        Platform.log(Object.keys(WS));
-        Platform.log(typeof WS);
-        Platform.log("ws", WS.ws);
+        Platform.trace("foo", WS);
+        Platform.trace(Object.keys(WS));
+        Platform.trace(typeof WS);
+        Platform.trace("ws", WS.ws);
         ws = new WS(networkPipe);
-        Platform.log("got thing here", ws);
+        Platform.trace("got thing here", ws);
         return ws;
     });
 }
@@ -76,11 +80,11 @@ export function createWS(url: string): Promise<WS>
 export function _ssl(): void
 {
     Platform.createTCPNetworkPipe({ host: "www.google.com", port: 443 }).then((pipe: NetworkPipe) => {
-        Platform.log("got pipe");
+        Platform.trace("got pipe");
         return Platform.createSSLNetworkPipe({ pipe: pipe });
     }).then((sslPipe: NetworkPipe) => {
-        Platform.log("Got ssl pipe");
+        Platform.trace("Got ssl pipe");
     }).catch((err: Error) => {
-        Platform.log("got error", err);
+        Platform.trace("got error", err);
     });
 }

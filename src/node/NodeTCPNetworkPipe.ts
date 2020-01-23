@@ -146,6 +146,10 @@ class NodeTCPNetworkPipe implements NetworkPipe {
         return writeAmount;
     }
 
+    unread(buf: ArrayBuffer): void {
+        assert(false, "Must implement this");
+    }
+
     close(): void {
         // successfully destroy socket.
         assert(this.sock !== undefined, "Must have sock");

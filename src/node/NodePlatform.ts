@@ -129,7 +129,7 @@ class NodePlatform implements Platform {
         return createTCPNetworkPipe(options);
     }
 
-    concatBuffers(...args: ArrayBuffer[] | Uint8Array[]): ArrayBuffer {
+    bufferConcat(...args: ArrayBuffer[] | Uint8Array[]): ArrayBuffer {
         let bufs;
 
         if (args[0] instanceof ArrayBuffer) {
