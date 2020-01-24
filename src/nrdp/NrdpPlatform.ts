@@ -267,7 +267,7 @@ export class NrdpPlatform implements Platform {
     writeFile(fileName: string, contents: Uint8Array | ArrayBuffer | string): boolean {
         const fd = N.open(fileName, N.O_CREAT|N.O_WRONLY, 0o0664);
         if (fd === -1) {
-            this.error(`Failed to open ${fileName} for writing`);
+            this.error(`Failed to open ${fileName} for writing`, N.errno, N.strerror());
             return false;
         }
         const len = typeof contents === "string" ? contents.length : contents.byteLength;

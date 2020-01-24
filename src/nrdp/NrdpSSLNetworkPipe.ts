@@ -103,6 +103,8 @@ class NrdpSSLNetworkPipe implements NetworkPipe
         };
         this.pipe.onclose = () => {
             this.platform.trace("got close", this.platform.stacktrace());
+            if (this.onclose)
+                this.onclose();
         };
         this.pipe.onerror = (code: number, message?: string) => {
             this.platform.error("got error", code, message || "");
@@ -236,7 +238,7 @@ class NrdpSSLNetworkPipe implements NetworkPipe
 
     close(): void
     {
-
+        this.pipe.close();
     }
 
     private _flushOutputBio()

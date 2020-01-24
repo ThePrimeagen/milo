@@ -343,7 +343,7 @@ Accept: */*\r\n`;
                 break;
             } else {
                 this.bytesReceived += read;
-                Platform.log("bytes received", this.bytesReceived, this.responseDataLength, this.contentLength);
+                Platform.trace("bytes received", this.bytesReceived, this.responseDataLength, this.contentLength);
                 if (this.state === RequestState.Connected) { // waiting for headers
                     if (this.headerBuffer) {
                         this.headerBuffer = Platform.bufferConcat(this.headerBuffer, read < recvBuffer.byteLength ? recvBuffer.buffer.slice(0, read) : recvBuffer);
