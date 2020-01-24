@@ -1,12 +1,13 @@
 {
     "include": ["src", "examples"],
     "compilerOptions": {
+        "moduleResolution": "Node",
         "outDir": "./build/",
         "sourceMap": true,
         "noImplicitAny": true,
         "lib": ["es6"],
-        "module": "commonjs",
-        "target": "es5",
+        "target": "ES5",
+        "module": "ES2015",
         "esModuleInterop": true,
         "allowJs": false,
         "strictNullChecks": true,
