@@ -263,6 +263,22 @@ export class NrdpPlatform implements Platform {
         return 4;
     }
 
+    private cachedStandardHeaders?: { [key: string]: string };
+    private cachedUILanguages?: string[];
+    get standardHeaders() {
+        let currentLanguages = this.UILanguages;
+        if (!this.cachedStandardHeaders || this.cachedUILanguages != currentLanguages) {
+            this.cachedUILanguages = currentLanguages;
+            this.cachedStandardHeaders = {};
+            this.cachedStandardHeaders["User-Agent"] = "Milo/0.1";
+            this.cachedStandardHeaders["Accept"] = "*/*";
+            if (currentLanguages && currentLanguages.length) {
+                this.cachedStandardHeaders["Language"] = currentLanguages.join(",");
+            }
+        }
+        return this.cachedStandardHeaders;
+    }
+
     get defaultRequestTimeouts(): RequestTimeouts {
         const opts = nrdp.options;
         return {

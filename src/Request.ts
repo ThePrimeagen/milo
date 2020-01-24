@@ -1,7 +1,7 @@
 import Url from "url-parse";
 import { ChunkyParser } from "./http1/ChunkyParser";
 import Platform from "./Platform";
-import { CreateTCPNetworkPipeOptions, DnsResult, IpConnectivityMode, NetworkPipe, RequestTimeouts } from "./types";
+import { CreateTCPNetworkPipeOptions, DnsResult, IpConnectivityMode, NetworkPipe, RequestTimeouts, HTTPMethod } from "./types";
 import { assert, escapeData } from "./utils";
 
 let recvBuffer = new Uint8Array(16 * 1024);
@@ -24,7 +24,7 @@ export interface OnHeadersData {
 export interface RequestData {
     url: string;
     baseUrl?: string;
-    method?: "POST" | "HEAD" | "PUT" | "DELETE" | "PATCH" | "GET";
+    method?: HTTPMethod;
     body?: string | ArrayBuffer | Uint8Array;
     timeouts?: RequestTimeouts;
     ipConnectivityMode?: IpConnectivityMode;

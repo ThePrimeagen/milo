@@ -1,5 +1,8 @@
+import Url from "url-parse";
+
 export type IpVersion = 4 | 6;
 export type IpConnectivityMode = 4 | 6 | 10 | 0; // 0 is invalid, 10 is dual
+export type HTTPMethod = "POST" | "HEAD" | "PUT" | "DELETE" | "PATCH" | "GET";
 
 export interface DnsResult {
     errorCode: number;
@@ -67,6 +70,33 @@ export interface NetworkPipe {
     onerror?: OnError;
 };
 
+export enum HTTPTransferEncoding {
+    None = 0x00,
+    Chunked = 0x01,
+    Compress = 0x02,
+    Deflate = 0x04,
+    Gzip = 0x08,
+    Identity = 0x10
+};
+
+export interface HTTPHeaders {
+    method: HTTPMethod;
+    statusCode: number;
+    headers: string[];
+    contentLength?: number;
+    transferEncoding: HTTPTransferEncoding;
+};
+
+export interface HTTP {
+    readonly version: string;
+    send(pipe: NetworkPipe, url: Url, method: HTTPMethod, requestHeaders: { [key: string]: string }): boolean;
+
+    onheaders?: (headers: HTTPTransferEncoding) => void;
+    ondata?: (data: ArrayBuffer, offset: number, length: number) => void;
+    onfinished?: () => void;
+    onerror?: () => void;
+};
+
 export interface Platform {
     sha1(input: string): Uint8Array;
     // base64 encode
@@ -100,6 +130,8 @@ export interface Platform {
     mono(): number;
 
     ipConnectivityMode: IpConnectivityMode;
+
+    standardHeaders: { [key: string]: string };
 
     createTCPNetworkPipe(options: CreateTCPNetworkPipeOptions): Promise<NetworkPipe>;
     createSSLNetworkPipe(options: CreateSSLNetworkPipeOptions): Promise<NetworkPipe>;
