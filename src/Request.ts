@@ -1,4 +1,5 @@
-import Url from "url-parse";
+// import * as Url from "url-parse";
+import Url = require("url-parse");
 import Platform from "./Platform";
 import { NetworkPipe, DnsResult } from "./types";
 import { ChunkyParser } from "./http1/ChunkyParser";

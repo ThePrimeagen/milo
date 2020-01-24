@@ -8,11 +8,10 @@ export default {
     input: 'build/src/milo.js',
     output: {
         dir: 'dist/',
-        format: 'iife',
+        format: 'umd',
         name: "milo",
         exports: "named"
-    },
-    plugins: [
+    }, plugins: [
         replace({ 'process.env.NRDP': true }),
         resolve(),
         commonjs()
