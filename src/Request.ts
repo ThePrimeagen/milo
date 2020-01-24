@@ -1,8 +1,8 @@
-// import * as Url from "url-parse";
-import Url = require("url-parse");
-import Platform from "./Platform";
-import { NetworkPipe, DnsResult } from "./types";
+import * as Url from "url-parse";
+import Url from "url-parse";
 import { ChunkyParser } from "./http1/ChunkyParser";
+import Platform from "./Platform";
+import { CreateTCPNetworkPipeOptions, DnsResult, IpConnectivityMode, NetworkPipe, RequestTimeouts } from "./types";
 import { assert } from "./utils";
 
 let recvBuffer = new Uint8Array(16 * 1024);
@@ -17,43 +17,28 @@ export enum DnsType {
     DNS_Preresolved = 5
 };
 
-export interface RequestTimeouts
-{
-    timeout?: number;
-    connectTimeout?: number;
-    dnsTimeout?: number;
-    dnsFallbackTimeoutWaitFor4?: number;
-    dnsFallbackTimeoutWaitFor6?: number;
-    happyEyeballsHeadStart?: number;
-    lowSpeedLimit?: number;
-    lowSpeedTime?: number; // ### this is in seconds in curl
-    delay?: number;
-};
-
-export interface OnHeadersData
-{
+export interface OnHeadersData {
     statusCode: number;
     headers: string[];
 };
 
-export interface RequestData
-{
+export interface RequestData {
     url: string;
     baseUrl?: string;
     method?: "POST" | "HEAD" | "PUT" | "DELETE" | "PATCH" | "GET";
-    body?: string | ArrayBuffer | Uint8Array,
+    body?: string | ArrayBuffer | Uint8Array;
     timeouts?: RequestTimeouts;
-    ipConnectivityMode?: 4 | 6 | 10;
+    ipConnectivityMode?: IpConnectivityMode;
     freshConnect?: boolean;
     forbidReuse?: boolean;
-    format?: string;
+    format?: "xml" | "json" | "jsonstream" | "arraybuffer" | "uint8array" | "none";
     async?: boolean;
     pipeWait?: boolean;
     debugThroughput?: boolean;
     noProxy?: boolean;
     tcpNoDelay?: boolean;
     secure?: boolean;
-    networkMetricsPrecision?:  "us" | "ms" | "none";
+    networkMetricsPrecision?: "us" | "ms" | "none";
     receiveBufferSize?: number;
     maxRecvSpeed?: number;
     maxSendSpeed?: number;
@@ -73,13 +58,10 @@ export interface RequestData
     onData?: (data: ArrayBuffer) => void;
 };
 
-export class RequestResponse
-{
-    constructor(id: number)
-    {
+export class RequestResponse {
+    constructor(id: number) {
         this.id = id;
         this.headers = [];
-        this.networkStartTime = Platform.mono();
     }
     id: number;
     state?: string;
@@ -98,25 +80,24 @@ export class RequestResponse
     duration?: number;
     timeToFirstByteRead?: number;
     timeToFirstByteWritten?: number;
-    networkStartTime: number;
+    networkStartTime?: number;
     metricsPrecision?: "us" | "ms" | "none";
     requestSize?: number;
     serverIp?: string;
     sslSessionResumed?: boolean;
     sslHandshakeTime?: number;
-    sslVersion?: string|undefined;
+    sslVersion?: string | undefined;
     dns?: string;
     dnsChannel?: string;
     socket?: number;
-    data?: string|ArrayBuffer|Uint8Array;
+    data?: string | ArrayBuffer | Uint8Array;
     size?: number;
     urls?: string[];
     headers: string[];
     httpVersion?: string;
 };
 
-enum RequestState
-{
+enum RequestState {
     Initial = 0,
     Connected = 1,
     ReceivedHeaders = 2,
@@ -125,8 +106,7 @@ enum RequestState
     Error = -1
 };
 
-export class Request
-{
+export class Request {
     state?: RequestState;
     requestData: RequestData;
     url: Url;
@@ -151,8 +131,7 @@ export class Request
     private onConnections: Array<() => void>;
     private contentLength?: number;
 
-    constructor(data: RequestData | string)
-    {
+    constructor(data: RequestData | string) {
         this.bytesReceived = 0;
         this.responseDataOffset = 0;
         this.responseDataLength = 0;
@@ -162,10 +141,14 @@ export class Request
         if (typeof data === "string") {
             data = { url: data };
         }
+
+        if (!data.timeouts) {
+            data.timeouts = Platform.defaultRequestTimeouts;
+        }
+
         if (data.http2) {
             throw new Error("http2 not implemented yet");
         }
-
 
         this.requestData = data;
         this.url = new Url(this.requestData.url, this.requestData.baseUrl || Platform.location);
@@ -182,6 +165,7 @@ export class Request
     }
 
     send(): Promise<RequestResponse> {
+        this.requestResponse.networkStartTime = Platform.mono();
         // Platform.trace("send called", this.state, this.url);
         if (this.state != RequestState.Initial) {
             throw new Error("Bad state transition");
@@ -214,9 +198,23 @@ export class Request
                     port = 80;
                 break;
         }
-        debugger;
         // Platform.trace("Request#send creating TCP pipe");
-        Platform.createTCPNetworkPipe({ host: this.url.hostname, port: port }).then((pipe: NetworkPipe) => {
+        assert(this.requestData.timeouts);
+        const tcpOpts = {
+            host: this.url.hostname,
+            port: port,
+            dnsTimeout: this.requestData.timeouts.dnsTimeout,
+            connectTimeout: this.requestData.timeouts.connectTimeout,
+            ipVersion: 4 // gotta do happy eyeballs and send off multiple tcp network pipe things
+        } as CreateTCPNetworkPipeOptions;
+        Platform.createTCPNetworkPipe(tcpOpts).then((pipe: NetworkPipe) => {
+            if (pipe.dnsTime) {
+                this.requestResponse.dnsTime = pipe.dnsTime;
+            }
+            if (pipe.connectTime) {
+                this.requestResponse.connectTime = pipe.connectTime;
+            }
+
             // Platform.trace("Request#send#createTCPNetworkPipe pipe");
             if (ssl) {
                 return Platform.createSSLNetworkPipe({ pipe: pipe });
@@ -248,7 +246,7 @@ export class Request
             case RequestState.Connected:
                 const method = this.requestData.method || (this.requestData.body ? "POST" : "GET");
                 let str =
-`${method} ${this.url.pathname || "/"} HTTP/1.1\r
+                    `${method} ${this.url.pathname || "/"} HTTP/1.1\r
 Host: ${this.url.hostname}\r
 User-Agent: Milo/0.1\r
 Connection: close\r
@@ -404,7 +402,7 @@ Accept: */*\r\n`;
         let contentLength: string | undefined;
         let transferEncoding: string | undefined;
 
-        for (var i=1; i<split.length; ++i) {
+        for (var i = 1; i < split.length; ++i) {
             // split \r\n\r\n by \r\n causes 2 empty lines.
             if (split.length === 0) {
                 // Platform.trace("IGNORING LINE....");
@@ -504,8 +502,7 @@ Accept: */*\r\n`;
         }
     }
 
-    private _finish()
-    {
+    private _finish() {
         this.transition(RequestState.Finished);
     }
 }

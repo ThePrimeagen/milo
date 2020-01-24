@@ -1,28 +1,24 @@
 import Platform from "../Platform";
 import { assert } from "../utils";
 
-export class ChunkyParser
-{
+export class ChunkyParser {
     private buffers: Uint8Array[] = [];
     private offset: number = 0;
     private dataNeeded: number = -1;
     private available: number = 0;
-    constructor()
-    {
+    constructor() {
     }
 
-    feed(data: ArrayBuffer, offset: number, length: number): void
-    {
+    feed(data: ArrayBuffer, offset: number, length: number): void {
         Platform.assert(this.onchunk, "Gotta have an onchunk");
         this.buffers.push(new Uint8Array(data, offset, length));
         this.available += length;
         this._process();
     }
 
-    dump(): string
-    {
+    dump(): string {
         let str = "";
-        for (let bi=0; bi<this.buffers.length; ++bi) {
+        for (let bi = 0; bi < this.buffers.length; ++bi) {
             let idx = bi ? 0 : this.offset;
             while (idx < this.buffers[bi].byteLength) {
                 let char = String.fromCharCode(this.buffers[bi][idx]);
@@ -38,8 +34,7 @@ export class ChunkyParser
         return str;
     }
 
-    private _process(): void
-    {
+    private _process(): void {
         while (true) {
             // Platform.trace("processing balls", this.dataNeeded, this.buffers.length, this.offset, this.available, "\n" + this.dump());
             if (this.dataNeeded == -1) {
@@ -47,11 +42,11 @@ export class ChunkyParser
                     let lastWasBackslashR = false;
                     let consumed = 0;
                     let str = "";
-                    for (let bi=0; bi<this.buffers.length && this.dataNeeded === -1; ++bi) {
+                    for (let bi = 0; bi < this.buffers.length && this.dataNeeded === -1; ++bi) {
                         // Platform.trace("shit", bi, this.buffers.length);
                         let buf = this.buffers[bi];
                         // Platform.trace("this is", buf, Platform.utf8toa(buf));
-                        for (let i=bi ? 0 : this.offset; i<buf.length; ++i) {
+                        for (let i = bi ? 0 : this.offset; i < buf.length; ++i) {
                             // Platform.trace("looking at", i, bi, buf[i], String.fromCharCode(buf[i]), str);
                             ++consumed;
                             if (lastWasBackslashR) {
@@ -76,8 +71,8 @@ export class ChunkyParser
                         }
                     }
                 }
-                    if (this.dataNeeded === -1)
-                        break;
+                if (this.dataNeeded === -1)
+                    break;
             } else if (!this.dataNeeded && this.available >= 2) {
                 this._consume(2);
                 const buffer = this.available ? this._extractChunk(this.available) : undefined;
@@ -102,8 +97,7 @@ export class ChunkyParser
     onchunk?: (chunk: ArrayBuffer) => void;
     onerror?: (code: number, message: string) => void;
 
-    private _consume(bytes: number): void
-    {
+    private _consume(bytes: number): void {
         Platform.assert(bytes <= this.available, "Not enough bytes to consume");
         // Platform.trace("consuoming", bytes, "from", this.buffers, this.available);
         let consumed = 0;
@@ -125,8 +119,7 @@ export class ChunkyParser
         this.available -= consumed;
     }
 
-    private _extractChunk(size: number): ArrayBuffer
-    {
+    private _extractChunk(size: number): ArrayBuffer {
         Platform.assert(this.available >= size, "available's gotta be more than size");
         // grab the whole first chunk
         if (!this.offset && this.buffers[0].byteLength === size) {
@@ -169,8 +162,7 @@ export class ChunkyParser
 
 };
 
-export function chunkyTest()
-{
+export function chunkyTest() {
     const shit = `4\r
 Wiki\r
 5\r
@@ -183,7 +175,7 @@ chunks.\r
 \r\n`;
 
     // Platform.trace("fuck start");
-    for (let size = 1; size<shit.length; ++size) {
+    for (let size = 1; size < shit.length; ++size) {
         const balls = new ChunkyParser;
         let chunks: ArrayBuffer[] = [];
         balls.onchunk = (chunk: ArrayBuffer) => {

@@ -1,11 +1,10 @@
-import { NetworkPipe, OnData, OnClose, OnError, DnsResult, CreateSSLNetworkPipeOptions } from "../types";
+import { CreateSSLNetworkPipeOptions, NetworkPipe, OnClose, OnData, OnError } from "../types";
+import nrdp from "./nrdp";
 import { NrdpPlatform } from "./NrdpPlatform";
 import N from "./ScriptSocket";
-import nrdp from "./nrdp";
 
 let platform: NrdpPlatform | undefined;
-function assert(condition: any, msg?: string): asserts condition
-{
+function assert(condition: any, msg?: string): asserts condition {
     if (!condition && platform) {
         platform.assert(condition, msg);
     }
@@ -15,8 +14,7 @@ function set_mem_eof_return(platform: NrdpPlatform, bio: N.Struct) {
     platform.BIO_ctrl(bio, platform.BIO_C_SET_BUF_MEM_EOF_RETURN, -1, undefined);
 }
 
-class NrdpSSLNetworkPipe implements NetworkPipe
-{
+class NrdpSSLNetworkPipe implements NetworkPipe {
     private ssl: N.Struct;
     private ssl_ctx: N.Struct;
     // private bio: N.BIO;
@@ -24,15 +22,14 @@ class NrdpSSLNetworkPipe implements NetworkPipe
     private outputBio: N.Struct;
     private pipe: NetworkPipe;
     private connected: boolean;
-    private writeBuffers: (Uint8Array|ArrayBuffer|string)[];
+    private writeBuffers: (Uint8Array | ArrayBuffer | string)[];
     private writeBufferOffsets: number[];
     private writeBufferLengths: number[];
     private connectedCallback?: (error?: Error) => void;
     private platform: NrdpPlatform;
     private buffer?: ArrayBuffer;
 
-    constructor(options: CreateSSLNetworkPipeOptions, p: NrdpPlatform, callback: (error?: Error) => void)
-    {
+    constructor(options: CreateSSLNetworkPipeOptions, p: NrdpPlatform, callback: (error?: Error) => void) {
         platform = p;
         this.platform = p;
         this.connectedCallback = callback;
@@ -116,8 +113,7 @@ class NrdpSSLNetworkPipe implements NetworkPipe
 
     get closed() { return this.pipe.closed; }
 
-    write(buf: Uint8Array | ArrayBuffer | string, offset?: number, length?: number): void
-    {
+    write(buf: Uint8Array | ArrayBuffer | string, offset?: number, length?: number): void {
         if (typeof buf === 'string') {
             length = buf.length;
         } else if (length === undefined) {
@@ -146,8 +142,7 @@ class NrdpSSLNetworkPipe implements NetworkPipe
         }
     }
 
-    read(buf: Uint8Array | ArrayBuffer, offset: number, length: number): number
-    {
+    read(buf: Uint8Array | ArrayBuffer, offset: number, length: number): number {
         let bufferRead = 0;
         if (this.buffer) {
             const byteLength = this.buffer.byteLength;
@@ -176,47 +171,47 @@ class NrdpSSLNetworkPipe implements NetworkPipe
                 // this.platform.error("got err", err);
                 this._flushOutputBio();
                 switch (err) {
-                    case this.platform.SSL_ERROR_NONE:
-                        this.platform.error("got error none");
-                        break;
-                    case this.platform.SSL_ERROR_SSL:
-                        this.platform.error("got error ssl");
-                        break;
-                    case this.platform.SSL_ERROR_WANT_READ:
-                        if (this.platform.BIO_ctrl_pending(this.inputBio))
-                            retry = true;
-                        this.platform.trace("got error want read");
-                        break;
-                    case this.platform.SSL_ERROR_WANT_WRITE:
-                        this.platform.trace("got error want write");
-                        break;
-                    case this.platform.SSL_ERROR_WANT_X509_LOOKUP:
-                        this.platform.error("got error want x509 lookup");
-                        break;
-                    case this.platform.SSL_ERROR_SYSCALL:
-                        this.platform.error("got error syscall");
-                        break;
-                    case this.platform.SSL_ERROR_ZERO_RETURN:
-                        this.platform.error("got error zero return");
-                        break;
-                    case this.platform.SSL_ERROR_WANT_CONNECT:
-                        this.platform.error("got error want connect");
-                        break;
-                    case this.platform.SSL_ERROR_WANT_ACCEPT:
-                        this.platform.error("got error want accept");
-                        break;
-                    case this.platform.SSL_ERROR_WANT_ASYNC:
-                        this.platform.error("got error want async");
-                        break;
-                    case this.platform.SSL_ERROR_WANT_ASYNC_JOB:
-                        this.platform.error("got error want async job");
-                        break;
-                    case this.platform.SSL_ERROR_WANT_CLIENT_HELLO_CB:
-                        this.platform.error("got error want client hello cb");
-                        break;
-                    default:
-                        this.platform.error("got error other", err);
-                        break;
+                case this.platform.SSL_ERROR_NONE:
+                    this.platform.error("got error none");
+                    break;
+                case this.platform.SSL_ERROR_SSL:
+                    this.platform.error("got error ssl");
+                    break;
+                case this.platform.SSL_ERROR_WANT_READ:
+                    if (this.platform.BIO_ctrl_pending(this.inputBio))
+                        retry = true;
+                    this.platform.trace("got error want read");
+                    break;
+                case this.platform.SSL_ERROR_WANT_WRITE:
+                    this.platform.trace("got error want write");
+                    break;
+                case this.platform.SSL_ERROR_WANT_X509_LOOKUP:
+                    this.platform.error("got error want x509 lookup");
+                    break;
+                case this.platform.SSL_ERROR_SYSCALL:
+                    this.platform.error("got error syscall");
+                    break;
+                case this.platform.SSL_ERROR_ZERO_RETURN:
+                    this.platform.error("got error zero return");
+                    break;
+                case this.platform.SSL_ERROR_WANT_CONNECT:
+                    this.platform.error("got error want connect");
+                    break;
+                case this.platform.SSL_ERROR_WANT_ACCEPT:
+                    this.platform.error("got error want accept");
+                    break;
+                case this.platform.SSL_ERROR_WANT_ASYNC:
+                    this.platform.error("got error want async");
+                    break;
+                case this.platform.SSL_ERROR_WANT_ASYNC_JOB:
+                    this.platform.error("got error want async job");
+                    break;
+                case this.platform.SSL_ERROR_WANT_CLIENT_HELLO_CB:
+                    this.platform.error("got error want client hello cb");
+                    break;
+                default:
+                    this.platform.error("got error other", err);
+                    break;
                 }
             }
         } while (retry);
@@ -225,8 +220,7 @@ class NrdpSSLNetworkPipe implements NetworkPipe
         return read + bufferRead;
     }
 
-    unread(buf: ArrayBuffer): void
-    {
+    unread(buf: ArrayBuffer): void {
         if (this.buffer) {
             this.buffer = this.platform.bufferConcat(this.buffer, buf);
         } else {
@@ -236,13 +230,11 @@ class NrdpSSLNetworkPipe implements NetworkPipe
             this.ondata();
     }
 
-    close(): void
-    {
+    close(): void {
         this.pipe.close();
     }
 
-    private _flushOutputBio()
-    {
+    private _flushOutputBio() {
         const pending = this.platform.BIO_ctrl_pending(this.outputBio);
         // assert(pending <= this.scratch.byteLength, "Pending too large. Probably have to increase scratch buffer size");
         if (pending > 0) {
@@ -256,8 +248,7 @@ class NrdpSSLNetworkPipe implements NetworkPipe
         }
     }
 
-    private _connect()
-    {
+    private _connect() {
         assert(this.connectedCallback);
         let ret = this.platform.SSL_connect(this.ssl);
         // this.platform.trace("CALLED CONNECT", ret);

@@ -75,7 +75,6 @@ export function createWS(url: string): Promise<WS>
         return ws;
     });
 }
-*/
 
 export function _ssl(): void
 {
@@ -88,3 +87,4 @@ export function _ssl(): void
         Platform.trace("got error", err);
     });
 }
+*/

@@ -1,9 +1,9 @@
-import { Platform, IpVersion, DnsResult, CreateTCPNetworkPipeOptions, CreateSSLNetworkPipeOptions, NetworkPipe } from "../types";
+import { CreateSSLNetworkPipeOptions, CreateTCPNetworkPipeOptions, IpConnectivityMode, NetworkPipe, Platform, RequestTimeouts } from "../types";
 import nrdp from "./nrdp";
-import N from "./ScriptSocket";
-import createNrdpTCPNetworkPipe from "./NrdpTCPNetworkPipe";
 import createNrdpSSLNetworkPipe from "./NrdpSSLNetworkPipe";
+import createNrdpTCPNetworkPipe from "./NrdpTCPNetworkPipe";
 import nrdp_platform from "./nrdp_platform";
+import N from "./ScriptSocket";
 
 type BIO_ctrl_pending_type = (b: N.Struct) => number;
 type BIO_ctrl_type = (bp: N.Struct, cmd: number, larg: number, parg: N.DataPointer | undefined) => number;
@@ -120,10 +120,10 @@ export class NrdpPlatform implements Platform {
     public readonly SSL_OP_SAFARI_ECDHE_ECDSA_BUG = 0x00000040;
     public readonly SSL_OP_TLSEXT_PADDING = 0x00000010;
     public readonly SSL_OP_TLS_ROLLBACK_BUG = 0x00800000;
-    public readonly SSL_OP_ALL = (this.SSL_OP_CRYPTOPRO_TLSEXT_BUG|
-                                  this.SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS|
-                                  this.SSL_OP_LEGACY_SERVER_CONNECT|
-                                  this.SSL_OP_TLSEXT_PADDING|
+    public readonly SSL_OP_ALL = (this.SSL_OP_CRYPTOPRO_TLSEXT_BUG |
+                                  this.SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS |
+                                  this.SSL_OP_LEGACY_SERVER_CONNECT |
+                                  this.SSL_OP_TLSEXT_PADDING |
                                   this.SSL_OP_SAFARI_ECDHE_ECDSA_BUG);
 
     public readonly BIO_C_SET_BUF_MEM_EOF_RETURN = 130;
@@ -154,8 +154,7 @@ export class NrdpPlatform implements Platform {
     public readonly SSL_MODE_DTLS_SCTP_LABEL_LENGTH_BUG = 0x00000400;
     public readonly SSL_MODE_NO_KTLS_RX = 0x00000800;
 
-    constructor()
-    {
+    constructor() {
         this.ERR_stringBuf = new Uint8Array(128);
         this.trustStoreHash = "";
         this.x509s = [];
@@ -202,8 +201,7 @@ export class NrdpPlatform implements Platform {
         this.scratch = new ArrayBuffer(16 * 1024);
     }
 
-    trustStore(): N.Struct[]
-    {
+    trustStore(): N.Struct[] {
         if (this.trustStoreHash != nrdp.trustStoreHash) {
             const trustStoreData = nrdp.trustStore;
             const trustBIO = this.BIO_new_mem_buf(trustStoreData, trustStoreData.byteLength);
@@ -221,12 +219,11 @@ export class NrdpPlatform implements Platform {
         return this.x509s;
     }
 
-    ERR_error_string(error:number): string
-    {
+    ERR_error_string(error: number): string {
         this.ERR_error_string_n(error, this.ERR_stringBuf, this.ERR_stringBuf.byteLength);
         // nrdp.l.success("error", error, ERR_stringBuf);
         let i;
-        for (i=0; i<this.ERR_stringBuf.byteLength; ++i) {
+        for (i = 0; i < this.ERR_stringBuf.byteLength; ++i) {
             if (!this.ERR_stringBuf[i]) {
                 break;
             }
@@ -239,20 +236,46 @@ export class NrdpPlatform implements Platform {
 
     public readonly scratch: ArrayBuffer;
 
-    log(...args: any[]): void
-    {
+    log(...args: any[]): void {
         args.unshift({ traceArea: "MILO" });
         nrdp.l.success.apply(nrdp.l, args);
     }
-    error(...args: any[]): void
-    {
+    error(...args: any[]): void {
         args.unshift({ traceArea: "MILO" });
         nrdp.l.error.apply(nrdp.l, args);
     }
-    trace(...args: any[]): void
-    {
+    trace(...args: any[]): void {
         args.unshift({ traceArea: "MILO" });
         nrdp.l.trace.apply(nrdp.l, args);
+    }
+
+    get ipConnectivityMode(): IpConnectivityMode {
+        switch (nrdp.device.ipConnectivityMode) {
+        case "4":
+            break;
+        case "6":
+            return 6;
+        case "dual":
+            return 10;
+        case "invalid":
+            return 0;
+        }
+        return 4;
+    }
+
+    get defaultRequestTimeouts(): RequestTimeouts {
+        const opts = nrdp.options;
+        return {
+            timeout: opts.default_network_timeout,
+            connectTimeout: opts.default_network_connect_timeout,
+            dnsTimeout: opts.default_network_dns_timeout,
+            dnsFallbackTimeoutWaitFor4: opts.default_network_dns_fallback_timeout_wait_for_4,
+            dnsFallbackTimeoutWaitFor6: opts.default_network_dns_fallback_timeout_wait_for_6,
+            happyEyeballsHeadStart: opts.default_network_happy_eyeballs_head_start,
+            lowSpeedLimit: opts.default_network_low_speed_limit,
+            lowSpeedTime: opts.default_network_low_speed_time,
+            delay: opts.default_network_delay
+        };
     }
 
     mono = nrdp.mono;
@@ -265,7 +288,7 @@ export class NrdpPlatform implements Platform {
     stacktrace = nrdp.stacktrace;
 
     writeFile(fileName: string, contents: Uint8Array | ArrayBuffer | string): boolean {
-        const fd = N.open(fileName, N.O_CREAT|N.O_WRONLY, 0o0664);
+        const fd = N.open(fileName, N.O_CREAT | N.O_WRONLY, 0o0664);
         if (fd === -1) {
             this.error(`Failed to open ${fileName} for writing`, N.errno, N.strerror());
             return false;
@@ -274,7 +297,7 @@ export class NrdpPlatform implements Platform {
         const w = N.write(fd, contents);
         N.close(fd);
         if (w != len) {
-            this.error(`Failed to open ${fileName} for writing`);
+            this.error(`Failed to write to ${fileName} for writing ${w} vs ${len}`, N.errno, N.strerror());
             return false;
         }
         return true;
