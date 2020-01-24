@@ -107,29 +107,29 @@ export interface Platform {
     bufferConcat(...args: ArrayBuffer[] | Uint8Array[]): ArrayBuffer;
 
     bufferIndexOf(haystack: Uint8Array | ArrayBuffer | string,
-        haystackOffset: number,
-        haystackLength: number | undefined,
-        needle: Uint8Array | ArrayBuffer | string,
-        needleOffset?: number,
-        needleLength?: number | undefined,
-        caseInsensitive?: boolean): number;
+                  haystackOffset: number,
+                  haystackLength: number | undefined,
+                  needle: Uint8Array | ArrayBuffer | string,
+                  needleOffset?: number,
+                  needleLength?: number | undefined,
+                  caseInsensitive?: boolean): number;
     bufferLastIndexOf(haystack: Uint8Array | ArrayBuffer | string,
-        haystackOffset: number,
-        haystackLength: number | undefined,
-        needle: Uint8Array | ArrayBuffer | string,
-        needleOffset?: number,
-        needleLength?: number | undefined,
-        caseInsensitive?: boolean): number;
+                      haystackOffset: number,
+                      haystackLength: number | undefined,
+                      needle: Uint8Array | ArrayBuffer | string,
+                      needleOffset?: number,
+                      needleLength?: number | undefined,
+                      caseInsensitive?: boolean): number;
     bufferSet(dest: Uint8Array | ArrayBuffer,
-        destOffset: number,
-        src: Uint8Array | ArrayBuffer | string,
-        srcOffset?: number,
-        srcLength?: number | undefined): void;
+              destOffset: number,
+              src: Uint8Array | ArrayBuffer | string,
+              srcOffset?: number,
+              srcLength?: number | undefined): void;
 
     lookupDnsHost(host: string,
-        ipVersion: IpVersion,
-        timeout: number,
-        callback: (result: DnsResult) => void): void;
+                  ipVersion: IpVersion,
+                  timeout: number,
+                  callback: (result: DnsResult) => void): void;
 
     UILanguages: string[];
     location: string;
