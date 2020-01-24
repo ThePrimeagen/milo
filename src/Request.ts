@@ -78,6 +78,7 @@ export class RequestResponse
     {
         this.id = id;
         this.headers = [];
+        this.networkStartTime = Platform.mono();
     }
     id: number;
     state?: string;
@@ -96,7 +97,7 @@ export class RequestResponse
     duration?: number;
     timeToFirstByteRead?: number;
     timeToFirstByteWritten?: number;
-    networkStartTime?: number;
+    networkStartTime: number;
     metricsPrecision?: "us" | "ms" | "none";
     requestSize?: number;
     serverIp?: string;

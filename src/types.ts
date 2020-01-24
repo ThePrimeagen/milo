@@ -83,6 +83,8 @@ export interface Platform
     log(...args: any[]): void;
     error(...args: any[]): void;
 
+    mono(): number;
+
     createTCPNetworkPipe(options: CreateTCPNetworkPipeOptions): Promise<NetworkPipe>;
     createSSLNetworkPipe(options: CreateSSLNetworkPipeOptions): Promise<NetworkPipe>;
 

@@ -30,6 +30,8 @@ interface nrdp {
 
     cipherList: string;
 
+    mono(): number;
+
     assert(cond: any, message?: string): void;
     atoutf8(input: Uint8Array | ArrayBuffer | string): Uint8Array;
     utf8toa(input: Uint8Array | ArrayBuffer | string, offset?: number, length?: number): string;

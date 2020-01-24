@@ -255,6 +255,7 @@ export class NrdpPlatform implements Platform {
         nrdp.l.trace.apply(nrdp.l, args);
     }
 
+    mono = nrdp.mono;
     assert = nrdp.assert;
     btoa = nrdp.btoa;
     atob = nrdp.atob;
