@@ -1,5 +1,5 @@
 import Url from "url-parse";
-import { ChunkyParser } from "./http1/ChunkyParser";
+import { ChunkyParser } from "./HTTP1/ChunkyParser";
 import Platform from "./Platform";
 import { CreateTCPNetworkPipeOptions, DnsResult, IpConnectivityMode, NetworkPipe, RequestTimeouts, HTTPMethod } from "./types";
 import { assert, escapeData } from "./utils";
@@ -374,6 +374,17 @@ Accept: */*\r\n`;
     }
 
     private _parseHeaders(rnrn: number): boolean {
+        assert(this.networkPipe, "Gotta have a pipe");
+        assert(this.requestResponse, "Gotta have requestResponse");
+        assert(this.requestResponse.networkStartTime, "Gotta have networkStartTime");
+
+        if (this.networkPipe.firstByteRead) {
+            this.requestResponse.timeToFirstByteRead = this.networkPipe.firstByteRead - this.requestResponse.networkStartTime;
+        }
+        if (this.networkPipe.firstByteWritten) {
+            this.requestResponse.timeToFirstByteWritten = this.networkPipe.firstByteWritten - this.requestResponse.networkStartTime;
+        }
+
         assert(this.headerBuffer, "Must have headerBuffer");
         const str = Platform.utf8toa(this.headerBuffer, 0, rnrn);
         const split = str.split("\r\n");

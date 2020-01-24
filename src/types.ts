@@ -3,6 +3,7 @@ import Url from "url-parse";
 export type IpVersion = 4 | 6;
 export type IpConnectivityMode = 4 | 6 | 10 | 0; // 0 is invalid, 10 is dual
 export type HTTPMethod = "POST" | "HEAD" | "PUT" | "DELETE" | "PATCH" | "GET";
+export type HTTPRequestHeaders = { [key: string]: string };
 
 export interface DnsResult {
     errorCode: number;
@@ -62,6 +63,8 @@ export interface NetworkPipe {
 
     readonly closed: boolean;
 
+    readonly firstByteWritten?: number;
+    readonly firstByteRead?: number;
     readonly dnsTime?: number;
     readonly connectTime?: number;
 
@@ -87,9 +90,16 @@ export interface HTTPHeaders {
     transferEncoding: HTTPTransferEncoding;
 };
 
+export interface HTTPRequest {
+    url: Url;
+    method: HTTPMethod;
+    requestHeaders: HTTPRequestHeaders;
+    body?: string | Uint8Array | ArrayBuffer;
+};
+
 export interface HTTP {
     readonly version: string;
-    send(pipe: NetworkPipe, url: Url, method: HTTPMethod, requestHeaders: { [key: string]: string }): boolean;
+    send(pipe: NetworkPipe, request: HTTPRequest): boolean;
 
     onheaders?: (headers: HTTPTransferEncoding) => void;
     ondata?: (data: ArrayBuffer, offset: number, length: number) => void;

@@ -29,6 +29,9 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
     private platform: NrdpPlatform;
     private buffer?: ArrayBuffer;
 
+    public firstByteRead?: number;
+    public firstByteWritten?: number;
+
     constructor(options: CreateSSLNetworkPipeOptions, p: NrdpPlatform, callback: (error?: Error) => void) {
         platform = p;
         this.platform = p;
@@ -267,6 +270,8 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
             assert(ret === 1, "This should be 1");
             // this.platform.trace("we're connected");
             this.connected = true;
+            this.firstByteWritten = this.pipe.firstByteWritten;
+            this.firstByteRead = this.pipe.firstByteRead;
             assert(this.connectedCallback);
             this.connectedCallback();
             this.connectedCallback = undefined;

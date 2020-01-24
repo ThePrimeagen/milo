@@ -31,6 +31,8 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
         this.connectTime = connectTime;
     }
 
+    public firstByteRead?: number;
+    public firstByteWritten?: number;
     public dnsTime: number;
     public connectTime: number;
 
@@ -90,8 +92,10 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
         case -1:
             if (N.errno !== N.EWOULDBLOCK)
                 this._error(N.errno, N.strerror());
-            break;
+            return -1; //
         default:
+            if (!this.firstByteRead)
+                this.firstByteRead = this.platform.mono();
             break;
         }
         return read + bufferRead;
@@ -127,6 +131,8 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
             const written = N.write(this.sock, this.writeBuffers[0], this.writeBufferOffsets[0], this.writeBufferLengths[0]);
             this.platform.trace("wrote", written, "of", this.writeBufferLengths[0]);
             if (written > 0) {
+                if (!this.firstByteWritten)
+                    this.firstByteWritten = this.platform.mono();
                 this.writeBufferOffsets[0] += written;
                 this.writeBufferLengths[0] -= written;
                 if (!this.writeBufferLengths[0]) {
