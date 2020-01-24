@@ -1,9 +1,8 @@
-import * as Url from "url-parse";
 import Url from "url-parse";
 import { ChunkyParser } from "./http1/ChunkyParser";
 import Platform from "./Platform";
 import { CreateTCPNetworkPipeOptions, DnsResult, IpConnectivityMode, NetworkPipe, RequestTimeouts } from "./types";
-import { assert } from "./utils";
+import { assert, escapeData } from "./utils";
 
 let recvBuffer = new Uint8Array(16 * 1024);
 let nextId = 0;
@@ -186,17 +185,17 @@ export class Request {
         // Platform.trace("Request#send port", port);
         let ssl = false;
         switch (this.url.protocol) {
-            case "https:":
-            case "wss:":
-                ssl = true;
-                if (!port) {
-                    port = 443;
-                }
-                break;
-            default:
-                if (!port)
-                    port = 80;
-                break;
+        case "https:":
+        case "wss:":
+            ssl = true;
+            if (!port) {
+                port = 443;
+            }
+            break;
+        default:
+            if (!port)
+                port = 80;
+            break;
         }
         // Platform.trace("Request#send creating TCP pipe");
         assert(this.requestData.timeouts);
@@ -241,79 +240,81 @@ export class Request {
         // Platform.trace("transition", this.state, "to", state);
         this.state = state;
         switch (state) {
-            case RequestState.Initial:
-                throw new Error("Invalid state transition to Initial");
-            case RequestState.Connected:
-                const method = this.requestData.method || (this.requestData.body ? "POST" : "GET");
-                let str =
-                    `${method} ${this.url.pathname || "/"} HTTP/1.1\r
+        case RequestState.Initial:
+            throw new Error("Invalid state transition to Initial");
+        case RequestState.Connected:
+            const method = this.requestData.method || (this.requestData.body ? "POST" : "GET");
+            let str =
+                `${method} ${this.url.pathname || "/"} HTTP/1.1\r
 Host: ${this.url.hostname}\r
 User-Agent: Milo/0.1\r
 Connection: close\r
 Accept: */*\r\n`;
-                if (this.requestData.headers) {
-                    for (let key in this.requestData.headers) {
-                        str += `${key}: ${this.requestData.headers[key]}\r\n`;
-                    }
+            if (this.requestData.headers) {
+                for (let key in this.requestData.headers) {
+                    str += `${key}: ${this.requestData.headers[key]}\r\n`;
                 }
-                if (this.requestData.cache) {
-                    str += `X-Gibbon-Cache-Control: ${this.requestData.cache}\r\n`;
-                }
+            }
+            if (this.requestData.cache) {
+                str += `X-Gibbon-Cache-Control: ${this.requestData.cache}\r\n`;
+            }
 
-                const lang = Platform.UILanguages;
-                if (lang && lang.length) {
-                    str += `Language: ${lang.join(",")}\r\n`;
-                }
+            const lang = Platform.UILanguages;
+            if (lang && lang.length) {
+                str += `Language: ${lang.join(",")}\r\n`;
+            }
 
-                str += "\r\n";
+            str += "\r\n";
 
-                assert(this.networkPipe, "Must have network pipe");
-                // Platform.trace("CALLING WRITE", str);
-                this.networkPipe.write(str);
+            assert(this.networkPipe, "Must have network pipe");
+            // Platform.trace("CALLING WRITE", str);
+            this.networkPipe.write(str);
 
+            break;
+        case RequestState.Closed:
+            this.transition(RequestState.Finished);
+            break;
+        case RequestState.Error:
+            break;
+        case RequestState.Finished:
+            let responseArrayBuffer: ArrayBuffer;
+            if (this.chunks) {
+                responseArrayBuffer = Platform.bufferConcat.apply(undefined, this.chunks);
+            } else if (this.responseDataArray) {
+                // Platform.trace("GOT HERE 1", this.responseDataArray);
+                responseArrayBuffer = Platform.bufferConcat.apply(undefined, this.responseDataArray);
+            } else if (this.responseData) {
+                // Platform.trace("GOT HERE 2", this.responseData);
+                responseArrayBuffer = this.responseData;
+            } else {
+                responseArrayBuffer = new ArrayBuffer(0);
+            }
+            assert(this.requestResponse, "Gotta have a requestResponse");
+            assert(this.requestResponse.networkStartTime, "Gotta have a requestResponse.networkStartTime");
+            this.requestResponse.duration = Platform.mono() - this.requestResponse.networkStartTime;
+
+            switch (this.requestData.format) {
+            case "xml":
+            case "json":
+            case "jsonstream":
+            case "none":
+                throw new Error("Not implemented " + this.requestData.format);
+            case "arraybuffer":
+                this.requestResponse.data = responseArrayBuffer;
                 break;
-            case RequestState.Closed:
-                this.transition(RequestState.Finished);
+            case "uint8array":
+                if (responseArrayBuffer)
+                    this.requestResponse.data = new Uint8Array(responseArrayBuffer);
                 break;
-            case RequestState.Error:
-                break;
-            case RequestState.Finished:
-                let responseArrayBuffer: ArrayBuffer;
-                if (this.chunks) {
-                    responseArrayBuffer = Platform.bufferConcat.apply(undefined, this.chunks);
-                } else if (this.responseDataArray) {
-                    // Platform.trace("GOT HERE 1", this.responseDataArray);
-                    responseArrayBuffer = Platform.bufferConcat.apply(undefined, this.responseDataArray);
-                } else if (this.responseData) {
-                    // Platform.trace("GOT HERE 2", this.responseData);
-                    responseArrayBuffer = this.responseData;
-                } else {
-                    responseArrayBuffer = new ArrayBuffer(0);
+            default:
+                if (responseArrayBuffer) {
+                    this.requestResponse.data = Platform.utf8toa(responseArrayBuffer);
                 }
-                // Platform.trace("BALLS", this.requestData.format, responseArrayBuffer);
-                switch (this.requestData.format) {
-                    case "xml":
-                    case "json":
-                    case "jsonstream":
-                    case "none":
-                        throw new Error("Not implemented " + this.requestData.format);
-                        break;
-                    case "arraybuffer":
-                        this.requestResponse.data = responseArrayBuffer;
-                        break;
-                    case "uint8array":
-                        if (responseArrayBuffer)
-                            this.requestResponse.data = new Uint8Array(responseArrayBuffer);
-                        break;
-                    default:
-                        if (responseArrayBuffer) {
-                            this.requestResponse.data = Platform.utf8toa(responseArrayBuffer);
-                        }
-                        break;
-                }
-                assert(this.resolve, "Must have resolve");
-                this.resolve(this.requestResponse);
                 break;
+            }
+            assert(this.resolve, "Must have resolve");
+            this.resolve(this.requestResponse);
+            break;
         }
     }
     private _httpError(code: number, text: string): void {
@@ -350,8 +351,10 @@ Accept: */*\r\n`;
                         this.headerBuffer = recvBuffer.buffer.slice(0, read);
                     }
                     const rnrn = Platform.bufferIndexOf(this.headerBuffer, 0, undefined, "\r\n\r\n");
-                    debugger;
                     if (rnrn != -1 && this._parseHeaders(rnrn)) {
+                        assert(this.requestResponse, "Gotta have a requestResponse");
+                        assert(this.requestResponse.networkStartTime, "Gotta have a requestResponse.networkStartTime");
+                        // Platform.log("GOT HEADERS AFTER", Platform.mono() - this.requestResponse.networkStartTime);
                         this.transition(RequestState.ReceivedHeaders);
                         const remaining = this.headerBuffer.byteLength - (rnrn + 4);
                         if (remaining)
@@ -481,7 +484,7 @@ Accept: */*\r\n`;
         return true;
     }
 
-    private _processResponseData(data: ArrayBuffer, offset: number, length: number): void {
+    private _processResponseData(data: ArrayBuffer, offset: number, length: number): void { // have to copy data, the buffer will be reused
         this.responseDataLength += length;
         // Platform.trace("got some data here", length, Platform.utf8toa(data.slice(offset, offset + length)));
         if (this.requestData.onData) {
@@ -489,16 +492,10 @@ Accept: */*\r\n`;
         } else if (this.chunkyParser) {
             this.chunkyParser.feed(data, offset, length);
         } else if (this.responseData) {
-            // ### should make this more efficient, also should make it okay to set an arraybuffer
-            if (offset || length != data.byteLength) {
-                this.responseData.set(new Uint8Array(data, offset, length), this.responseDataOffset);
-            } else {
-                // this.responseData.set(data, this.responseDataOffset);
-            }
+            Platform.bufferSet(this.responseData, this.responseDataOffset, data, offset, length);
             this.responseDataOffset += length;
         } else if (this.responseDataArray) {
             this.responseDataArray.push(data.slice(offset, offset + length));
-            // this.responseDataArray(data
         }
     }
 

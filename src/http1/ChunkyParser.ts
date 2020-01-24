@@ -1,5 +1,5 @@
 import Platform from "../Platform";
-import { assert } from "../utils";
+import { assert, escapeData } from "../utils";
 
 export class ChunkyParser {
     private buffers: Uint8Array[] = [];
@@ -11,7 +11,7 @@ export class ChunkyParser {
 
     feed(data: ArrayBuffer, offset: number, length: number): void {
         Platform.assert(this.onchunk, "Gotta have an onchunk");
-        this.buffers.push(new Uint8Array(data, offset, length));
+        this.buffers.push(new Uint8Array(data.slice(offset, offset + length)));
         this.available += length;
         this._process();
     }
@@ -19,17 +19,8 @@ export class ChunkyParser {
     dump(): string {
         let str = "";
         for (let bi = 0; bi < this.buffers.length; ++bi) {
-            let idx = bi ? 0 : this.offset;
-            while (idx < this.buffers[bi].byteLength) {
-                let char = String.fromCharCode(this.buffers[bi][idx]);
-                if (char === '\r') {
-                    char = "\\r";
-                } else if (char === '\n') {
-                    char = "\\n\n";
-                }
-                str += char;
-                ++idx;
-            }
+            const idx = bi ? 0 : this.offset;
+            str += escapeData(this.buffers[bi], idx);
         }
         return str;
     }
@@ -46,7 +37,7 @@ export class ChunkyParser {
                         // Platform.trace("shit", bi, this.buffers.length);
                         let buf = this.buffers[bi];
                         // Platform.trace("this is", buf, Platform.utf8toa(buf));
-                        for (let i = bi ? 0 : this.offset; i < buf.length; ++i) {
+                        for (let i = bi ? 0 : this.offset; i < buf.byteLength; ++i) {
                             // Platform.trace("looking at", i, bi, buf[i], String.fromCharCode(buf[i]), str);
                             ++consumed;
                             if (lastWasBackslashR) {
@@ -168,7 +159,7 @@ Wiki\r
 5\r
 pedia\r
 E\r
- in\r
+in\r
 \r
 chunks.\r
 0\r

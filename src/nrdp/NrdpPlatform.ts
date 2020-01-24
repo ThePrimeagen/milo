@@ -296,7 +296,7 @@ export class NrdpPlatform implements Platform {
         const len = typeof contents === "string" ? contents.length : contents.byteLength;
         const w = N.write(fd, contents);
         N.close(fd);
-        if (w != len) {
+        if (w != len && (typeof contents !== "string" || w != nrdp.atoutf8(contents).byteLength)) {
             this.error(`Failed to write to ${fileName} for writing ${w} vs ${len}`, N.errno, N.strerror());
             return false;
         }

@@ -411,24 +411,26 @@ declare namespace nrdsocket {
     // functions
     function bindFunction(signature: string, options?: BindFunctionOptions): Function;
     function unbindFunction(signature: string): boolean;
-    function socket(domain: number, type: number, protocol: number): number;
-    function open(pathname: ConstBuffer, flags: number, mode: number): number;
-    function close(fd: number): number;
-    function bind(sockfd: number, addr: Sockaddr): number;
-    function listen(sockfd: number, backlog: number): number;
-    function connect(sockfd: number, addr: Sockaddr): number;
+
     function accept(sockfd: number, addr: Sockaddr | undefined): number;
-    function send(sockfd: number, buf: ConstBuffer, bufOffset: number, bufLength: number, flags: number): number;
-    function sendto(sockfd: number, buf: ConstBuffer, bufOffset: number, bufLength: number, flags: number, addr: Sockaddr): number;
-    function sendmsg(sockfd: number, msg: ConstMsgHdr, flags: number): number;
-    function write(fd: number, buf: ConstBuffer, bufOffset?: number, bufLength?: number): number;
+    function bind(sockfd: number, addr: Sockaddr): number;
+    function close(fd: number): number;
+    function connect(sockfd: number, addr: Sockaddr): number;
+    function fcntl(fd: number, cmd: number, arg?: ConstBuffer | undefined | number | boolean): number;
+    function getsockopt(fd: number, level: number, optname: number, optval: Buffer | undefined, optvalOffset?: number, optvalLength?: number): number;
+    function listen(sockfd: number, backlog: number): number;
+    function open(pathname: ConstBuffer, flags: number, mode: number): number;
+    function read(fd: number, buf: Buffer, bufOffset?: number, bufLength?: number): number;
     function recv(sockfd: number, buf: Buffer, bufOffset: number, bufLength: number, flags: number): number;
     function recvfrom(sockfd: number, buf: Buffer, bufOffset: number, bufLength: number, flags: number, addr: Sockaddr | undefined): number;
     function recvmsg(sockfd: number, msg: MsgHdr, flags: number): number;
-    function read(fd: number, buf: Buffer, bufOffset?: number, bufLength?: number): number;
-    function fcntl(fd: number, cmd: number, arg?: ConstBuffer | undefined | number | boolean): number;
-    function getsockopt(fd: number, level: number, optname: number, optval: Buffer | undefined, optvalOffset?: number, optvalLength?: number): number;
+    function send(sockfd: number, buf: ConstBuffer, bufOffset: number, bufLength: number, flags: number): number;
+    function sendmsg(sockfd: number, msg: ConstMsgHdr, flags: number): number;
+    function sendto(sockfd: number, buf: ConstBuffer, bufOffset: number, bufLength: number, flags: number, addr: Sockaddr): number;
     function setsockopt(fd: number, level: number, optname: number, optval: ConstBuffer | undefined, optvalOffset?: number, optvalLength?: number): number;
+    function socket(domain: number, type: number, protocol: number): number;
+    function unlink(pathname: ConstBuffer): number;
+    function write(fd: number, buf: ConstBuffer, bufOffset?: number, bufLength?: number): number;
 }
 
 export default nrdsocket;

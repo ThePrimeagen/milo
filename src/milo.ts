@@ -6,16 +6,15 @@ import { headerValue } from "./utils";
 
 const requests = new Map();
 
-export function _load(data: RequestData, callback: Function): number
-{
+export function _load(data: RequestData, callback: Function): number {
     // @ts-ignore
     const req = new Request(data);
     req.send().then(response => {
-        Platform.trace("Got resolved", response);
         if (response.data) {
             Platform.writeFile("/tmp/dl", response.data);
-
         }
+        delete response.data;
+        Platform.log("Got resolved", response);
     }).catch(error => {
         Platform.trace("Got error", error);
     });
@@ -61,30 +60,30 @@ export function _wsUpgrade(data: RequestData): Promise<NetworkPipe> {
 }
 
 /*
-export let ws: WS;
-export function createWS(url: string): Promise<WS>
-{
-    return _wsUpgrade({url: url}).then((networkPipe: NetworkPipe) => {
-        // @ts-ignore
-        Platform.trace("foo", WS);
-        Platform.trace(Object.keys(WS));
-        Platform.trace(typeof WS);
-        Platform.trace("ws", WS.ws);
-        ws = new WS(networkPipe);
-        Platform.trace("got thing here", ws);
-        return ws;
-    });
-}
+  export let ws: WS;
+  export function createWS(url: string): Promise<WS>
+  {
+  return _wsUpgrade({url: url}).then((networkPipe: NetworkPipe) => {
+  // @ts-ignore
+  Platform.trace("foo", WS);
+  Platform.trace(Object.keys(WS));
+  Platform.trace(typeof WS);
+  Platform.trace("ws", WS.ws);
+  ws = new WS(networkPipe);
+  Platform.trace("got thing here", ws);
+  return ws;
+  });
+  }
 
-export function _ssl(): void
-{
-    Platform.createTCPNetworkPipe({ host: "www.google.com", port: 443 }).then((pipe: NetworkPipe) => {
-        Platform.trace("got pipe");
-        return Platform.createSSLNetworkPipe({ pipe: pipe });
-    }).then((sslPipe: NetworkPipe) => {
-        Platform.trace("Got ssl pipe");
-    }).catch((err: Error) => {
-        Platform.trace("got error", err);
-    });
-}
+  export function _ssl(): void
+  {
+  Platform.createTCPNetworkPipe({ host: "www.google.com", port: 443 }).then((pipe: NetworkPipe) => {
+  Platform.trace("got pipe");
+  return Platform.createSSLNetworkPipe({ pipe: pipe });
+  }).then((sslPipe: NetworkPipe) => {
+  Platform.trace("Got ssl pipe");
+  }).catch((err: Error) => {
+  Platform.trace("got error", err);
+  });
+  }
 */

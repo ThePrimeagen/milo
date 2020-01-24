@@ -16,3 +16,14 @@ export function assert(condition: any, msg?: string): asserts condition {
         Platform.assert(condition, msg);
     }
 }
+
+export function escapeData(data: Uint8Array | ArrayBuffer | string, offset?: number, length?: number): string {
+    if (typeof data !== "string") {
+        data = Platform.utf8toa(data, offset || 0, length);
+    } else if (offset && !length) {
+        data = data.substr(offset);
+    } else if (length) {
+        data = data.substr(offset || 0, length);
+    }
+    return data.replace(/\r/g, "\\r").replace(/\n/g, "\\n\n");
+}
