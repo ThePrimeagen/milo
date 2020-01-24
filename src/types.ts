@@ -67,6 +67,12 @@ export interface NetworkPipe {
     onerror?: OnError;
 };
 
+export interface HTTP {
+
+
+
+};
+
 export interface Platform {
     sha1(input: string): Uint8Array;
     // base64 encode

@@ -2,7 +2,7 @@ import Url from "url-parse";
 import { ChunkyParser } from "./http1/ChunkyParser";
 import Platform from "./Platform";
 import { CreateTCPNetworkPipeOptions, DnsResult, IpConnectivityMode, NetworkPipe, RequestTimeouts } from "./types";
-import { assert, escapeData } from "./utils";
+import { assert } from "./utils";
 
 let recvBuffer = new Uint8Array(16 * 1024);
 let nextId = 0;
