@@ -1,41 +1,65 @@
-import { NetworkPipe, OnData, OnClose, OnError, DnsResult, Platform, CreateSSLNetworkPipeOptions } from "../types";
+import { CreateSSLNetworkPipeOptions, NetworkPipe, OnClose, OnData, OnError } from "../types";
+import nrdp from "./nrdp";
 import { NrdpPlatform } from "./NrdpPlatform";
 import N from "./ScriptSocket";
-import nrdp from "./nrdp";
+
+let platform: NrdpPlatform | undefined;
+function assert(condition: any, msg?: string): asserts condition {
+    if (!condition && platform) {
+        platform.assert(condition, msg);
+    }
+}
 
 function set_mem_eof_return(platform: NrdpPlatform, bio: N.Struct) {
     platform.BIO_ctrl(bio, platform.BIO_C_SET_BUF_MEM_EOF_RETURN, -1, undefined);
 }
 
-class NrdpSSLNetworkPipe implements NetworkPipe
-{
+class NrdpSSLNetworkPipe implements NetworkPipe {
     private ssl: N.Struct;
     private ssl_ctx: N.Struct;
     // private bio: N.BIO;
     private inputBio: N.Struct;
     private outputBio: N.Struct;
     private pipe: NetworkPipe;
-    private platform: NrdpPlatform
-    private connected: boolean = false;
+    private connected: boolean;
+    private writeBuffers: (Uint8Array | ArrayBuffer | string)[];
+    private writeBufferOffsets: number[];
+    private writeBufferLengths: number[];
+    private connectedCallback?: (error?: Error) => void;
+    private platform: NrdpPlatform;
+    private buffer?: ArrayBuffer;
 
-    constructor(options: CreateSSLNetworkPipeOptions, platform: Platform)
-    {
-        this.platform = <NrdpPlatform>(platform);
-        platform.log("shit");
-        platform.log("shit", Object.keys(platform));
+    public firstByteRead?: number;
+    public firstByteWritten?: number;
+
+    constructor(options: CreateSSLNetworkPipeOptions, p: NrdpPlatform, callback: (error?: Error) => void) {
+        platform = p;
+        this.platform = p;
+        this.connectedCallback = callback;
+        this.connected = false;
+        this.writeBuffers = [];
+        this.writeBufferOffsets = [];
+        this.writeBufferLengths = [];
+
         this.pipe = options.pipe;
         const meth = this.platform.TLS_client_method();
         this.ssl_ctx = this.platform.SSL_CTX_new(meth);
         this.ssl_ctx.free = "SSL_CTX_free";
-        let ret = this.platform.SSL_CTX_ctrl(this.ssl_ctx, this.platform.SSL_CTRL_MODE, this.platform.SSL_MODE_RELEASE_BUFFERS, undefined);
-        this.platform.log("BALLS", ret);
-        /* SSL_SET_OPTION(0); */
-        let ctx_options = this.platform.SSL_OP_NO_SSLv3;
+        this.platform.trace("cipher", nrdp.cipherList);
+        this.platform.SSL_CTX_set_cipher_list(this.ssl_ctx, nrdp.cipherList);
+        let ret = this.platform.SSL_CTX_ctrl(this.ssl_ctx, this.platform.SSL_CTRL_MODE,
+                                             this.platform.SSL_MODE_RELEASE_BUFFERS,//|this.platform.SSL_MODE_AUTO_RETRY,
+                                             undefined);
+        const ctx_options = (this.platform.SSL_OP_ALL |
+                             this.platform.SSL_OP_NO_TLSv1 |
+                             this.platform.SSL_OP_NO_SSLv2 |
+                             this.platform.SSL_OP_NO_SSLv3 |
+                             this.platform.SSL_OP_CIPHER_SERVER_PREFERENCE);
+
         ret = this.platform.SSL_CTX_set_options(this.ssl_ctx, ctx_options);
-        this.platform.log("BALLS 2", ret);
+        this.platform.trace("BALLS 2", ret);
+
         const cert_store = this.platform.SSL_CTX_get_cert_store(this.ssl_ctx);
-        const shit = this.platform.trustStore();
-        this.platform.log("BALLS3", typeof shit);
         this.platform.trustStore().forEach((x509: N.Struct) => {
             this.platform.X509_STORE_add_cert(cert_store, x509);
         });
@@ -46,122 +70,212 @@ class NrdpSSLNetworkPipe implements NetworkPipe
 
         this.ssl = this.platform.SSL_new(this.ssl_ctx);
         this.platform.SSL_set_default_read_buffer_len(this.ssl, 16384);
-        this.platform.SSL_up_ref(this.ssl);
         this.platform.SSL_set_read_ahead(this.ssl, 1);
-        // if (0) {
-            // this.inputBio = this.platform.BIO_new_socket(sock, this.platform.BIO_NOCLOSE);
-            // this.inputBio.free = "BIO_free";
-            // // this.platform.BIO_set_read_buffer_size(this.bio, 16384);
-            // 	this.platform.log("ball", this.platform.BIO_int_ctrl(this.bio, this.platform.BIO_C_SET_BUFF_SIZE, 16384, 0));
+        this.ssl.free = "SSL_free";
 
-            // this.platform.SSL_set_bio(this.ssl, this.inputBio, this.inputBio);
-        // } else if (0) {
-            // const that = this;
-            // this.bio = new N.BIO;
-            // this.bio.onread = function(this: N.BIO, len: number) {
-            //     that.platform.log("got called", len);
-            //      // ### GOTTA write the
-            //     return -1;
-            // };
-            // this.bio.onwrite = function(this: N.BIO, len: number) {
-            //     // 	this.platform.log("fucking here", len, this, this.bio, this === this.bio);
-            //     var ab = new ArrayBuffer(len);
-            //     that.platform.log("fucking here2", len);
-            //     // how to get
-            //     this.readData(0, ab, 0, len);
-            //     that.platform.log("fucking here3", len, ab);
-            //     // addSocketWriteBytes(ab);
-            //     that.platform.log("fucking here4", len);
-            //     // 	this.platform.log("got called write", len, ab, socketWriteBuf);
-            //     return len;
-            // };
+        const memMethod = this.platform.BIO_s_mem();
+        this.inputBio = this.platform.BIO_new(memMethod);
+        set_mem_eof_return(this.platform, this.inputBio);
 
-            // this.bio.onctrl = function(this: N.BIO, cmd: number, num: number, ptr: N.DataPointer|undefined) {
-            //     that.platform.log("fucking ctrl", cmd, num, ptr);
-            //     return 1;
-            // };
+        this.outputBio = this.platform.BIO_new(memMethod);
 
-            // this.platform.SSL_set_bio(this.ssl, this.bio, this.bio);
-        // } else {
-            const memMethod = this.platform.BIO_s_mem();
-            this.inputBio = this.platform.BIO_new(memMethod);
-            set_mem_eof_return(this.platform, this.inputBio);
-
-            this.inputBio.free = "BIO_free";
-
-            this.outputBio = this.platform.BIO_new(memMethod);
-            set_mem_eof_return(this.platform, this.outputBio);
-            this.outputBio.free = "BIO_free";
-            this.pipe.ondata = () => {
-                this.platform.log("got data");
-                const read = this.pipe.read(this.platform.scratch, 0, this.platform.scratch.byteLength);
-                this.platform.assert(read > 0, "This should be > 0");
-                nrdp.l("wrote", read, "bytes to inputBio");
-                this.platform.BIO_write(this.inputBio, this.platform.scratch, read);
-                if (!this.connected) {
-                    this.connect();
+        set_mem_eof_return(this.platform, this.outputBio);
+        this.pipe.ondata = () => {
+            const read = this.pipe.read(this.platform.scratch, 0, this.platform.scratch.byteLength);
+            if (!read) {
+                assert(this.pipe.closed, "Should be closed already");
+                return;
+            }
+            this.platform.trace("got data", read);
+            assert(read > 0, "This should be > 0");
+            // throw new Error("fiskball");
+            const written = this.platform.BIO_write(this.inputBio, this.platform.scratch, 0, read);
+            this.platform.trace("wrote", read, "bytes to inputBio =>", written);
+            if (!this.connected) {
+                this._connect();
+            }
+            if (this.connected) {
+                const pending = this.platform.BIO_ctrl_pending(this.inputBio);
+                if (pending && this.ondata) {
+                    this.ondata();
                 }
-            };
-            this.pipe.onclose = () => {
-                this.platform.log("got close");
-            };
-            this.pipe.onerror = (code: number, message?: string) => {
-                this.platform.log("got error", code, message || "");
-            };
+            }
+        };
+        this.pipe.onclose = () => {
+            this.platform.trace("got close", this.platform.stacktrace());
+            if (this.onclose)
+                this.onclose();
+        };
+        this.pipe.onerror = (code: number, message?: string) => {
+            this.platform.error("got error", code, message || "");
+        };
 
-            this.platform.SSL_set_bio(this.ssl, this.inputBio, this.outputBio);
-        // }
-        this.connect();
+        this.platform.SSL_set_bio(this.ssl, this.inputBio, this.outputBio);
+        this._connect();
     }
 
-    write(buf: Uint8Array | ArrayBuffer | string, offset?: number, length?: number): void
-    {
-        this.writeToNetworkPipe();
+    get closed() { return this.pipe.closed; }
+
+    write(buf: Uint8Array | ArrayBuffer | string, offset?: number, length?: number): void {
+        if (typeof buf === 'string') {
+            length = buf.length;
+        } else if (length === undefined) {
+            length = buf.byteLength;
+        }
+        offset = offset || 0;
+
+        if (!length)
+            throw new Error("0 length write");
+
+        this.platform.trace("write called", buf, offset, length);
+
+        if (!this.connected) {
+            throw new Error("SSLNetworkPipe is not connected");
+        }
+
+        const written = this.writeBuffers.length ? -1 : this.platform.SSL_write(this.ssl, buf, offset, length);
+        this.platform.trace("wrote to output bio", length, "=>", written);
+
+        if (written === -1) {
+            this.writeBuffers.push(buf);
+            this.writeBufferOffsets.push(offset || 0);
+            this.writeBufferLengths.push(length);
+        } else {
+            this._flushOutputBio();
+        }
     }
 
-    read(buf: Uint8Array | ArrayBuffer, offset: number, length: number): number
-    {
-        return -1;
-    }
-
-    close(): void
-    {
-
-    }
-
-    private writeToNetworkPipe()
-    {
-
-
-    }
-
-    private connect()
-    {
-        let ret = this.platform.SSL_connect(this.ssl);
-        this.platform.log("CALLED CONNECT", ret);
-        if (ret < 0) {
-            this.platform.log("GOT ERROR FROM SSL_CONNECT", this.platform.SSL_get_error(this.ssl, ret),
-                              this.platform.ERR_error_string(this.platform.SSL_get_error(this.ssl, ret)));
-            if (this.platform.SSL_get_error(this.ssl, ret) == this.platform.SSL_ERROR_WANT_READ) {
-                const pending = this.platform.BIO_ctrl_pending(this.outputBio);
-                // this.platform.assert(pending <= this.scratch.byteLength, "Pending too large. Probably have to increase scratch buffer size");
-                if (pending > 0) {
-                    const buf = new ArrayBuffer(pending);
-                    let read = this.platform.BIO_read(this.outputBio, buf, pending);
-                    this.platform.assert(read === pending, "Read should be pending");
-                    this.pipe.write(buf, 0, read);
-                    // this.platform
-                }
-                this.platform.log("got pending", pending);
-                // N.setFD(sock, N.READ, onConnected.bind(this, host));
+    read(buf: Uint8Array | ArrayBuffer, offset: number, length: number): number {
+        let bufferRead = 0;
+        if (this.buffer) {
+            const byteLength = this.buffer.byteLength;
+            if (length >= byteLength) {
+                this.platform.bufferSet(buf, offset, this.buffer, 0, byteLength);
+                offset += byteLength;
+                length -= byteLength;
+                this.buffer = undefined;
+                bufferRead = byteLength;
+                // ### maybe pool these buffers?
             } else {
-                this.platform.log("BIG FAILURE", this.platform.SSL_get_error(this.ssl, ret), N.errno);
-                // this.platform.quit(1);
+                this.platform.bufferSet(buf, offset, this.buffer, 0, length);
+                this.buffer = this.buffer.slice(length);
+                return length;
+            }
+        }
+
+        let retry = false;
+        let read;
+        do {
+            retry = false;
+            this.platform.trace("someone's calling read", length, this.platform.SSL_pending(this.ssl));
+            read = this.platform.SSL_read(this.ssl, buf, offset, length);
+            if (read <= 0) {
+                const err = this.platform.SSL_get_error(this.ssl, read);
+                // this.platform.error("got err", err);
+                this._flushOutputBio();
+                switch (err) {
+                case this.platform.SSL_ERROR_NONE:
+                    this.platform.error("got error none");
+                    break;
+                case this.platform.SSL_ERROR_SSL:
+                    this.platform.error("got error ssl");
+                    break;
+                case this.platform.SSL_ERROR_WANT_READ:
+                    if (this.platform.BIO_ctrl_pending(this.inputBio))
+                        retry = true;
+                    this.platform.trace("got error want read");
+                    break;
+                case this.platform.SSL_ERROR_WANT_WRITE:
+                    this.platform.trace("got error want write");
+                    break;
+                case this.platform.SSL_ERROR_WANT_X509_LOOKUP:
+                    this.platform.error("got error want x509 lookup");
+                    break;
+                case this.platform.SSL_ERROR_SYSCALL:
+                    this.platform.error("got error syscall");
+                    break;
+                case this.platform.SSL_ERROR_ZERO_RETURN:
+                    this.platform.error("got error zero return");
+                    break;
+                case this.platform.SSL_ERROR_WANT_CONNECT:
+                    this.platform.error("got error want connect");
+                    break;
+                case this.platform.SSL_ERROR_WANT_ACCEPT:
+                    this.platform.error("got error want accept");
+                    break;
+                case this.platform.SSL_ERROR_WANT_ASYNC:
+                    this.platform.error("got error want async");
+                    break;
+                case this.platform.SSL_ERROR_WANT_ASYNC_JOB:
+                    this.platform.error("got error want async job");
+                    break;
+                case this.platform.SSL_ERROR_WANT_CLIENT_HELLO_CB:
+                    this.platform.error("got error want client hello cb");
+                    break;
+                default:
+                    this.platform.error("got error other", err);
+                    break;
+                }
+            }
+        } while (retry);
+
+        // this.platform.trace("SSL_read called", read);
+        return read + bufferRead;
+    }
+
+    unread(buf: ArrayBuffer): void {
+        if (this.buffer) {
+            this.buffer = this.platform.bufferConcat(this.buffer, buf);
+        } else {
+            this.buffer = buf;
+        }
+        if (this.ondata)
+            this.ondata();
+    }
+
+    close(): void {
+        this.pipe.close();
+    }
+
+    private _flushOutputBio() {
+        const pending = this.platform.BIO_ctrl_pending(this.outputBio);
+        // assert(pending <= this.scratch.byteLength, "Pending too large. Probably have to increase scratch buffer size");
+        if (pending > 0) {
+            // should maybe pool these arraybuffers
+            const buf = new ArrayBuffer(pending);
+            let read = this.platform.BIO_read(this.outputBio, buf, 0, pending);
+            assert(read === pending, "Read should be pending");
+            // this.platform.trace("writing", read, this.platform.BIO_ctrl_pending(this.outputBio));
+            this.pipe.write(buf, 0, read);
+            // Platform
+        }
+    }
+
+    private _connect() {
+        assert(this.connectedCallback);
+        let ret = this.platform.SSL_connect(this.ssl);
+        // this.platform.trace("CALLED CONNECT", ret);
+        if (ret <= 0) {
+            const err = this.platform.SSL_get_error(this.ssl, ret);
+            // this.platform.trace("GOT ERROR FROM SSL_CONNECT", err);
+            if (this.platform.SSL_get_error(this.ssl, ret) == this.platform.SSL_ERROR_WANT_READ) {
+                this._flushOutputBio();
+            } else {
+                this.platform.error("BIG FAILURE", this.platform.SSL_get_error(this.ssl, ret), N.errno);
+                this.connectedCallback(new Error(`SSL_connect failure ${this.platform.SSL_get_error(this.ssl, ret)} ${N.errno}`));
+                this.connectedCallback = undefined;
             }
         } else {
-            this.platform.assert(ret === 0, "This should be 0");
-            this.platform.log("we're connected");
+            // this.platform.trace("sheeeet", ret);
+            assert(ret === 1, "This should be 1");
+            // this.platform.trace("we're connected");
             this.connected = true;
+            this.firstByteWritten = this.pipe.firstByteWritten;
+            this.firstByteRead = this.pipe.firstByteRead;
+            assert(this.connectedCallback);
+            this.connectedCallback();
+            this.connectedCallback = undefined;
+
         }
     }
 
@@ -171,10 +285,15 @@ class NrdpSSLNetworkPipe implements NetworkPipe
 };
 
 
-export default function connectSSLNetworkPipe(options: CreateSSLNetworkPipeOptions, platform: Platform): Promise<NetworkPipe> {
+export default function createSSLNetworkPipe(options: CreateSSLNetworkPipeOptions, platform: NrdpPlatform): Promise<NetworkPipe> {
     return new Promise<NetworkPipe>((resolve, reject) => {
-        const sslPipe = new NrdpSSLNetworkPipe(options, platform);
-
-
+        const sslPipe = new NrdpSSLNetworkPipe(options, platform, (error?: Error) => {
+            // platform.trace("connected or something", error);
+            if (error) {
+                reject(error);
+            } else {
+                resolve(sslPipe);
+            }
+        });
     });
 };

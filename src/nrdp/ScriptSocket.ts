@@ -1,63 +1,56 @@
-/* (c) 2019 Netflix, Inc. Do not copy or use without prior written permission from Netflix, Inc. */
-/* This file is generated. Do not modify */
 declare namespace nrdsocket {
     // interfaces
     class Sockaddr {
         constructor(arg?: Sockaddr | string);
 
         ipAddress: string | undefined;
+        ipVersion: 4 | 6 | 0;
         port: number;
         readonly valid: boolean;
         clear(): void;
     }
 
-    class BIO
-    {
+    class BIO {
         flags: number;
 
-        onctrl: (cmd: number, num: number, ptr: undefined|DataPointer) => number;
+        onctrl: (cmd: number, num: number, ptr: undefined | DataPointer) => number;
 
         onread: (bufferSize: number) => number; // this is called when the buffer wants to read, e.g. you need to call writeData in the callback
         onwrite: (bufferSize: number) => number; // this is called when the buffer wants to write, e.g. you need to call readData in the callback
 
-        readData(offset:number, buffer: ArrayBuffer|Uint8Array, buffeOffset: number, bufferLength: number): void; // this reads from the bio
-        writeData(offset:number, buffer: ArrayBuffer|Uint8Array|string, buffeOffset: number, bufferLength: number): void; // this writes to the bio
+        readData(offset: number, buffer: ArrayBuffer | Uint8Array, buffeOffset: number, bufferLength: number): void; // this reads from the bio
+        writeData(offset: number, buffer: ArrayBuffer | Uint8Array | string, buffeOffset: number, bufferLength: number): void; // this writes to the bio
 
-        eq(other: BIO|Struct): boolean;
+        eq(other: BIO | Struct): boolean;
     }
 
-    interface Struct
-    {
+    interface Struct {
         readonly null: boolean;
         free: string;
         release(): void;
-        eq(other: BIO|Struct): boolean;
+        eq(other: BIO | Struct): boolean;
     }
 
-    interface MsgHdr
-    {
+    interface MsgHdr {
         name?: ConstBuffer;
-        iov?: [ Buffer ] | Buffer;
+        iov?: [Buffer] | Buffer;
         control?: Buffer;
         flags?: number;
     }
 
-    interface ConstMsgHdr
-    {
+    interface ConstMsgHdr {
         name?: ConstBuffer;
-        iov?: [ ConstBuffer ] | ConstBuffer;
+        iov?: [ConstBuffer] | ConstBuffer;
         control?: ConstBuffer;
         flags?: number;
     }
 
-    interface BindFunctionOptions
-    {
+    interface BindFunctionOptions {
         no_trace?: boolean;
         allow_null_struct?: boolean;
     }
 
-    class DataPointer
-    {
+    class DataPointer {
         constructor(arg?: DataPointer);
 
         readonly valid: boolean;
@@ -69,8 +62,7 @@ declare namespace nrdsocket {
         clear(): void;
     }
 
-    class ConstDataPointer
-    {
+    class ConstDataPointer {
         constructor(arg?: ConstDataPointer | DataPointer);
 
         readonly valid: boolean;
@@ -81,9 +73,8 @@ declare namespace nrdsocket {
         clear(): void;
     }
 
-    class UnorderedMap
-    {
-        constructor(arg?: [ [] ] | UnorderedMap);
+    class UnorderedMap {
+        constructor(arg?: [[]] | UnorderedMap);
         clone(): UnorderedMap;
         has(key: any): boolean;
         get(key: any): any;
@@ -91,9 +82,9 @@ declare namespace nrdsocket {
         take(key: any): any;
         delete(key: any): boolean;
         forEach(callback: ForEachCallback): void;
-        keys(): [ any ];
-        values(): [ any ];
-        entries(): [ any ];
+        keys(): [any];
+        values(): [any];
+        entries(): [any];
         clear(): void;
         readonly size: number;
         readonly length: number;
@@ -102,7 +93,6 @@ declare namespace nrdsocket {
     // types
     type Buffer = ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | Uint16Array | Int16Array | Uint32Array | Int32Array | Float32Array | Float64Array | DataView | DataPointer;
     type ConstBuffer = string | ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | Uint16Array | Int16Array | Uint32Array | Int32Array | Float32Array | Float64Array | DataView | ConstDataPointer | DataPointer;
-    type int = number;
 
     type ForEachCallback = (key: any, value: any) => boolean;
     type SelectCallback = (fds: UnorderedMap) => void;
@@ -121,8 +111,8 @@ declare namespace nrdsocket {
     let errno: number;
     function strerror(err?: number): string;
     let selectCallback: SelectCallback;
-    const sockets: [ number ];
-    const files: [ number ];
+    const sockets: [number];
+    const files: [number];
 
     const AF_ALG: number;
     const AF_APPLETALK: number;
@@ -421,23 +411,26 @@ declare namespace nrdsocket {
     // functions
     function bindFunction(signature: string, options?: BindFunctionOptions): Function;
     function unbindFunction(signature: string): boolean;
-    function socket(domain: int, type: int, protocol: int): number;
-    function close(fd: int): number;
-    function bind(sockfd: int, addr: Sockaddr): number;
-    function listen(sockfd: int, backlog: int): number;
-    function connect(sockfd: int, addr: Sockaddr): number;
-    function accept(sockfd: int, addr: Sockaddr | undefined): number;
-    function send(sockfd: int, buf: ConstBuffer, bufOffset: number, bufLength: number, flags: int): number;
-    function sendto(sockfd: int, buf: ConstBuffer, bufOffset: number, bufLength: number, flags: int, addr: Sockaddr): number;
-    function sendmsg(sockfd: int, msg: ConstMsgHdr, flags: int): number;
-    function write(fd: int, buf: ConstBuffer, bufOffset?: number, bufLength?: number): number;
-    function recv(sockfd: int, buf: Buffer, bufOffset: number, bufLength: number, flags: int): number;
-    function recvfrom(sockfd: int, buf: Buffer, bufOffset: number, bufLength: number, flags: int, addr: Sockaddr | undefined): number;
-    function recvmsg(sockfd: int, msg: MsgHdr, flags: int): number;
-    function read(fd: int, buf: Buffer, bufOffset?: number, bufLength?: number): number;
-    function fcntl(fd: int, cmd: int, arg?: ConstBuffer|undefined|number|boolean): number;
-    function getsockopt(fd: int, level: int, optname: int, optval: Buffer | undefined, optvalOffset?: number, optvalLength?: number): number;
-    function setsockopt(fd: int, level: int, optname: int, optval: ConstBuffer | undefined, optvalOffset?: number, optvalLength?: number): number;
+
+    function accept(sockfd: number, addr: Sockaddr | undefined): number;
+    function bind(sockfd: number, addr: Sockaddr): number;
+    function close(fd: number): number;
+    function connect(sockfd: number, addr: Sockaddr): number;
+    function fcntl(fd: number, cmd: number, arg?: ConstBuffer | undefined | number | boolean): number;
+    function getsockopt(fd: number, level: number, optname: number, optval: Buffer | undefined, optvalOffset?: number, optvalLength?: number): number;
+    function listen(sockfd: number, backlog: number): number;
+    function open(pathname: ConstBuffer, flags: number, mode: number): number;
+    function read(fd: number, buf: Buffer, bufOffset?: number, bufLength?: number): number;
+    function recv(sockfd: number, buf: Buffer, bufOffset: number, bufLength: number, flags: number): number;
+    function recvfrom(sockfd: number, buf: Buffer, bufOffset: number, bufLength: number, flags: number, addr: Sockaddr | undefined): number;
+    function recvmsg(sockfd: number, msg: MsgHdr, flags: number): number;
+    function send(sockfd: number, buf: ConstBuffer, bufOffset: number, bufLength: number, flags: number): number;
+    function sendmsg(sockfd: number, msg: ConstMsgHdr, flags: number): number;
+    function sendto(sockfd: number, buf: ConstBuffer, bufOffset: number, bufLength: number, flags: number, addr: Sockaddr): number;
+    function setsockopt(fd: number, level: number, optname: number, optval: ConstBuffer | undefined, optvalOffset?: number, optvalLength?: number): number;
+    function socket(domain: number, type: number, protocol: number): number;
+    function unlink(pathname: ConstBuffer): number;
+    function write(fd: number, buf: ConstBuffer, bufOffset?: number, bufLength?: number): number;
 }
 
 export default nrdsocket;
