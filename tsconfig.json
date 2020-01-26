@@ -6,7 +6,7 @@
         "noImplicitAny": true,
         "lib": ["es6"],
         "module": "commonjs",
-        "target": "es5",
+        "target": "es6",
         "esModuleInterop": true,
         "allowJs": false,
         "strictNullChecks": true,

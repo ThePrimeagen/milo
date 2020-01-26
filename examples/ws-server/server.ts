@@ -10,6 +10,11 @@ for (let i = 0; i < reallyLargeBuffer.byteLength; ++i) {
     reallyLargeBuffer.writeUInt8(i % 256, i);
 }
 
+const smallBuf = Buffer.alloc(1024);
+for (let i = 0; i < smallBuf.byteLength; ++i) {
+    smallBuf.writeUInt8(i % 256, i);
+}
+
 function getBigAssBufferSlice() {
     const mid = Math.floor(reallyLargeBuffer.byteLength / 2);
     const low = Math.floor(Math.random() * mid);
@@ -27,7 +32,7 @@ wss.on('connection', function(ws) {
     function sendData() {
         // @ts-ignore
         const buffer = getBigAssBufferSlice();
-        ws.send(buffer);
+        ws.send(buffer);//smallBuf);
     }
 
     function stopData() {

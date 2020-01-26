@@ -221,6 +221,9 @@ export class Request
                 throw new Error("Invalid state transition to Initial");
             case RequestState.Connected:
                 const method = this.requestData.method || (this.requestData.body ? "POST" : "GET");
+
+                // TODO: With HTTP2 upgrade, do we know that the host can do it or should we
+                // do the connection handshake everytime?
                 let str =
 `${method} ${this.url.pathname || "/"} HTTP/1.1\r
 Host: ${this.url.hostname}\r
@@ -324,15 +327,14 @@ Accept: */*\r\n`;
                     } else {
                         this.headerBuffer = recvBuffer.buffer.slice(0, read);
                     }
+
                     const rnrn = Platform.bufferIndexOf(this.headerBuffer, 0, undefined, "\r\n\r\n");
-                        debugger;
                     if (rnrn != -1 && this._parseHeaders(rnrn)) {
                         this.transition(RequestState.ReceivedHeaders);
                         const remaining = this.headerBuffer.byteLength - (rnrn + 4);
                         if (remaining)
                             this._processResponseData(this.headerBuffer, this.headerBuffer.byteLength - remaining, remaining);
                         this.headerBuffer = undefined;
-                        debugger;
                         if (this.connection == "Upgrade") {
                             this.transition(RequestState.Finished);
                         }

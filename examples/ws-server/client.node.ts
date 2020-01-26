@@ -12,7 +12,9 @@ async function run() {
     let bytesReceived = 0;
     let packetBytesReceived = 0;
 
-    const byteLength = 4096;
+    const byteLength = 4096 * 16;
+    const dataFetchCount = 10000;
+
     const buf = new ArrayBuffer(byteLength);
     debugger
     const networkPipe = await _wsUpgrade({
@@ -25,14 +27,14 @@ async function run() {
 
         bytesReceived += bytesRead;
 
-        if (++dataCount === 10000) {
+        if (++dataCount === dataFetchCount) {
             const now = Date.now();
             console.log("Total Bytes Received:", bytesReceived);
             console.log("Time Spent:", now - then);
             console.log("Mbps:", (bytesReceived / (now - then)) * 1000);
             return;
         }
-        else if (dataCount < 10000) {
+        else if (dataCount < dataFetchCount) {
             ws.send("send");
         }
     });
