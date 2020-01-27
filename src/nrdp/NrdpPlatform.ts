@@ -265,7 +265,7 @@ export class NrdpPlatform implements Platform {
 
     private cachedStandardHeaders?: { [key: string]: string };
     private cachedUILanguages?: string[];
-    get standardHeaders() {
+    get standardHeaders(): { [key: string]: string } {
         let currentLanguages = this.UILanguages;
         if (!this.cachedStandardHeaders || this.cachedUILanguages != currentLanguages) {
             this.cachedUILanguages = currentLanguages;

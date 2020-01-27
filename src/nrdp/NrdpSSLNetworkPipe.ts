@@ -195,7 +195,8 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
                     this.platform.error("got error syscall");
                     break;
                 case this.platform.SSL_ERROR_ZERO_RETURN:
-                    this.platform.error("got error zero return");
+                    this.close();
+                    this.platform.trace("got error zero return");
                     break;
                 case this.platform.SSL_ERROR_WANT_CONNECT:
                     this.platform.error("got error want connect");
