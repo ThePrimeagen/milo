@@ -1,5 +1,3 @@
-import Platform from '../../Platform';
-
 import {
     FrameType,
     Flag
@@ -7,10 +5,8 @@ import {
 
 import * as FrameUtils from './utils';
 
-const maxStreamIdentifier = 1 << 32 - 1;
 const tmpBuffer = new Uint8Array(4);
 const tmpView = new DataView(tmpBuffer.buffer);
-const FRAME_HEADER_SIZE = 9;
 
     /* FRAME HEADER
  +-----------------------------------------------+
@@ -23,7 +19,6 @@ const FRAME_HEADER_SIZE = 9;
  |                   Frame Payload (0...)                      ...
  +---------------------------------------------------------------+
      */
-
 /* DATA FRAME PAYLOAD PADDING PADDED
  +---------------+
  |Pad Length? (8)|
@@ -33,9 +28,10 @@ const FRAME_HEADER_SIZE = 9;
  |                           Padding (*)                       ...
  +---------------------------------------------------------------+
  */
+export const FRAME_HEADER_SIZE = 9;
 
-class FrameWriter {
-    private buffer: Uint8Array;
+export default class FrameWriter {
+    public buffer: Uint8Array;
     private ptr: number;
 
     constructor(length: number, streamIdentifier: number, type: FrameType) {
@@ -45,6 +41,7 @@ class FrameWriter {
         FrameUtils.setLength(this.buffer, length);
         FrameUtils.setType(this.buffer, type);
         FrameUtils.zeroFlags(this.buffer);
+        debugger;
         FrameUtils.setStreamIdentifier(this.buffer, streamIdentifier);
     }
 
@@ -52,8 +49,14 @@ class FrameWriter {
         this.buffer[this.ptr++] = item;
     }
 
+    write16(item: number) {
+        new DataView(this.buffer).setUint16(this.ptr, item);
+        this.ptr += 2;
+    }
+
     write32(item: number) {
-        new DataView(this.buffer).setUint32(this.ptr++, item);
+        new DataView(this.buffer).setUint32(this.ptr, item);
+        this.ptr += 4;
     }
 
     writeStr(item: string) {
@@ -88,45 +91,6 @@ class FrameWriter {
         FrameUtils.setFlags(this.buffer, Flag.PADDED);
         this.buffer.fill(0, this.buffer.byteLength - padding);
     }
-}
-
-/*
-+---------------+
- |Pad Length? (8)|
- +-+-------------+-----------------------------------------------+
- |E|                 Stream Dependency? (31)                     |
- +-+-------------+-----------------------------------------------+
- |  Weight? (8)  |
- +-+-------------+-----------------------------------------------+
- |                   Header Block Fragment (*)                 ...
- +---------------------------------------------------------------+
- |                           Padding (*)                       ...
- +---------------------------------------------------------------+
- */
-export function writeHeaderData(
-    frame: FrameWriter, data: Uint8Array,
-    streamDependency?: number, isExclusive?: boolean, weight?: number) {
-
-    if (streamDependency !== undefined) {
-        frame.addFlag(Flag.PRIORITY);
-
-        let sD = streamDependency | (isExclusive ? 1 << 32 : 0);
-        frame.write32(sD);
-        frame.write8(weight || 0);
-    }
-
-    frame.write(data);
-}
-
-// TODO: will we know a head of time the buffer size?
-export function createHeaderFrame(
-    bytesToSend: number, flags: number,
-    streamIdentifier: number, padding: number = 0): FrameWriter {
-
-    const frameWriter = new FrameWriter(bytesToSend, streamIdentifier, flags);
-    frameWriter.addPadding(padding);
-
-    return frameWriter;
 }
 
 

@@ -3,7 +3,7 @@ import {
     Flag,
 } from './types';
 
-const maxStreamIdentifier = 1 << 32 - 1;
+const maxStreamIdentifier = 2147483647;
 const tmpBuffer = new Uint8Array(4);
 const tmpView = new DataView(tmpBuffer.buffer);
 
