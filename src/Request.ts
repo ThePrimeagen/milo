@@ -140,7 +140,9 @@ export class Request {
         this.http.onheaders = this._onHeaders.bind(this);
         this.http.ondata = this._onData.bind(this);
         this.http.onerror = this._onError.bind(this);
-        this.http.onfinished = this._onFinished.bind(this);
+        this.http.onfinished = () => {
+            this._transition(RequestState.Finished);
+        };
 
         if (typeof data === "string") {
             data = { url: data };
@@ -222,7 +224,7 @@ export class Request {
             // Platform.trace("GOT OUR PIPE NOW");
             this.networkPipe = pipe;
 
-            this.transition(RequestState.Connected);
+            this._transition(RequestState.Connected);
         }).catch(err => {
             // Platform.trace("Request#send#createTCPNetworkPipe error", err);
             this._onError(-1, err.toString());
@@ -231,13 +233,19 @@ export class Request {
         return ret;
     }
 
-    private transition(state: RequestState): void {
+    private _transition(state: RequestState): void {
         // Platform.trace("transition", this.state, "to", state);
         this.state = state;
         switch (state) {
         case RequestState.Initial:
             throw new Error("Invalid state transition to Initial");
         case RequestState.Connected:
+            assert(this.networkPipe);
+            this.requestResponse.serverIp = this.networkPipe.ipAddress;
+            this.requestResponse.dns = this.networkPipe.dns;
+            if (this.networkPipe.dnsChannel)
+                this.requestResponse.dnsChannel = this.networkPipe.dnsChannel;
+
             if (!this.requestData.headers)
                 this.requestData.headers = {};
 
@@ -257,12 +265,11 @@ export class Request {
                 body: this.requestData.body,
                 networkStartTime: this.requestResponse.networkStartTime
             };
-            assert(this.networkPipe);
             this.http.send(this.networkPipe, req);
             // Platform.trace("CALLING WRITE", str);
             break;
         case RequestState.Closed:
-            this.transition(RequestState.Finished);
+            this._transition(RequestState.Finished);
             break;
         case RequestState.Error:
             break;
@@ -280,6 +287,9 @@ export class Request {
             assert(this.requestResponse, "Gotta have a requestResponse");
             assert(this.requestResponse.networkStartTime, "Gotta have a requestResponse.networkStartTime");
             this.requestResponse.duration = Platform.mono() - this.requestResponse.networkStartTime;
+            this.requestResponse.size = this.responseDataLength;
+            this.requestResponse.httpVersion = this.http.httpVersion;
+            this.requestResponse.state = "network";
 
             switch (this.requestData.format) {
             case "xml":
@@ -307,13 +317,18 @@ export class Request {
     }
 
     private _onHeaders(event: HTTPHeadersEvent): void {
-        Platform.log("balls", this.requestResponse);
+        Platform.log("balls", this.requestResponse, event, typeof this.requestData.onData, typeof this.requestData.onChunk);
         this.requestResponse.statusCode = event.statusCode;
         this.requestResponse.headers = event.headers;
         this.transferEncoding = event.transferEncoding;
+        this.requestResponse.requestSize = event.requestSize;
+        this.requestResponse.timeToFirstByteWritten = this.http.timeToFirstByteWritten;
+        this.requestResponse.timeToFirstByteRead = this.http.timeToFirstByteRead;
+
         if (!(this.transferEncoding & HTTPTransferEncoding.Chunked))
             this.requestData.onChunk = undefined;
         if (!this.requestData.onData && !this.requestData.onChunk) {
+            Platform.log("shit contentLength", event.contentLength);
             if (typeof event.contentLength === "undefined") {
                 this.responseDataArray = [];
             } else if (event.contentLength && event.contentLength > 0) {
@@ -329,7 +344,7 @@ export class Request {
 
     private _onData(data: ArrayBuffer, offset: number, length: number): void { // have to copy data, the buffer will be reused
         this.responseDataLength += length;
-        // Platform.trace("got some data here", length, Platform.utf8toa(data.slice(offset, offset + length)));
+        Platform.trace("got some data here", length);
         if (this.requestData.onData) {
             this.requestData.onData(data.slice(offset, length));
         } else if (this.requestData.onChunk) { // this arrayBuffer is created by ChunkyParser
@@ -340,6 +355,10 @@ export class Request {
             assert(typeof this.responseDataOffset !== "undefined", "Must have responseDataOffset");
             Platform.bufferSet(this.responseData, this.responseDataOffset, data, offset, length);
             this.responseDataOffset += length;
+            Platform.log("GOT DATA", this.responseDataOffset, "of", this.responseData.byteLength);
+            if (this.responseDataOffset == this.responseData.byteLength) {
+                this._transition(RequestState.Finished);
+            }
         } else if (this.responseDataArray) {
             this.responseDataArray.push(data.slice(offset, offset + length));
         }
@@ -352,9 +371,4 @@ export class Request {
             this.networkPipe.close();
         this.reject(code, message);
     }
-
-    private _onFinished() {
-        this.transition(RequestState.Finished);
-    }
-
 }

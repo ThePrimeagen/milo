@@ -10,11 +10,12 @@ export function _load(data: RequestData, callback: Function): number {
     // @ts-ignore
     const req = new Request(data);
     req.send().then(response => {
-        if (response.data) {
-            Platform.writeFile("/tmp/dl", response.data);
-        }
-        delete response.data;
+        // if (response.data) {
+        //     Platform.writeFile("/tmp/dl", response.data);
+        // }
+        // delete response.data;
         Platform.log("Got resolved", response);
+        callback(response);
     }).catch(error => {
         Platform.trace("Got error", error);
     });

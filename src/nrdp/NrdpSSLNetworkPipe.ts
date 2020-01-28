@@ -102,7 +102,6 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
             }
         };
         this.pipe.onclose = () => {
-            this.platform.trace("got close", this.platform.stacktrace());
             if (this.onclose)
                 this.onclose();
         };
@@ -115,6 +114,9 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
         this._connect();
     }
 
+    get ipAddress() { return this.pipe.ipAddress; }
+    get dns() { return this.pipe.dns; }
+    get dnsChannel() { return this.pipe.dnsChannel; }
     get closed() { return this.pipe.closed; }
 
     write(buf: Uint8Array | ArrayBuffer | string, offset?: number, length?: number): void {
@@ -152,11 +154,9 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
             const byteLength = this.buffer.byteLength;
             if (length >= byteLength) {
                 this.platform.bufferSet(buf, offset, this.buffer, 0, byteLength);
-                offset += byteLength;
-                length -= byteLength;
                 this.buffer = undefined;
+                return byteLength;
                 bufferRead = byteLength;
-                // ### maybe pool these buffers?
             } else {
                 this.platform.bufferSet(buf, offset, this.buffer, 0, length);
                 this.buffer = this.buffer.slice(length);
@@ -164,62 +164,55 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
             }
         }
 
-        let retry = false;
-        let read;
-        do {
-            retry = false;
-            this.platform.trace("someone's calling read", length, this.platform.SSL_pending(this.ssl));
-            read = this.platform.SSL_read(this.ssl, buf, offset, length);
-            if (read <= 0) {
-                const err = this.platform.SSL_get_error(this.ssl, read);
-                // this.platform.error("got err", err);
-                this._flushOutputBio();
-                switch (err) {
-                case this.platform.SSL_ERROR_NONE:
-                    this.platform.error("got error none");
-                    break;
-                case this.platform.SSL_ERROR_SSL:
-                    this.platform.error("got error ssl");
-                    break;
-                case this.platform.SSL_ERROR_WANT_READ:
-                    if (this.platform.BIO_ctrl_pending(this.inputBio))
-                        retry = true;
-                    this.platform.trace("got error want read");
-                    break;
-                case this.platform.SSL_ERROR_WANT_WRITE:
-                    this.platform.trace("got error want write");
-                    break;
-                case this.platform.SSL_ERROR_WANT_X509_LOOKUP:
-                    this.platform.error("got error want x509 lookup");
-                    break;
-                case this.platform.SSL_ERROR_SYSCALL:
-                    this.platform.error("got error syscall");
-                    break;
-                case this.platform.SSL_ERROR_ZERO_RETURN:
-                    this.close();
-                    this.platform.trace("got error zero return");
-                    break;
-                case this.platform.SSL_ERROR_WANT_CONNECT:
-                    this.platform.error("got error want connect");
-                    break;
-                case this.platform.SSL_ERROR_WANT_ACCEPT:
-                    this.platform.error("got error want accept");
-                    break;
-                case this.platform.SSL_ERROR_WANT_ASYNC:
-                    this.platform.error("got error want async");
-                    break;
-                case this.platform.SSL_ERROR_WANT_ASYNC_JOB:
-                    this.platform.error("got error want async job");
-                    break;
-                case this.platform.SSL_ERROR_WANT_CLIENT_HELLO_CB:
-                    this.platform.error("got error want client hello cb");
-                    break;
-                default:
-                    this.platform.error("got error other", err);
-                    break;
-                }
+        this.platform.trace("someone's calling read", length, this.platform.SSL_pending(this.ssl));
+        const read = this.platform.SSL_read(this.ssl, buf, offset, length);
+        if (read <= 0) {
+            const err = this.platform.SSL_get_error(this.ssl, read);
+            // this.platform.error("got err", err);
+            this._flushOutputBio();
+            switch (err) {
+            case this.platform.SSL_ERROR_NONE:
+                this.platform.error("got error none");
+                break;
+            case this.platform.SSL_ERROR_SSL:
+                this.platform.error("got error ssl");
+                break;
+            case this.platform.SSL_ERROR_WANT_READ:
+                this.platform.trace("got error want read");
+                break;
+            case this.platform.SSL_ERROR_WANT_WRITE:
+                this.platform.trace("got error want write");
+                break;
+            case this.platform.SSL_ERROR_WANT_X509_LOOKUP:
+                this.platform.error("got error want x509 lookup");
+                break;
+            case this.platform.SSL_ERROR_SYSCALL:
+                this.platform.error("got error syscall");
+                break;
+            case this.platform.SSL_ERROR_ZERO_RETURN:
+                this.close();
+                this.platform.trace("got error zero return");
+                break;
+            case this.platform.SSL_ERROR_WANT_CONNECT:
+                this.platform.error("got error want connect");
+                break;
+            case this.platform.SSL_ERROR_WANT_ACCEPT:
+                this.platform.error("got error want accept");
+                break;
+            case this.platform.SSL_ERROR_WANT_ASYNC:
+                this.platform.error("got error want async");
+                break;
+            case this.platform.SSL_ERROR_WANT_ASYNC_JOB:
+                this.platform.error("got error want async job");
+                break;
+            case this.platform.SSL_ERROR_WANT_CLIENT_HELLO_CB:
+                this.platform.error("got error want client hello cb");
+                break;
+            default:
+                this.platform.error("got error other", err);
+                break;
             }
-        } while (retry);
+        }
 
         // this.platform.trace("SSL_read called", read);
         return read + bufferRead;

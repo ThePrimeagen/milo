@@ -72,6 +72,10 @@ export interface NetworkPipe {
     readonly dnsTime?: number;
     readonly connectTime?: number;
 
+    readonly ipAddress: string;
+    readonly dns: string; // dns type
+    readonly dnsChannel?: string;
+
     ondata?: OnData;
     onclose?: OnClose;
     onerror?: OnError;
@@ -87,10 +91,12 @@ export enum HTTPTransferEncoding {
 };
 
 export interface HTTPHeadersEvent {
-    method: HTTPMethod;
-    statusCode: number;
-    headers: string[];
     contentLength?: number;
+    headers: string[];
+    headersSize: number;
+    method: HTTPMethod;
+    requestSize: number;
+    statusCode: number;
     transferEncoding: HTTPTransferEncoding;
 };
 
@@ -105,6 +111,9 @@ export interface HTTPRequest {
 export interface HTTP {
     httpVersion: string;
     send(pipe: NetworkPipe, request: HTTPRequest): boolean;
+
+    timeToFirstByteRead?: number;
+    timeToFirstByteWritten?: number;
 
     onheaders?: (headers: HTTPHeadersEvent) => void;
     ondata?: (data: ArrayBuffer, offset: number, length: number) => void;

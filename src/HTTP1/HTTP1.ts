@@ -16,6 +16,7 @@ export class HTTP1 implements HTTP {
     private connection?: string;
     private headersFinished: boolean;
     private chunkyParser?: ChunkyParser;
+    private requestSize?: number;
 
     constructor() {
         this.headersFinished = false;
@@ -39,13 +40,16 @@ Host: ${request.url.hostname}\r
         }
         str += "\r\n";
         this.networkPipe.write(str);
+        this.requestSize = str.length; // headers are latin1
 
         switch (typeof request.body) {
         case "string":
             this.networkPipe.write(request.body);
+            this.requestSize += request.body.length; // if this has utf8 this would be wrong
             break;
         case "object":
             this.networkPipe.write(request.body, 0, request.body.byteLength);
+            this.requestSize += request.body.byteLength;
             break;
         }
 
@@ -54,6 +58,7 @@ Host: ${request.url.hostname}\r
             while (true) {
                 assert(this.networkPipe, "Must have network pipe");
                 const read = this.networkPipe.read(scratch, 0, scratch.byteLength);
+                Platform.trace("We read some bytes from the pipe", read, this.headersFinished);
                 if (read <= 0) {
                     break;
                 } else if (!this.headersFinished) {
@@ -121,10 +126,12 @@ Host: ${request.url.hostname}\r
 
         assert(this.request, "Gotta have request");
         const event = {
-            method: this.request.method,
-            statusCode: -1,
-            headers: [],
             contentLength: undefined,
+            headers: [],
+            headersSize: rnrn + 4,
+            method: this.request.method,
+            requestSize: this.requestSize,
+            statusCode: -1,
             transferEncoding: 0
         } as HTTPHeadersEvent;
 
@@ -135,11 +142,9 @@ Host: ${request.url.hostname}\r
             this._error(-1, "Bad status line " + statusLine);
             return false;
         }
-
         // this.requestResponse.headers = new ResponseHeaders;
         let contentLength: string | undefined;
         let transferEncoding: string | undefined;
-        let headers = [];
 
         for (var i = 1; i < split.length; ++i) {
             // split \r\n\r\n by \r\n causes 2 empty lines.
@@ -170,16 +175,18 @@ Host: ${request.url.hostname}\r
             } else if (lower == "connection") {
                 this.connection = value;
             }
-            headers.push(key + ": " + value);
+            event.headers.push(key + ": " + value);
         }
 
         if (transferEncoding) {
             const transferEncodings = transferEncoding.split(",");
-            for (let idx = 0; idx < transferEncodings.length; ++i) {
+            Platform.trace("got some encodings", transferEncodings);
+            for (let idx = 0; idx < transferEncodings.length; ++idx) {
                 switch (transferEncodings[idx].trim()) {
-                case "Chunked":
+                case "chunked":
                     this.chunkyParser = new ChunkyParser;
                     this.chunkyParser.onchunk = (chunk: ArrayBuffer) => {
+                        Platform.trace("got a chunk right here", chunk.byteLength, typeof this.ondata);
                         if (this.ondata)
                             this.ondata(chunk, 0, chunk.byteLength);
                     };
@@ -195,16 +202,16 @@ Host: ${request.url.hostname}\r
 
                     event.transferEncoding |= HTTPTransferEncoding.Chunked;
                     break;
-                case "Compress":
+                case "compress":
                     event.transferEncoding |= HTTPTransferEncoding.Compress;
                     break;
-                case "Deflate":
+                case "deflate":
                     event.transferEncoding |= HTTPTransferEncoding.Deflate;
                     break;
-                case "Gzip":
+                case "gzip":
                     event.transferEncoding |= HTTPTransferEncoding.Gzip;
                     break;
-                case "Identity":
+                case "identity":
                     event.transferEncoding |= HTTPTransferEncoding.Identity;
                     break;
                 }
@@ -227,6 +234,7 @@ Host: ${request.url.hostname}\r
     }
 
     private _processResponseData(data: ArrayBuffer, offset: number, length: number): void { // have to copy data, the buffer will be reused
+        Platform.log("processing data", typeof this.chunkyParser, length);
         if (this.chunkyParser) {
             this.chunkyParser.feed(data, offset, length);
         } else if (this.ondata) {
