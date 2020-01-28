@@ -108,6 +108,7 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
         };
         this.pipe.onerror = (code: number, message?: string) => {
             this.platform.error("got error", code, message || "");
+            this._error
         };
 
         this.platform.SSL_set_bio(this.ssl, this.inputBio, this.outputBio);
@@ -278,6 +279,12 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
             this.connectedCallback = undefined;
 
         }
+    }
+
+    private _error(code: number, message: string): void {
+        // ### have to shut down all sorts of ssl stuff
+        if (this.onerror)
+            this.onerror(code, message);
     }
 
     ondata?: OnData;

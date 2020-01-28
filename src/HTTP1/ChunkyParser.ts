@@ -1,5 +1,6 @@
 import Platform from "../Platform";
 import { assert, escapeData } from "../utils";
+import { ErrorCode, OnError } from "../types";
 
 export class ChunkyParser {
     private buffers: Uint8Array[] = [];
@@ -86,7 +87,7 @@ export class ChunkyParser {
 
     ondone?: (buffer: ArrayBuffer | undefined) => void;
     onchunk?: (chunk: ArrayBuffer) => void;
-    onerror?: (code: number, message: string) => void;
+    onerror?: OnError;
 
     private _consume(bytes: number): void {
         Platform.assert(bytes <= this.available, "Not enough bytes to consume");

@@ -5,6 +5,10 @@ export type IpConnectivityMode = 4 | 6 | 10 | 0; // 0 is invalid, 10 is dual
 export type HTTPMethod = "POST" | "HEAD" | "PUT" | "DELETE" | "PATCH" | "GET";
 export type HTTPRequestHeaders = { [key: string]: string };
 
+export enum ErrorCode {
+    None = 0
+};
+
 export interface DnsResult {
     errorCode: number;
     host: string;
@@ -49,7 +53,7 @@ export interface CreateSSLNetworkPipeOptions {
 
 export type OnData = () => void;
 export type OnClose = () => void;
-export type OnError = (code: number, message?: string) => void;
+export type OnError = (code: number, message: string) => void;
 
 export interface NetworkPipe {
     write(buf: Uint8Array | ArrayBuffer, offset: number, length: number): void;
@@ -91,6 +95,7 @@ export interface HTTPHeadersEvent {
 };
 
 export interface HTTPRequest {
+    networkStartTime: number,
     url: Url;
     method: HTTPMethod;
     requestHeaders: HTTPRequestHeaders;

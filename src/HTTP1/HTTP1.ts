@@ -1,4 +1,6 @@
-import { HTTP, HTTPMethod, HTTPTransferEncoding, HTTPRequest, NetworkPipe, HTTPHeadersEvent, OnError } from "../types";
+import {
+    HTTP, HTTPMethod, HTTPTransferEncoding, HTTPRequest, NetworkPipe, HTTPHeadersEvent, OnError, ErrorCode
+} from "../types";
 import Url from "url-parse";
 import Platform from "../Platform";
 import { ChunkyParser } from "./ChunkyParser";
@@ -8,7 +10,6 @@ export class HTTP1 implements HTTP {
     public httpVersion: string;
     networkPipe?: NetworkPipe;
     request?: HTTPRequest;
-    public networkStartTime?: number;
     public timeToFirstByteRead?: number;
     public timeToFirstByteWritten?: number;
     private headerBuffer?: ArrayBuffer;
@@ -22,7 +23,6 @@ export class HTTP1 implements HTTP {
     }
 
     send(networkPipe: NetworkPipe, request: HTTPRequest): boolean {
-        this.networkStartTime = Platform.mono();
         this.networkPipe = networkPipe;
         this.request = request;
         let str =
@@ -69,13 +69,11 @@ Host: ${request.url.hostname}\r
                     if (rnrn != -1) {
                         this._parseHeaders(rnrn);
                         this.headersFinished = true;
-                        // Platform.log("GOT HEADERS AFTER", Platform.mono() - this.requestResponse.networkStartTime);
                         const remaining = this.headerBuffer.byteLength - (rnrn + 4);
                         if (remaining) {
                             this._processResponseData(this.headerBuffer, this.headerBuffer.byteLength - remaining, remaining);
                         }
                         this.headerBuffer = undefined;
-                        debugger;
                         if (this.connection == "Upgrade") {
                             this._finish();
                         }
@@ -85,18 +83,21 @@ Host: ${request.url.hostname}\r
                 }
             }
         }
+        this.networkPipe.onclose = () => {
+            this._finish(); // ### check if we're okay to be closed?
+        };
         return true;
     }
 
     private _parseHeaders(rnrn: number): boolean {
         assert(this.networkPipe, "Gotta have a pipe");
-        assert(this.networkStartTime, "Gotta have network start time");
+        assert(this.request, "Gotta have a pipe");
 
         if (this.networkPipe.firstByteRead) {
-            this.timeToFirstByteRead = this.networkPipe.firstByteRead - this.networkStartTime;
+            this.timeToFirstByteRead = this.networkPipe.firstByteRead - this.request.networkStartTime;
         }
         if (this.networkPipe.firstByteWritten) {
-            this.timeToFirstByteWritten = this.networkPipe.firstByteWritten - this.networkStartTime;
+            this.timeToFirstByteWritten = this.networkPipe.firstByteWritten - this.request.networkStartTime;
         }
 
         assert(this.headerBuffer, "Must have headerBuffer");
@@ -212,7 +213,7 @@ Host: ${request.url.hostname}\r
 
         if (contentLength) {
             const len = parseInt(contentLength);
-            if (len < 0 || len > 1024 * 1024 * 16 || isNaN(len)) {
+            if (len < 0 || isNaN(len)) {
                 this._error(-1, "Bad content length " + contentLength);
                 return false;
             }
