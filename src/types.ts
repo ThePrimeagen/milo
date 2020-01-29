@@ -55,6 +55,13 @@ export type OnData = () => void;
 export type OnClose = () => void;
 export type OnError = (code: number, message: string) => void;
 
+export interface SHA256Context {
+    add(buf: Uint8Array | ArrayBuffer | string): void;
+
+    final(): ArrayBuffer;
+    reset(): void;
+};
+
 export interface NetworkPipe {
     write(buf: Uint8Array | ArrayBuffer, offset: number, length: number): void;
     write(buf: string): void;
@@ -159,6 +166,7 @@ export interface Platform {
 
     createTCPNetworkPipe(options: CreateTCPNetworkPipeOptions): Promise<NetworkPipe>;
     createSSLNetworkPipe(options: CreateSSLNetworkPipeOptions): Promise<NetworkPipe>;
+    createSHA256Context(): SHA256Context;
 
     bufferConcat(...args: ArrayBuffer[] | Uint8Array[]): ArrayBuffer;
 

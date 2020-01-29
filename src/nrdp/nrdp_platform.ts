@@ -19,6 +19,12 @@ declare namespace nrdp_platform {
                        srcOffset?: number,
                        srcLength?: number | undefined): void;
     function random(length: number): Uint8Array;
+    class Hasher {
+        constructor(type: "sha1" | "sha256" | "sha512" | "md5");
+        add(data: string | Uint8Array | ArrayBuffer): void;
+        final(): ArrayBuffer;
+        reset(): void;
+    }
 }
 
 export default nrdp_platform;

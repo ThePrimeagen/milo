@@ -9,7 +9,6 @@ import {
 } from "./types";
 import { assert, escapeData } from "./utils";
 
-let recvBuffer = new Uint8Array(16 * 1024);
 let nextId = 0;
 
 export enum DnsType {
@@ -109,8 +108,19 @@ enum RequestState {
     Error = -1
 };
 
+function requestStateToString(state: RequestState): string {
+    switch (state) {
+    case RequestState.Initial: return "Initial";
+    case RequestState.Connected: return "Connected";
+    case RequestState.ReceivedHeaders: return "ReceivedHeaders";
+    case RequestState.Closed: return "Closed";
+    case RequestState.Finished: return "Finished";
+    case RequestState.Error: return "Error";
+    }
+}
+
 export class Request {
-    state?: RequestState;
+    state: RequestState;
     requestData: RequestData;
     url: Url;
     id: number;
@@ -118,11 +128,7 @@ export class Request {
 
     private resolve?: Function;
     private reject?: Function;
-    private dnsResult?: DnsResult;
-    private writeBuffer?: Uint8Array;
-    private writeBufferOffset?: number;
     private requestResponse: RequestResponse;
-    private headerBuffer?: ArrayBuffer;
     private responseData?: ArrayBuffer;
     private responseDataOffset?: number;
     private responseDataArray?: ArrayBuffer[];
@@ -152,6 +158,11 @@ export class Request {
             data.timeouts = Platform.defaultRequestTimeouts;
         }
 
+        if (!data.method) {
+            data.method = data.body ? "POST" : "GET";
+        }
+
+        data.http2 = data.http2 || false;
         if (data.http2) {
             throw new Error("http2 not implemented yet");
         }
@@ -234,7 +245,7 @@ export class Request {
     }
 
     private _transition(state: RequestState): void {
-        // Platform.trace("transition", this.state, "to", state);
+        Platform.trace("transition", requestStateToString(this.state), "to", requestStateToString(state));
         this.state = state;
         switch (state) {
         case RequestState.Initial:
@@ -256,26 +267,57 @@ export class Request {
                     this.requestData.headers["X-Gibbon-Cache-Control"] = this.requestData.cache;
                 }
             }
+
             let cacheKey: ArrayBuffer | undefined;
             if ("X-Gibbon-Cache-Control" in this.requestData.headers) {
-                this.requestData.headers["X-Gibbon-Cache-Control"].split(',').forEach((val: String) => {
-                    val = val.trim();
-                    if (val.lastIndexOf("key=", 0)) {
-                        cacheKey = Platform.atoutf8(val.substr(4));
-                    } else {
-                        // ### handle other cache controls
+                const cacheControl = this.requestData.headers["X-Gibbon-Cache-Control"];
+                if (cacheControl) {
+                    const split = cacheControl.split(',');
+                    for (let i = 0; i < split.length; ++i) {
+                        const val = split[i].trim();
+                        if (val.lastIndexOf("key=", 0)) {
+                            cacheKey = Platform.atoutf8(val.substr(4));
+                        } else {
+                            // ### handle other cache controls
+                        }
                     }
-                });
-            }
-            if (!cacheKey) {
-                const hash = this.requestData["X-Gibbon-Hash"];
-                if (hash) {
-                    cacheKey = Platform.atoutf8(hash.trim());
-                } else {
-
-
                 }
             }
+            assert(this.requestData.method, "Gotta have method");
+            if (!cacheKey) {
+                let hash = this.requestData.headers["X-Gibbon-Hash"];
+                if (hash) {
+                    hash = hash.trim();
+                    const eq = hash.indexOf("=");
+                    if (eq != -1) {
+                        cacheKey = Platform.atoutf8(hash.substr(eq + 1));
+                    }
+                }
+                if (!cacheKey) {
+                    const hasher = Platform.createSHA256Context();
+                    hasher.add(this.requestData.method);
+                    hasher.add(this.requestData.http2 ? "2" : "1");
+                    hasher.add(this.requestData.url);
+                    if (this.requestData.body)
+                        hasher.add(this.requestData.body);
+                    for (let header in this.requestData.headers) {
+                        switch (header) {
+                        case "If-None-Match":
+                        case "If-Modified-Since":
+                        case "Referer":
+                        case "X-Gibbon-Cache-Control":
+                            Platform.trace("Skipped header", header);
+                            continue;
+                        }
+                        hasher.add(header);
+                        hasher.add(this.requestData.headers[header]);
+                    }
+                    cacheKey = hasher.final();
+                }
+            }
+            assert(cacheKey, "Gotta have cacheKey");
+            this.requestResponse.cacheKey = cacheKey;
+            Platform.log("got cache key", cacheKey);
 
             assert(this.requestResponse.networkStartTime, "Gotta have networkStartTime");
             const req = {
@@ -385,10 +427,10 @@ export class Request {
     }
 
     private _onError(code: number, message: string) {
-        // Platform.trace("got error", code, text);
+        Platform.error("got error", code, message);
         assert(this.reject, "Must have reject");
         if (this.networkPipe)
             this.networkPipe.close();
-        this.reject(code, message);
+        this.reject({ code: code, message: message });
     }
 }

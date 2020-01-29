@@ -1,4 +1,4 @@
-import { CreateSSLNetworkPipeOptions, CreateTCPNetworkPipeOptions, IpConnectivityMode, NetworkPipe, Platform, RequestTimeouts } from "../types";
+import { CreateSSLNetworkPipeOptions, CreateTCPNetworkPipeOptions, IpConnectivityMode, NetworkPipe, Platform, RequestTimeouts, SHA256Context } from "../types";
 import nrdp from "./nrdp";
 import createNrdpSSLNetworkPipe from "./NrdpSSLNetworkPipe";
 import createNrdpTCPNetworkPipe from "./NrdpTCPNetworkPipe";
@@ -319,12 +319,17 @@ export class NrdpPlatform implements Platform {
         return true;
     }
 
+    createSHA256Context(): SHA256Context {
+        return new nrdp_platform.Hasher("sha256");
+    }
+
     createTCPNetworkPipe(options: CreateTCPNetworkPipeOptions): Promise<NetworkPipe> {
         return createNrdpTCPNetworkPipe(options, this);
     }
     createSSLNetworkPipe(options: CreateSSLNetworkPipeOptions): Promise<NetworkPipe> {
         return createNrdpSSLNetworkPipe(options, this);
     }
+
     bufferConcat(...args: ArrayBuffer[] | Uint8Array[]) {
         // @ts-ignore
         return ArrayBuffer.concat(...args);

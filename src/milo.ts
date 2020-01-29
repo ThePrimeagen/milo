@@ -14,7 +14,7 @@ export function _load(data: RequestData, callback: Function): number {
         //     Platform.writeFile("/tmp/dl", response.data);
         // }
         // delete response.data;
-        Platform.log("Got resolved", response);
+        // Platform.log("Got resolved", response);
         callback(response);
     }).catch(error => {
         Platform.trace("Got error", error);
