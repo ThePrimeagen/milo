@@ -20,5 +20,3 @@ declare namespace nrdp_platform {
                        srcLength?: number | undefined): void;
     function random(length: number): Uint8Array;
 }
-
-export default nrdp_platform;

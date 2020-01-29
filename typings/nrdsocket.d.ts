@@ -432,5 +432,3 @@ declare namespace nrdsocket {
     function unlink(pathname: ConstBuffer): number;
     function write(fd: number, buf: ConstBuffer, bufOffset?: number, bufLength?: number): number;
 }
-
-export default nrdsocket;

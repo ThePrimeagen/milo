@@ -1,11 +1,9 @@
 import { CreateSSLNetworkPipeOptions, CreateTCPNetworkPipeOptions, IpConnectivityMode, NetworkPipe, Platform, RequestTimeouts } from "../types";
-import nrdp from "./nrdp";
 import createNrdpSSLNetworkPipe from "./NrdpSSLNetworkPipe";
 import createNrdpTCPNetworkPipe from "./NrdpTCPNetworkPipe";
-import nrdp_platform from "./nrdp_platform";
-import N from "./ScriptSocket";
+import N = nrdsocket;
 
-type BIO_ctrl_pending_type = (b: N.Struct) => number;
+type BIO_ctrl_pending_type = (b:N.Struct) => number;
 type BIO_ctrl_type = (bp: N.Struct, cmd: number, larg: number, parg: N.DataPointer | undefined) => number;
 type BIO_ctrl_wpending_type = (b: N.Struct) => number;
 type BIO_free_type = (a: N.Struct) => number;
