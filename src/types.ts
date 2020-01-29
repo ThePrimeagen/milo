@@ -107,7 +107,7 @@ export interface HTTPHeadersEvent {
 
 export interface HTTPRequest {
     networkStartTime: number,
-    url: Url;
+    url: import('url-parse');
     method: HTTPMethod;
     requestHeaders: HTTPRequestHeaders;
     body?: string | Uint8Array | ArrayBuffer;

@@ -441,5 +441,3 @@ declare namespace nrdsocket {
         function all(): { [key: string]: SSLCallbackData | undefined };
     }
 }
-
-export default nrdsocket;
