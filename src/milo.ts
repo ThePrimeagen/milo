@@ -1,5 +1,5 @@
 import { Request, RequestData } from "./Request";
-import Platform from "./#{platform}/Platform";
+import Platform from "./#{target}/Platform";
 import { NetworkPipe } from "./types";
 import { headerValue } from "./utils";
 // @ts-ignore

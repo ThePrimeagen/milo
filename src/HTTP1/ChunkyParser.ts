@@ -1,4 +1,4 @@
-import Platform from "../#{platform}/Platform";
+import Platform from "../#{target}/Platform";
 import { assert, escapeData } from "../utils";
 import { ErrorCode, OnError } from "../types";
 

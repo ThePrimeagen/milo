@@ -1,6 +1,6 @@
 import Url from "url-parse";
 import { HTTP1 } from "./HTTP1/HTTP1";
-import Platform from "./#{platform}/Platform";
+import Platform from "./#{target}/Platform";
 import {
     CreateTCPNetworkPipeOptions, DnsResult, IpConnectivityMode,
     NetworkPipe, RequestTimeouts, HTTP, HTTPMethod, HTTPHeadersEvent,

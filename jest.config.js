@@ -17,7 +17,7 @@ module.exports = {
     "^.+\\.(ts|tsx)$": "ts-jest"
   },
   moduleNameMapper: {
-    "#{platform}\/(.*)": "<rootDir>/src/node/$1"
+    "#{target}\/(.*)": "<rootDir>/src/node/$1"
   },
 }
 

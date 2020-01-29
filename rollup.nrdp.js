@@ -3,13 +3,13 @@ import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import path from 'path';
 
-function target({ platform }) {
+function target({ target }) {
     return {
         name: 'target',
         resolveId (source, importer) {
-            if (source.includes('#{platform}')) {
-                const platformPath = source.replace('#{platform}', platform) + '.js';
-                return path.resolve(path.dirname(importer), platformPath);
+            if (source.includes('#{target}')) {
+                const targetPath = source.replace('#{target}', target) + '.js';
+                return path.resolve(path.dirname(importer), targetPath);
             }        
         },
     }
@@ -24,7 +24,7 @@ export default {
         exports: "named"
     }, plugins: [
         target({
-            platform: 'nrdp'
+            target: 'nrdp'
         }),
         resolve(),
         commonjs()
