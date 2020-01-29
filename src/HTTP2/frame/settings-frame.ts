@@ -15,7 +15,7 @@ import FrameWriter from './frame-writer';
  */
 type DefinedSettings = [number, number];
 
-export class SettingsCreator {
+export default class SettingsCreator {
     private settings: DefinedSettings[];
     constructor() {
         this.settings = [];

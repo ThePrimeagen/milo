@@ -32,7 +32,7 @@ export function zeroFlags(buffer: Uint8Array) {
 };
 
 export function setFlags(buffer: Uint8Array, flags: Flag) {
-    buffer[4] |= flags;
+    buffer[FRAME_HEADER_FLAGS_OFFSET] |= flags;
 };
 
 export function setStreamIdentifier(buffer: Uint8Array, streamIdentifier: number) {
@@ -41,10 +41,10 @@ export function setStreamIdentifier(buffer: Uint8Array, streamIdentifier: number
     }
 
     tmpView.setUint32(0, streamIdentifier);
-    buffer[5] = tmpBuffer[1];
-    buffer[6] = tmpBuffer[2];
-    buffer[7] = tmpBuffer[3];
-    buffer[8] = tmpBuffer[4];
+    buffer[5] = tmpBuffer[0];
+    buffer[6] = tmpBuffer[1];
+    buffer[7] = tmpBuffer[2];
+    buffer[8] = tmpBuffer[3];
 };
 
 
