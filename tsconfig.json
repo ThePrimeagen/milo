@@ -1,12 +1,13 @@
 {
     "include": ["src", "examples"],
     "compilerOptions": {
+        "downlevelIteration": true,
         "outDir": "./build/",
         "sourceMap": true,
         "noImplicitAny": true,
         "lib": ["es6"],
         "module": "commonjs",
-        "target": "es6",
+        "target": "es5",
         "esModuleInterop": true,
         "allowJs": false,
         "strictNullChecks": true,

@@ -485,6 +485,8 @@ Accept: */*\r\n`;
                 };
 
                 this.chunkyParser.ondone = (buffer: ArrayBuffer | undefined) => {
+                    assert(this.chunks, "Gotta have chunks");
+                    Platform.log("Finished chunking", this.chunks.length);
                     this._finish();
                     if (buffer) {
                         assert(this.networkPipe, "Must have networkPipe");

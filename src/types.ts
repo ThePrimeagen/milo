@@ -82,7 +82,7 @@ export enum HTTPTransferEncoding {
     Identity = 0x10
 };
 
-export interface HTTPHeaders {
+export interface HTTPHeadersEvent {
     method: HTTPMethod;
     statusCode: number;
     headers: string[];
@@ -98,13 +98,13 @@ export interface HTTPRequest {
 };
 
 export interface HTTP {
-    readonly version: string;
+    httpVersion: string;
     send(pipe: NetworkPipe, request: HTTPRequest): boolean;
 
-    onheaders?: (headers: HTTPTransferEncoding) => void;
+    onheaders?: (headers: HTTPHeadersEvent) => void;
     ondata?: (data: ArrayBuffer, offset: number, length: number) => void;
     onfinished?: () => void;
-    onerror?: () => void;
+    onerror?: OnError;
 };
 
 export interface Platform {
@@ -175,6 +175,7 @@ export interface Platform {
 
     UILanguages: string[];
     location: string;
+    scratch: ArrayBuffer;
 
     defaultRequestTimeouts: RequestTimeouts;
 
