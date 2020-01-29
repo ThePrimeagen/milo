@@ -1,5 +1,3 @@
-import Platform from '../../Platform';
-
 import {
     FrameType,
     Flag

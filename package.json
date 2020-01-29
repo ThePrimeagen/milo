@@ -13,10 +13,11 @@
   },
   "license": "MIT",
   "author": "",
-  "main": "dist/index.js",
+  "main": "build/node/src/milo.js",
   "scripts": {
-    "build": "tsc && rollup --config",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc -p tsconfig.nrdp.json && rollup -c rollup.nrdp.js",
+    "build:node": "tsc -p tsconfig.node.json",
+    "test": "jest"
   },
   "dependencies": {
     "atob": "^2.1.2",
@@ -29,7 +30,6 @@
   "devDependencies": {
     "@rollup/plugin-commonjs": "^11.0.1",
     "@rollup/plugin-node-resolve": "^7.0.0",
-    "@rollup/plugin-replace": "^2.3.0",
     "@types/atob": "^2.1.2",
     "@types/btoa": "^1.2.3",
     "@types/jest": "^24.0.24",

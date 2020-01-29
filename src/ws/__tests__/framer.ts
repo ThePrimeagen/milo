@@ -1,4 +1,4 @@
-import Platform from "../../Platform";
+import Platform from "../../#{platform}/Platform";
 import { NetworkPipe } from "../../types";
 import WSFramer, {constructFrameHeader} from '../framer';
 import {Opcodes} from '../types';

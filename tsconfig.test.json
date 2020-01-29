@@ -1,17 +1,17 @@
 {
-    "include": ["src", "typings", "examples"],
+    "extends": "./tsconfig.json",
     "compilerOptions": {
-        "moduleResolution": "node",
         "sourceMap": true,
         "noImplicitAny": true,
+        "lib": ["es6"],
+        "module": "es6",
+        "target": "es6",
         "esModuleInterop": true,
         "allowJs": false,
         "strictNullChecks": true,
         "strictPropertyInitialization": true,
         "strict": true,
-        "baseUrl": ".",
         "rootDirs": [
-            "src/nrdp",
             "src/node",
             "src/#{platform}"
         ]

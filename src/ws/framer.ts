@@ -1,4 +1,4 @@
-import Platform from '../Platform';
+import Platform from '../#{platform}/Platform';
 
 import {
     BufferPool,

@@ -1,6 +1,4 @@
 import { HTTP, HTTPMethod, HTTPTransferEncoding, HTTPRequest, NetworkPipe } from "../types";
-import Url from "url-parse";
-import Platform from "../Platform";
 
 export class HTTP1 implements HTTP {
     readonly version = "HTTP1";

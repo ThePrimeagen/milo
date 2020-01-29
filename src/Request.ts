@@ -1,6 +1,6 @@
 import Url from "url-parse";
 import { ChunkyParser } from "./HTTP1/ChunkyParser";
-import Platform from "./Platform";
+import Platform from "./#{platform}/Platform";
 import { CreateTCPNetworkPipeOptions, DnsResult, IpConnectivityMode, NetworkPipe, RequestTimeouts, HTTPMethod } from "./types";
 import { assert, escapeData } from "./utils";
 

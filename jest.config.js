@@ -1,5 +1,10 @@
 module.exports = {
-  "roots": [
+  globals: {
+    'ts-jest': {
+      tsConfig: 'tsconfig.test.json'
+    }
+  },
+  roots: [
     "<rootDir>/src"
   ],
   testPathIgnorePatterns: [
@@ -10,6 +15,9 @@ module.exports = {
   ],
   "transform": {
     "^.+\\.(ts|tsx)$": "ts-jest"
+  },
+  moduleNameMapper: {
+    "#{platform}\/(.*)": "<rootDir>/src/node/$1"
   },
 }
 

@@ -1,7 +1,6 @@
 import { CreateSSLNetworkPipeOptions, NetworkPipe, OnClose, OnData, OnError } from "../types";
-import nrdp from "./nrdp";
-import { NrdpPlatform } from "./NrdpPlatform";
-import N from "./ScriptSocket";
+import { NrdpPlatform } from "./Platform";
+import N = nrdsocket;
 
 let platform: NrdpPlatform | undefined;
 function assert(condition: any, msg?: string): asserts condition {
