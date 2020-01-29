@@ -28,7 +28,6 @@ export class ChunkyParser {
 
     private _process(): void {
         while (true) {
-            // Platform.trace("processing balls", this.dataNeeded, this.buffers.length, this.offset, this.available, "\n" + this.dump());
             if (this.dataNeeded == -1) {
                 if (this.available > 2) {
                     let lastWasBackslashR = false;
@@ -150,51 +149,4 @@ export class ChunkyParser {
         this.available -= size;
         return ret;
     }
-
-
 };
-
-export function chunkyTest() {
-    const shit = `4\r
-Wiki\r
-5\r
-pedia\r
-E\r
-in\r
-\r
-chunks.\r
-0\r
-\r\n`;
-
-    // Platform.trace("fuck start");
-    for (let size = 1; size < shit.length; ++size) {
-        const balls = new ChunkyParser;
-        let chunks: ArrayBuffer[] = [];
-        balls.onchunk = (chunk: ArrayBuffer) => {
-            // Platform.trace("got chunk", size, Platform.utf8toa(chunk));
-            chunks.push(chunk);
-        };
-        balls.onerror = (code: number, message: string) => {
-            Platform.trace("got error", size, code, message);
-            return;
-        };
-        balls.ondone = (buf?: ArrayBuffer) => {
-            Platform.trace("Got done with", size, buf);
-            let str = "";
-            chunks.forEach((a: ArrayBuffer) => {
-                str += Platform.utf8toa(a);
-            });
-            // Platform.trace("shit is done");
-            Platform.trace(str);
-        };
-
-        let idx = 0;
-        while (idx < shit.length) {
-            const sub = shit.substr(idx, size);
-            const chunk = Platform.atoutf8(sub);
-            // Platform.trace("feeding", idx, shit.length);
-            balls.feed(chunk, 0, chunk.byteLength);
-            idx += size;
-        }
-    }
-}

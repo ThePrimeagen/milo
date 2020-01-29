@@ -234,7 +234,7 @@ Host: ${request.url.hostname}\r
     }
 
     private _processResponseData(data: ArrayBuffer, offset: number, length: number): void { // have to copy data, the buffer will be reused
-        Platform.log("processing data", typeof this.chunkyParser, length);
+        Platform.trace("processing data", typeof this.chunkyParser, length);
         if (this.chunkyParser) {
             this.chunkyParser.feed(data, offset, length);
         } else if (this.ondata) {
