@@ -45,6 +45,11 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
         const meth = this.platform.TLS_client_method();
         this.ssl_ctx = this.platform.SSL_CTX_new(meth);
         this.ssl_ctx.free = "SSL_CTX_free";
+        const cb = N.sslCallbacks.set("SSL_verify_cb", (preverify_ok: number, x509_ctx: N.Struct) => {
+            this.platform.log("got verify", preverify_ok);
+            return preverify_ok;
+        });
+        //this.platform.SSL_CTX_set_verify(this.ssl_ctx, this.platform.SSL_VERIFY_PEER, cb);
         this.platform.trace("cipher", nrdp.cipherList);
         this.platform.SSL_CTX_set_cipher_list(this.ssl_ctx, nrdp.cipherList);
         let ret = this.platform.SSL_CTX_ctrl(this.ssl_ctx, this.platform.SSL_CTRL_MODE,
