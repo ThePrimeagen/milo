@@ -1,26 +1,37 @@
 import {
     FrameType,
+    Settings,
 } from '../types';
 
-import FrameWriter, { FRAME_HEADER_SIZE } from '../frame-writer';
+import SettingsWriter from '../settings-frame';
+import { FRAME_HEADER_SIZE } from '../frame-writer';
 
 function toArray(...args: number[]) {
     return args;
 }
 
+/*
+ +-------------------------------+
+ |       Identifier (16)         |
+ +-------------------------------+-------------------------------+
+ |                        Value (32)                             |
+ +---------------------------------------------------------------+
+ */
 describe('Settings', function() {
-    it('should be able to add a few definitions.', function() {
-        debugger;
-        const frame = new FrameWriter(70000, 3, FrameType.HEADERS);
-        const header = frame.buffer.slice(0, FRAME_HEADER_SIZE);
+    it('should set all the settings.', function() {
+        const settings = new SettingsWriter();
 
-        const length = header.slice(0, 3);
-        const lengthExpBuf = Buffer.alloc(4);
-        new DataView(lengthExpBuf.buffer).setUint32(0, 70000);
+        settings.addSetting(Settings.MAX_CONCURRENT_STREAMS, 4);
+        settings.addSetting(Settings.MAX_FRAME_SIZE, 2 ** 10 * 16);
 
-        expect(frame.buffer.byteLength).toEqual(70000 + FRAME_HEADER_SIZE);
+        const frame = settings.toFrameWriter(5);
+        const contents = frame.buffer.slice(FRAME_HEADER_SIZE);
+        const view = new DataView(contents.buffer, contents.byteOffset, contents.byteLength);
 
-        expect(toArray(...length)).toEqual(toArray(...lengthExpBuf.slice(1)));
+        expect(view.getUint16(0)).toEqual(Settings.MAX_CONCURRENT_STREAMS);
+        expect(view.getUint32(2)).toEqual(4);
+        expect(view.getUint16(6)).toEqual(Settings.MAX_FRAME_SIZE);
+        expect(view.getUint32(8)).toEqual(2 ** 10 * 16);
     });
 });
 

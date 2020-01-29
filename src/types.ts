@@ -3,6 +3,10 @@ export type IpConnectivityMode = 4 | 6 | 10 | 0; // 0 is invalid, 10 is dual
 export type HTTPMethod = "POST" | "HEAD" | "PUT" | "DELETE" | "PATCH" | "GET";
 export type HTTPRequestHeaders = { [key: string]: string };
 
+export enum ErrorCode {
+    None = 0
+};
+
 export interface DnsResult {
     errorCode: number;
     host: string;
@@ -47,7 +51,14 @@ export interface CreateSSLNetworkPipeOptions {
 
 export type OnData = () => void;
 export type OnClose = () => void;
-export type OnError = (code: number, message?: string) => void;
+export type OnError = (code: number, message: string) => void;
+
+export interface SHA256Context {
+    add(buf: Uint8Array | ArrayBuffer | string): void;
+
+    final(): ArrayBuffer;
+    reset(): void;
+};
 
 export interface NetworkPipe {
     write(buf: Uint8Array | ArrayBuffer, offset: number, length: number): void;
@@ -66,6 +77,10 @@ export interface NetworkPipe {
     readonly dnsTime?: number;
     readonly connectTime?: number;
 
+    readonly ipAddress: string;
+    readonly dns: string; // dns type
+    readonly dnsChannel?: string;
+
     ondata?: OnData;
     onclose?: OnClose;
     onerror?: OnError;
@@ -80,29 +95,35 @@ export enum HTTPTransferEncoding {
     Identity = 0x10
 };
 
-export interface HTTPHeaders {
-    method: HTTPMethod;
-    statusCode: number;
-    headers: string[];
+export interface HTTPHeadersEvent {
     contentLength?: number;
+    headers: string[];
+    headersSize: number;
+    method: HTTPMethod;
+    requestSize: number;
+    statusCode: number;
     transferEncoding: HTTPTransferEncoding;
 };
 
 export interface HTTPRequest {
-    url: import('url-parse');
+    networkStartTime: number,
+    url: Url;
     method: HTTPMethod;
     requestHeaders: HTTPRequestHeaders;
     body?: string | Uint8Array | ArrayBuffer;
 };
 
 export interface HTTP {
-    readonly version: string;
+    httpVersion: string;
     send(pipe: NetworkPipe, request: HTTPRequest): boolean;
 
-    onheaders?: (headers: HTTPTransferEncoding) => void;
+    timeToFirstByteRead?: number;
+    timeToFirstByteWritten?: number;
+
+    onheaders?: (headers: HTTPHeadersEvent) => void;
     ondata?: (data: ArrayBuffer, offset: number, length: number) => void;
     onfinished?: () => void;
-    onerror?: () => void;
+    onerror?: OnError;
 };
 
 export interface Platform {
@@ -143,6 +164,7 @@ export interface Platform {
 
     createTCPNetworkPipe(options: CreateTCPNetworkPipeOptions): Promise<NetworkPipe>;
     createSSLNetworkPipe(options: CreateSSLNetworkPipeOptions): Promise<NetworkPipe>;
+    createSHA256Context(): SHA256Context;
 
     bufferConcat(...args: ArrayBuffer[] | Uint8Array[]): ArrayBuffer;
 
@@ -173,6 +195,7 @@ export interface Platform {
 
     UILanguages: string[];
     location: string;
+    scratch: ArrayBuffer;
 
     defaultRequestTimeouts: RequestTimeouts;
 

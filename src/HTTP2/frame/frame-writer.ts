@@ -32,16 +32,18 @@ export const FRAME_HEADER_SIZE = 9;
 
 export default class FrameWriter {
     public buffer: Uint8Array;
+    public view: DataView;
+
     private ptr: number;
 
     constructor(length: number, streamIdentifier: number, type: FrameType) {
         this.buffer = new Uint8Array(length + FRAME_HEADER_SIZE);
+        this.view = new DataView(this.buffer.buffer, this.buffer.byteOffset, this.buffer.byteLength);
         this.ptr = FRAME_HEADER_SIZE;
 
         FrameUtils.setLength(this.buffer, length);
         FrameUtils.setType(this.buffer, type);
         FrameUtils.zeroFlags(this.buffer);
-        debugger;
         FrameUtils.setStreamIdentifier(this.buffer, streamIdentifier);
     }
 
@@ -50,12 +52,12 @@ export default class FrameWriter {
     }
 
     write16(item: number) {
-        new DataView(this.buffer).setUint16(this.ptr, item);
+        this.view.setUint16(this.ptr, item);
         this.ptr += 2;
     }
 
     write32(item: number) {
-        new DataView(this.buffer).setUint32(this.ptr, item);
+        this.view.setUint32(this.ptr, item);
         this.ptr += 4;
     }
 

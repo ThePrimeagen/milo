@@ -431,4 +431,15 @@ declare namespace nrdsocket {
     function socket(domain: number, type: number, protocol: number): number;
     function unlink(pathname: ConstBuffer): number;
     function write(fd: number, buf: ConstBuffer, bufOffset?: number, bufLength?: number): number;
+
+    interface SSLCallbackData {
+        callback: Function;
+        functionPointer: DataPointer;
+    }
+    namespace sslCallbacks {
+        function set(name: string, callback?: Function): DataPointer;
+        function all(): { [key: string]: SSLCallbackData | undefined };
+    }
 }
+
+export default nrdsocket;

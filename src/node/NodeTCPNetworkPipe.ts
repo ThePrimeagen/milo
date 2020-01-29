@@ -33,6 +33,9 @@ class NodeTCPNetworkPipe implements NetworkPipe {
     private bufferIdx: number;
     private state: State;
 
+    public ipAddress: string = "the ip address!";
+    public dns: string = "the dns type!";
+    public dnsChannel?: string;
     public ondata?: OnData;
     public onclose?: OnClose;
     public onerror?: OnError;
@@ -100,10 +103,10 @@ class NodeTCPNetworkPipe implements NetworkPipe {
         }
 
         /*
-        if (typeof buf === 'string') {
-            this.sock.write(buf);
-        }
-         */
+          if (typeof buf === 'string') {
+          this.sock.write(buf);
+          }
+        */
 
         assert(this.sock !== undefined, "Must have sock");
         this.sock.write(normalizeUint8ArrayLen(buf, offset || 0, length));

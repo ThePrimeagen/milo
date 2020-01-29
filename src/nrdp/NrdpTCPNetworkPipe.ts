@@ -18,22 +18,28 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
     private platform: NrdpPlatform;
     private buffer?: ArrayBuffer;
 
-    constructor(socket: number, p: NrdpPlatform, dnsTime: number, connectTime: number) {
+    constructor(p: NrdpPlatform, socket: number, ipAddress: string, connectTime: number, dnsTime: number, dns: string, dnsChannel?: string) {
         this.platform = p;
         platform = p;
         this.sock = socket;
+        this.ipAddress = ipAddress;
         this.writeBuffers = [];
         this.writeBufferOffsets = [];
         this.writeBufferLengths = [];
         this.selectMode = 0;
         this.dnsTime = dnsTime;
+        this.dns = dns;
+        this.dnsChannel = dnsChannel;
         this.connectTime = connectTime;
     }
 
     public firstByteRead?: number;
     public firstByteWritten?: number;
     public dnsTime: number;
+    public dns: string;
+    public dnsChannel?: string;
     public connectTime: number;
+    public ipAddress: string;
 
     get fd() { return this.sock; }
 
@@ -172,6 +178,8 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
 
 export default function createTCPNetworkPipe(options: CreateTCPNetworkPipeOptions, platform: NrdpPlatform): Promise<NetworkPipe> {
     let dnsStartTime = 0;
+    let dns: string | undefined;
+    let dnsChannel: string | undefined;
     return new Promise<NetworkPipe>((resolve, reject) => {
         new Promise<N.Sockaddr>(innerResolve => {
             let ipAddress = options.host;
@@ -188,6 +196,7 @@ export default function createTCPNetworkPipe(options: CreateTCPNetworkPipeOption
                 if (sockAddr.ipVersion != options.ipVersion) {
                     reject(new Error("Invalid ip version in ip address"));
                 }
+                dns = "literal";
                 innerResolve(sockAddr);
             } catch (err) {
                 dnsStartTime = platform.mono();
@@ -199,6 +208,8 @@ export default function createTCPNetworkPipe(options: CreateTCPNetworkPipeOption
                     }
                     try {
                         sockAddr = new N.Sockaddr(`${dnsResult.addresses[0]}:${options.port}`);
+                        dns = dnsResult.type;
+                        dnsChannel = dnsResult.channel;
                         innerResolve(sockAddr);
                     } catch (err) {
                         reject(new Error("Failed to parse ip address"));
@@ -215,7 +226,9 @@ export default function createTCPNetworkPipe(options: CreateTCPNetworkPipeOption
                 N.fcntl(sock, N.F_SETFL, cur | N.O_NONBLOCK);
                 let ret = N.connect(sock, sockAddr);
                 if (!ret) {
-                    resolve(new NrdpTCPNetworkPipe(sock, platform, dnsTime, platform.mono() - now));
+                    assert(sockAddr.ipAddress, "Gotta have an ip address at this point");
+                    assert(dns, "Must have dns here");
+                    resolve(new NrdpTCPNetworkPipe(platform, sock, sockAddr.ipAddress, platform.mono() - now, dnsTime, dns, dnsChannel));
                 } else if (N.errno != N.EINPROGRESS) {
                     throw new Error("Failed to connect " + N.errno + " " + N.strerror());
                 } else {
@@ -241,7 +254,10 @@ export default function createTCPNetworkPipe(options: CreateTCPNetworkPipeOption
                         case 0:
                             clearTimeout(connectTimeoutId);
                             N.clearFD(sock);
-                            resolve(new NrdpTCPNetworkPipe(sock, platform, dnsTime, platform.mono() - now));
+                            assert(sockAddr.ipAddress, "Gotta have an ip address at this point");
+                            assert(dns, "Must have dns here");
+                            assert(dns, "Must have dns here");
+                            resolve(new NrdpTCPNetworkPipe(platform, sock, sockAddr.ipAddress, platform.mono() - now, dnsTime, dns, dnsChannel));
                             break;
                         default:
                             reject(new Error(`Failed to connect to host ${errno}`));
