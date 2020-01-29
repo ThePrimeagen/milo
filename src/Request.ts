@@ -256,6 +256,26 @@ export class Request {
                     this.requestData.headers["X-Gibbon-Cache-Control"] = this.requestData.cache;
                 }
             }
+            let cacheKey: ArrayBuffer | undefined;
+            if ("X-Gibbon-Cache-Control" in this.requestData.headers) {
+                this.requestData.headers["X-Gibbon-Cache-Control"].split(',').forEach((val: String) => {
+                    val = val.trim();
+                    if (val.lastIndexOf("key=", 0)) {
+                        cacheKey = Platform.atoutf8(val.substr(4));
+                    } else {
+                        // ### handle other cache controls
+                    }
+                });
+            }
+            if (!cacheKey) {
+                const hash = this.requestData["X-Gibbon-Hash"];
+                if (hash) {
+                    cacheKey = Platform.atoutf8(hash.trim());
+                } else {
+
+
+                }
+            }
 
             assert(this.requestResponse.networkStartTime, "Gotta have networkStartTime");
             const req = {
