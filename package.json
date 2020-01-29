@@ -17,7 +17,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.nrdp.json && rollup -c rollup.nrdp.js",
     "build:node": "tsc -p tsconfig.node.json",
-    "test": "jest"
+    "test": "jest",
+    "clean": "del-cli build/ dist/"
   },
   "dependencies": {
     "atob": "^2.1.2",
@@ -37,6 +38,7 @@
     "@types/sha1": "^1.1.2",
     "@types/url-parse": "^1.4.3",
     "@types/ws": "^6.0.4",
+    "del-cli": "^3.0.0",
     "jest": "^24.9.0",
     "rollup": "^1.29.0",
     "ts-jest": "^24.2.0",
