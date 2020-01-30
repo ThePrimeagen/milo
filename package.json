@@ -17,6 +17,10 @@
   "scripts": {
     "build": "tsc -p tsconfig.nrdp.json && rollup -c rollup.nrdp.js",
     "build:node": "tsc -p tsconfig.node.json",
+    "build:all": "npm run build && npm run build:node",
+    "nrdp": "npm run build",
+    "node": "npm run build:node",
+    "all": "npm run build:all",
     "test": "jest",
     "clean": "del-cli build/ dist/"
   },
