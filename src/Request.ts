@@ -209,11 +209,12 @@ export class Request {
         }
         // Platform.trace("Request#send creating TCP pipe");
         assert(this.requestData.timeouts);
+        const timeouts = this.requestData.timeouts;
         const tcpOpts = {
             host: this.url.hostname,
             port: port,
-            dnsTimeout: this.requestData.timeouts.dnsTimeout,
-            connectTimeout: this.requestData.timeouts.connectTimeout,
+            dnsTimeout: timeouts && timeouts.dnsTimeout,
+            connectTimeout: timeouts && timeouts.connectTimeout,
             ipVersion: 4 // gotta do happy eyeballs and send off multiple tcp network pipe things
         } as CreateTCPNetworkPipeOptions;
         Platform.createTCPNetworkPipe(tcpOpts).then((pipe: NetworkPipe) => {

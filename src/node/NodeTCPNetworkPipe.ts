@@ -59,6 +59,7 @@ class NodeTCPNetworkPipe implements NetworkPipe {
                     // Reuses a 16KiB Buffer for every read from the socket.
                     buffer: Buffer.alloc(32 * 1024),
                     callback: (nread: number, buf: Buffer): boolean => {
+                        debugger;
                         const copiedBuf = Buffer.allocUnsafe(nread);
                         buf.copy(copiedBuf, 0, 0, nread);
                         this.bufferPool.push(copiedBuf);

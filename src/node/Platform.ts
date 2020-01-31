@@ -1,7 +1,17 @@
+import fs from "fs";
+
 import dns from "dns";
 
 import { toUint8Array } from './utils';
-import { DnsResult, IpVersion, Platform, NetworkPipe, CreateTCPNetworkPipeOptions } from "../types";
+import {
+    DnsResult,
+    IpVersion,
+    Platform,
+    NetworkPipe,
+    CreateTCPNetworkPipeOptions,
+    CreateSSLNetworkPipeOptions,
+} from "../types";
+
 import createTCPNetworkPipe from "./NodeTCPNetworkPipe";
 
 import sha1 from "sha1";
@@ -33,6 +43,27 @@ class NodePlatform implements Platform {
     sha1(input: string): Uint8Array {
         const buf = Buffer.from(sha1(input), 'hex');
         return buf;
+    }
+
+    writeFile(fileName: string, contents: Uint8Array | ArrayBuffer | string): boolean {
+        fs.writeFileSync(fileName, contents);
+        return true;
+    }
+
+    mono() {
+        return Date.now();
+    }
+
+    stacktrace(): string {
+        let out: string;
+
+        try {
+            throw new Error();
+        } catch(e) {
+            out = e.stack.toString();
+        }
+
+        return out;
     }
 
     // base64 encode
@@ -121,8 +152,16 @@ class NodePlatform implements Platform {
         console.log.apply(console, args);
     }
 
+    trace(...args: any) {
+        console.trace(...args);
+    }
+
     error(...args: any): void {
         console.error.apply(console, args);
+    }
+
+    createSSLNetworkPipe(options: CreateSSLNetworkPipeOptions): Promise<NetworkPipe> {
+        throw new Error("Really not implementetd...");
     }
 
     createTCPNetworkPipe(options: CreateTCPNetworkPipeOptions): Promise<NetworkPipe> {
@@ -225,6 +264,7 @@ class NodePlatform implements Platform {
             callback(res);
         });
     }
+
 }
 
 export default new NodePlatform();

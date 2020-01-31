@@ -1,12 +1,19 @@
 import Url from "url-parse";
 import Platform from "../#{target}/Platform";
+import SettingsFrame from "./frame/settings-frame";
 import { VersionIdentification } from "./consts";
 import { RequestData, Request } from "../Request";
 import { NetworkPipe, DnsResult } from "../types";
 import { assert } from "../utils"
 
-// TODO: 3.4 Starting a request with prior knowledge.
-export async function _http2Upgrade(data: RequestData): Promise<NetworkPipe> {
+// RFC: 3.4 Starting a request with prior knowledge.
+// This requires a special connection frame with a octet string of
+// "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
+// Then a settings frame directly after.
+export async function initializeHttp2Connection(data: RequestData, settings): Promise<NetworkPipe> {
+}
+
+export async function http2Upgrade(data: RequestData): Promise<NetworkPipe> {
     Platform.log("HTTP2 Got some data headers or something.", data);
 
     if (!data.headers) {

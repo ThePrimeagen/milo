@@ -61,10 +61,6 @@ export default class FrameWriter {
         this.ptr += 4;
     }
 
-    writeStr(item: string) {
-        // TODO: later?
-    }
-
     write(item: Uint8Array) {
         this.buffer.set(item, this.ptr);
         this.ptr += item.byteLength;
