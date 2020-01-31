@@ -1,5 +1,5 @@
 import WSFramer, {WSState} from './framer';
-import Platform from "../Platform";
+import Platform from "../#{target}/Platform";
 import {
     NetworkPipe
 } from '../types';

@@ -1,5 +1,5 @@
 import Url from "url-parse";
-import Platform from "../Platform";
+import Platform from "../#{target}/Platform";
 import { VersionIdentification } from "./consts";
 import { RequestData, Request } from "../Request";
 import { NetworkPipe, DnsResult } from "../types";

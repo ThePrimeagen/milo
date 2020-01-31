@@ -26,5 +26,3 @@ declare namespace nrdp_platform {
         reset(): void;
     }
 }
-
-export default nrdp_platform;

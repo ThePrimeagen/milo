@@ -1,8 +1,7 @@
 import {
     HTTP, HTTPMethod, HTTPTransferEncoding, HTTPRequest, NetworkPipe, HTTPHeadersEvent, OnError, ErrorCode
 } from "../types";
-import Url from "url-parse";
-import Platform from "../Platform";
+import Platform from "../#{target}/Platform";
 import { ChunkyParser } from "./ChunkyParser";
 import { assert } from "../utils";
 

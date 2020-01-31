@@ -1,5 +1,3 @@
-import Url from "url-parse";
-
 export type IpVersion = 4 | 6;
 export type IpConnectivityMode = 4 | 6 | 10 | 0; // 0 is invalid, 10 is dual
 export type HTTPMethod = "POST" | "HEAD" | "PUT" | "DELETE" | "PATCH" | "GET";
@@ -109,7 +107,7 @@ export interface HTTPHeadersEvent {
 
 export interface HTTPRequest {
     networkStartTime: number,
-    url: Url;
+    url: import('url-parse');
     method: HTTPMethod;
     requestHeaders: HTTPRequestHeaders;
     body?: string | Uint8Array | ArrayBuffer;

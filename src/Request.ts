@@ -1,7 +1,6 @@
 import Url from "url-parse";
-import { ChunkyParser } from "./HTTP1/ChunkyParser";
 import { HTTP1 } from "./HTTP1/HTTP1";
-import Platform from "./Platform";
+import Platform from "./#{target}/Platform";
 import {
     CreateTCPNetworkPipeOptions, DnsResult, IpConnectivityMode,
     NetworkPipe, RequestTimeouts, HTTP, HTTPMethod, HTTPHeadersEvent,
@@ -236,7 +235,7 @@ export class Request {
             this.networkPipe = pipe;
 
             this._transition(RequestState.Connected);
-        }).catch(err => {
+        }).catch((err: Error) => {
             // Platform.trace("Request#send#createTCPNetworkPipe error", err);
             this._onError(-1, err.toString());
         });

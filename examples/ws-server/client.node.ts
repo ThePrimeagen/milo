@@ -2,7 +2,6 @@ import {
     NetworkPipe,
 } from '../../src/types';
 
-import Platform from '../../src/Platform';
 import WS, {WSState} from '../../src/ws/index';
 import {_wsUpgrade} from '../../src/milo';
 

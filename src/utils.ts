@@ -1,4 +1,4 @@
-import Platform from "./Platform";
+import Platform from "./#{target}/Platform";
 
 export function headerValue(headers: string[], header: string): string {
     const lower = header.toLowerCase() + ": ";
