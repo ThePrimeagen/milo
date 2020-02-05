@@ -10,6 +10,8 @@ import {
     NetworkPipe,
     CreateTCPNetworkPipeOptions,
     CreateSSLNetworkPipeOptions,
+    SHA256Context,
+    HTTPRequestHeaders,
 } from "../types";
 
 import createTCPNetworkPipe from "./NodeTCPNetworkPipe";
@@ -17,6 +19,12 @@ import createTCPNetworkPipe from "./NodeTCPNetworkPipe";
 import sha1 from "sha1";
 import btoa from "btoa";
 import atob from "atob";
+import DataBuffer from "./DataBuffer";
+
+function toBuffer(buf: Uint8Array | ArrayBuffer | string) {
+    // @ts-ignore
+    return Buffer.from(buf);
+}
 
 function bufferToString(buf: Uint8Array | ArrayBuffer): string {
     if (buf instanceof Uint8Array) {
@@ -37,12 +45,35 @@ function normalizeLength(buf: string | Uint8Array | ArrayBuffer): number {
 }
 
 class NodePlatform implements Platform {
-    constructor() { }
+    public location: string = "?";
+    public defaultRequestTimeouts = { };
+    public standardHeaders: HTTPRequestHeaders = { };
+    // TODO: Implement data buffer
+    // @ts-ignore
+    public scratch: DataBuffer;
+
+    constructor() {
+        this.scratch = new ArrayBuffer(16 * 1024);
+    }
 
     // One down, 40 to go
     sha1(input: string): Uint8Array {
         const buf = Buffer.from(sha1(input), 'hex');
         return buf;
+    }
+
+    // @ts-ignore
+    bufferSet(dest: Uint8Array | ArrayBuffer, destOffset: number,
+        src: Uint8Array | ArrayBuffer | string, srcOffset?: number, srcLength?: number): void {
+
+        const destBuf = toBuffer(dest);
+        const srcBuf = toBuffer(src);
+
+        srcBuf.copy(dest, destOffset, srcOffset, srcLength);
+    }
+
+    createSHA256Context(): SHA256Context {
+        throw new Error("Do I have to do this?");
     }
 
     writeFile(fileName: string, contents: Uint8Array | ArrayBuffer | string): boolean {

@@ -1,8 +1,7 @@
 import http2 from 'http2';
-import express from 'express';
 
 import { Request } from '../../Request';
-import { http2Upgrade }from '../index';
+import { initializeHttp2Connection } from '../index';
 
 describe("HTTP2 integration test", function() {
 
@@ -18,10 +17,11 @@ describe("HTTP2 integration test", function() {
             });
             stream.end('<h1>Hello World</h1>');
         });
+
         server.listen(8000);
 
         // create the http2 upgrade request
-        const pipe = await http2Upgrade({url: 'http://localhost:8000/'});
+        const pipe = await initializeHttp2Connection('http://localhost:8000');
     });
 });
 

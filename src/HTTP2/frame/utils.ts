@@ -7,6 +7,7 @@ const maxStreamIdentifier = 2147483647;
 const tmpBuffer = new Uint8Array(4);
 const tmpView = new DataView(tmpBuffer.buffer);
 
+export const FRAME_HEADER_SIZE = 9;
 export const FRAME_HEADER_FLAGS_OFFSET = 4;
 
 // The length, of course, is a 24bit number.  Because... Numbers...
