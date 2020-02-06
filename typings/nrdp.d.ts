@@ -1,9 +1,9 @@
 declare namespace nrdp {
     namespace dns {
         function lookupHost(host: string,
-                   ipVersion: import('../src/types').IpVersion,
-                   timeout: number,
-                   callback: (result: import('../src/types').DnsResult) => void): void;
+                            ipVersion: import('../src/types').IpVersion,
+                            timeout: number,
+                            callback: (result: import('../src/types').DnsResult) => void): void;
     }
 
     namespace device {
