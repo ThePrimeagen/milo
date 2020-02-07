@@ -94,6 +94,7 @@ class NodeTCPNetworkPipe implements NetworkPipe {
         });
     }
 
+    // @ts-ignore
     get fd() {
         throw new Error("Not supported in Node.");
     }
@@ -166,9 +167,7 @@ class NodeTCPNetworkPipe implements NetworkPipe {
 // TODO: We only allow ipv4
 // we should create an opts
 export default function createTCPNetworkPipe(options: CreateTCPNetworkPipeOptions): Promise<NetworkPipe> {
-    console.log("Crea,ting TCP Network Pipe");
     return new Promise((res, rej) => {
-        console.log("new Promise Crea,ting TCP Network Pipe");
         // @ts-ignore
         const pipe = new NodeTCPNetworkPipe(options.host, options.port);
         // @ts-ignore

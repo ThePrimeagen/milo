@@ -1,6 +1,7 @@
 import Url from "url-parse";
 import Platform from "../#{target}/Platform";
 import SettingsFrame from "./frame/settings-frame";
+import FrameConstructor from "./frame/frame-constructor";
 import { VersionIdentification } from "./consts";
 import { RequestData, Request } from "../Request";
 import { NetworkPipe, DnsResult } from "../types";
@@ -10,39 +11,8 @@ import { assert } from "../utils"
 // This requires a special connection frame with a octet string of
 // "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 // Then a settings frame directly after.
-export async function initializeHttp2Connection(url: RequestData | string, settings?: SettingsFrame): Promise<NetworkPipe> {
-    if (settings === undefined) {
-        settings = new SettingsFrame();
-    }
-
-    const settingsBuf = settings.toFrameWriter(0).buffer;
-    const preamble = Platform.atoutf8("PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n");
-    const body = new Uint8Array(preamble.byteLength + settingsBuf.byteLength);
-
-    body.set(preamble, 0);
-    body.set(settingsBuf, preamble.byteLength);
-
-    return new Promise(async (res, rej) => {
-        let pipe: NetworkPipe;
-        try {
-
-            pipe = await Request.connect(url);
-
-            const buffer = new Uint8Array(1000);
-
-            pipe.ondata = function() {
-                const len = pipe.read(buffer, 0, 1000);
-                const buf = buffer.subarray(0, len);
-
-            };
-
-            pipe.write(body, 0, body.byteLength);
-
-        } catch (e) {
-            Platform.log("Got e", e);
-            throw e;
-        }
-    });
+export async function createRawConnection(data: RequestData | string): Promise<NetworkPipe> {
+    return await Request.connect(data);
 }
 
 export async function http2Upgrade(data: RequestData): Promise<NetworkPipe> {

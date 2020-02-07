@@ -220,7 +220,6 @@ export class Request {
         } as CreateTCPNetworkPipeOptions;
 
         return Platform.createTCPNetworkPipe(tcpOpts).then((pipe: NetworkPipe) => {
-            Platform.trace("Request#send#createTCPNetworkPipe pipe");
             if (ssl) {
                 return Platform.createSSLNetworkPipe({ pipe: pipe });
             } else {

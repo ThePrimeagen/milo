@@ -21,8 +21,19 @@ export enum Settings {
 }
 
 export enum Flag {
+    ACK = 0x1,
     END_STREAM = 0x1,
     PRIORITY = 0x2,
     PADDED = 0x8,
 };
+
+export const SettingsDefault = [
+    0,
+    4096, // HEADER_TABLE_SIZE
+    1, // PUSH
+    Number.MAX_SAFE_INTEGER, // MAX_CONCURRENT
+    65535, // WINDOW_SIZE
+    16384, // FRAME_SIZE
+    Number.MAX_SAFE_INTEGER // MAX_HEADER_LIST
+];
 

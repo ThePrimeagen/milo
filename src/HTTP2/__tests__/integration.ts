@@ -1,7 +1,8 @@
 import http2 from 'http2';
 
 import { Request } from '../../Request';
-import { initializeHttp2Connection } from '../index';
+import { createRawConnection } from '../index';
+import StreamManager, {SMState} from '../stream/stream-manager';
 
 describe("HTTP2 integration test", function() {
 
@@ -21,7 +22,29 @@ describe("HTTP2 integration test", function() {
         server.listen(8000);
 
         // create the http2 upgrade request
-        const pipe = await initializeHttp2Connection('http://localhost:8000');
+        const pipe = await createRawConnection('http://localhost:8000');
+        const streamManager = new StreamManager(pipe);
+
+        let count = 0;
+        const expects = [
+            SMState.WAITING_ON_SETTINGS_ACK,
+            SMState.OPEN,
+            SMState.CLOSED,
+        ];
+
+        streamManager.onStateChange(newState => {
+            expect(newState).toEqual(expects[count++]);
+
+            if (streamManager.isInitialized()) {
+                streamManager.close();
+            }
+
+            if (newState === SMState.CLOSED) {
+                server.close(() => {
+                    done();
+                });
+            }
+        });
     });
 });
 
