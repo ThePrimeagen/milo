@@ -1,4 +1,4 @@
-import { CreateSSLNetworkPipeOptions, NetworkPipe, OnClose, OnData, OnError } from "../types";
+import { CreateSSLNetworkPipeOptions, NetworkPipe, OnClose, OnData, OnError, DataBuffer } from "../types";
 import { NrdpPlatform } from "./Platform";
 import N = nrdsocket;
 
@@ -21,12 +21,12 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
     private outputBio: N.Struct;
     private pipe: NetworkPipe;
     private connected: boolean;
-    private writeBuffers: (Uint8Array | ArrayBuffer | string)[];
+    private writeBuffers: (Uint8Array | ArrayBuffer | string | DataBuffer)[];
     private writeBufferOffsets: number[];
     private writeBufferLengths: number[];
     private connectedCallback?: (error?: Error) => void;
     private platform: NrdpPlatform;
-    private buffer?: ArrayBuffer;
+    private buffer?: DataBuffer;
 
     public firstByteRead?: number;
     public firstByteWritten?: number;
@@ -123,7 +123,7 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
     get dnsChannel() { return this.pipe.dnsChannel; }
     get closed() { return this.pipe.closed; }
 
-    write(buf: Uint8Array | ArrayBuffer | string, offset?: number, length?: number): void {
+    write(buf: DataBuffer | string, offset?: number, length?: number): void {
         if (typeof buf === 'string') {
             length = buf.length;
         } else if (length === undefined) {
@@ -152,7 +152,7 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
         }
     }
 
-    read(buf: Uint8Array | ArrayBuffer, offset: number, length: number): number {
+    read(buf: Uint8Array | ArrayBuffer | DataBuffer, offset: number, length: number): number {
         let bufferRead = 0;
         if (this.buffer) {
             const byteLength = this.buffer.byteLength;
@@ -222,11 +222,14 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
         return read + bufferRead;
     }
 
-    unread(buf: ArrayBuffer): void {
+    unread(buf: ArrayBuffer | Uint8Array | DataBuffer): void {
         if (this.buffer) {
-            this.buffer = this.platform.bufferConcat(this.buffer, buf);
-        } else {
+            this.buffer.bufferLength = this.buffer.byteLength + buf.byteLength;
+            this.buffer.set(0, buf);
+        } else if (buf instanceof DataBuffer) {
             this.buffer = buf;
+        } else {
+            this.buffer = new DataBuffer(buf);
         }
         if (this.ondata)
             this.ondata();

@@ -1,18 +1,18 @@
 import Platform from "../#{target}/Platform";
 import { assert, escapeData } from "../utils";
-import { ErrorCode, OnError } from "../types";
+import { OnError, DataBuffer } from "../types";
 
 export class ChunkyParser {
-    private buffers: Uint8Array[] = [];
+    private buffers: DataBuffer[] = [];
     private offset: number = 0;
     private dataNeeded: number = -1;
     private available: number = 0;
     constructor() {
     }
 
-    feed(data: ArrayBuffer, offset: number, length: number): void {
+    feed(data: DataBuffer, offset: number, length: number): void {
         Platform.assert(this.onchunk, "Gotta have an onchunk");
-        this.buffers.push(new Uint8Array(data.slice(offset, offset + length)));
+        this.buffers.push(data.mid(offset, length).detach());
         this.available += length;
         this._process();
     }
@@ -41,7 +41,7 @@ export class ChunkyParser {
                             // Platform.trace("looking at", i, bi, buf[i], String.fromCharCode(buf[i]), str);
                             ++consumed;
                             if (lastWasBackslashR) {
-                                if (buf[i] === 10) {
+                                if (buf.get(i) === 10) {
                                     const len = parseInt(str, 16);
                                     if (isNaN(len)) {
                                         if (this.onerror)
@@ -53,11 +53,11 @@ export class ChunkyParser {
                                     this._consume(consumed);
                                     break;
                                 }
-                            } else if (buf[i] === 13) {
+                            } else if (buf.get(i) === 13) {
                                 lastWasBackslashR = true;
                             } else {
                                 lastWasBackslashR = false;
-                                str += String.fromCharCode(buf[i]);
+                                str += String.fromCharCode(buf.get(i));
                             }
                         }
                     }
@@ -84,8 +84,8 @@ export class ChunkyParser {
         }
     }
 
-    ondone?: (buffer: ArrayBuffer | undefined) => void;
-    onchunk?: (chunk: ArrayBuffer) => void;
+    ondone?: (buffer: DataBuffer | undefined) => void;
+    onchunk?: (chunk: DataBuffer) => void;
     onerror?: OnError;
 
     private _consume(bytes: number): void {
@@ -110,7 +110,7 @@ export class ChunkyParser {
         this.available -= consumed;
     }
 
-    private _extractChunk(size: number): ArrayBuffer {
+    private _extractChunk(size: number): DataBuffer {
         Platform.assert(this.available >= size, "available's gotta be more than size");
         // grab the whole first chunk
         if (!this.offset && this.buffers[0].byteLength === size) {
@@ -120,27 +120,27 @@ export class ChunkyParser {
             return ret;
         }
 
-        const ret = new ArrayBuffer(size);
+        const ret = new DataBuffer(size);
         let idx = 0;
         while (idx < size) {
             const buf = this.buffers[0];
             const wanted = size - idx;
             const bufferAvailable = buf.byteLength - this.offset;
             if (bufferAvailable > size - idx) {
-                Platform.bufferSet(ret, idx, buf, this.offset, wanted);
+                ret.set(idx, buf, this.offset, wanted);
                 idx += wanted;
                 this.offset += wanted;
                 break;
             } else if (this.offset) {
                 Platform.assert(bufferAvailable <= wanted, "foo");
-                Platform.bufferSet(ret, idx, buf, this.offset, bufferAvailable);
+                ret.set(idx, buf, this.offset, bufferAvailable);
                 this.offset = 0;
                 this.buffers.shift();
                 idx += bufferAvailable;
             } else {
                 Platform.assert(bufferAvailable <= wanted, "bar");
                 Platform.assert(!this.offset, "zot");
-                Platform.bufferSet(ret, idx, buf);
+                ret.set(idx, buf);
                 this.buffers.shift();
                 idx += bufferAvailable;
             }

@@ -4,7 +4,7 @@ import Platform from "./#{target}/Platform";
 import {
     CreateTCPNetworkPipeOptions, DnsResult, IpConnectivityMode,
     NetworkPipe, RequestTimeouts, HTTP, HTTPMethod, HTTPHeadersEvent,
-    HTTPTransferEncoding, ErrorCode
+    HTTPTransferEncoding, ErrorCode, DataBuffer
 } from "./types";
 import { assert, escapeData } from "./utils";
 
@@ -33,7 +33,7 @@ export interface RequestData {
     ipConnectivityMode?: IpConnectivityMode;
     freshConnect?: boolean;
     forbidReuse?: boolean;
-    format?: "xml" | "json" | "jsonstream" | "arraybuffer" | "uint8array" | "none";
+    format?: "xml" | "json" | "jsonstream" | "arraybuffer" | "uint8array" | "databuffer" | "none";
     async?: boolean;
     pipeWait?: boolean;
     debugThroughput?: boolean;
@@ -91,7 +91,7 @@ export class RequestResponse {
     dns?: string;
     dnsChannel?: string;
     socket?: number;
-    data?: string | ArrayBuffer | Uint8Array;
+    data?: string | ArrayBuffer | Uint8Array | DataBuffer;
     size?: number;
     urls?: string[];
     headers: string[];
@@ -128,9 +128,9 @@ export class Request {
     private resolve?: Function;
     private reject?: Function;
     private requestResponse: RequestResponse;
-    private responseData?: ArrayBuffer;
+    private responseData?: DataBuffer;
     private responseDataOffset?: number;
-    private responseDataArray?: ArrayBuffer[];
+    private responseDataArray?: DataBuffer[];
     private responseDataLength: number;
     private transferEncoding: HTTPTransferEncoding;
     private http: HTTP;
@@ -335,15 +335,15 @@ export class Request {
         case RequestState.Error:
             break;
         case RequestState.Finished:
-            let responseArrayBuffer: ArrayBuffer;
+            let responseDataBuffer: DataBuffer;
             if (this.responseDataArray) {
                 // Platform.trace("GOT HERE 1", this.responseDataArray);
-                responseArrayBuffer = Platform.bufferConcat.apply(undefined, this.responseDataArray);
+                responseDataBuffer = DataBuffer.concat.apply(undefined, this.responseDataArray);
             } else if (this.responseData) {
                 // Platform.trace("GOT HERE 2", this.responseData);
-                responseArrayBuffer = this.responseData;
+                responseDataBuffer = this.responseData;
             } else {
-                responseArrayBuffer = new ArrayBuffer(0);
+                responseDataBuffer = new DataBuffer(0);
             }
             assert(this.requestResponse, "Gotta have a requestResponse");
             assert(this.requestResponse.networkStartTime, "Gotta have a requestResponse.networkStartTime");
@@ -359,15 +359,19 @@ export class Request {
             case "none":
                 throw new Error("Not implemented " + this.requestData.format);
             case "arraybuffer":
-                this.requestResponse.data = responseArrayBuffer;
+                this.requestResponse.data = responseDataBuffer.toArrayBuffer();
                 break;
             case "uint8array":
-                if (responseArrayBuffer)
-                    this.requestResponse.data = new Uint8Array(responseArrayBuffer);
+                if (responseDataBuffer)
+                    this.requestResponse.data = new Uint8Array(responseDataBuffer.toArrayBuffer());
+                break;
+            case "databuffer":
+                if (responseDataBuffer)
+                    this.requestResponse.data = responseDataBuffer;
                 break;
             default:
-                if (responseArrayBuffer) {
-                    this.requestResponse.data = Platform.utf8toa(responseArrayBuffer);
+                if (responseDataBuffer) {
+                    this.requestResponse.data = responseDataBuffer.toString();
                 }
                 break;
             }
@@ -398,30 +402,36 @@ export class Request {
                     return;
                 }
                 this.responseDataOffset = 0;
-                this.responseData = new ArrayBuffer(event.contentLength);
+                this.responseData = new DataBuffer(event.contentLength);
             }
         }
     }
 
-    private _onData(data: ArrayBuffer, offset: number, length: number): void { // have to copy data, the buffer will be reused
+    private _onData(data: DataBuffer, offset: number, length: number): void { // have to copy data, the buffer will be reused
         this.responseDataLength += length;
         Platform.trace("got some data here", length);
         if (this.requestData.onData) {
-            this.requestData.onData(data.slice(offset, length));
+            this.requestData.onData(data.toArrayBuffer(offset, length));
         } else if (this.requestData.onChunk) { // this arrayBuffer is created by ChunkyParser
             assert(!offset, "No offsets for chunks");
-            assert(length != data.byteLength, "No offsets for chunks");
-            this.requestData.onChunk(data);
+            assert(length == data.byteLength, "No offsets for chunks");
+            this.requestData.onChunk(data.toArrayBuffer());
         } else if (this.responseData) {
             assert(typeof this.responseDataOffset !== "undefined", "Must have responseDataOffset");
-            Platform.bufferSet(this.responseData, this.responseDataOffset, data, offset, length);
+            this.responseData.set(this.responseDataOffset, data, offset, length);
             this.responseDataOffset += length;
             Platform.log("GOT DATA", this.responseDataOffset, "of", this.responseData.byteLength);
             if (this.responseDataOffset == this.responseData.byteLength) {
                 this._transition(RequestState.Finished);
             }
         } else if (this.responseDataArray) {
-            this.responseDataArray.push(data.slice(offset, offset + length));
+            if (this.transferEncoding & HTTPTransferEncoding.Chunked) {
+                assert(!offset, "No offsets for chunks");
+                assert(length == data.byteLength, "No offsets for chunks");
+                this.responseDataArray.push(data); // whole chunks, created by the chunky parser
+            } else {
+                this.responseDataArray.push(data.slice(offset, offset + length));
+            }
         }
     }
 

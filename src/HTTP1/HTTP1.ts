@@ -1,5 +1,6 @@
 import {
-    HTTP, HTTPMethod, HTTPTransferEncoding, HTTPRequest, NetworkPipe, HTTPHeadersEvent, OnError, ErrorCode
+    HTTP, HTTPMethod, HTTPTransferEncoding, HTTPRequest, NetworkPipe,
+    HTTPHeadersEvent, OnError, ErrorCode, DataBuffer
 } from "../types";
 import Platform from "../#{target}/Platform";
 import { ChunkyParser } from "./ChunkyParser";
@@ -11,7 +12,7 @@ export class HTTP1 implements HTTP {
     request?: HTTPRequest;
     public timeToFirstByteRead?: number;
     public timeToFirstByteWritten?: number;
-    private headerBuffer?: ArrayBuffer;
+    private headerBuffer?: DataBuffer;
     private connection?: string;
     private headersFinished: boolean;
     private chunkyParser?: ChunkyParser;
@@ -62,14 +63,12 @@ Host: ${request.url.hostname}\r
                     break;
                 } else if (!this.headersFinished) {
                     if (this.headerBuffer) {
-                        let b = new ArrayBuffer(this.headerBuffer.byteLength + read);
-                        Platform.bufferSet(b, 0, this.headerBuffer);
-                        Platform.bufferSet(b, this.headerBuffer.byteLength, scratch, 0, read);
-                        this.headerBuffer = b;
+                        this.headerBuffer.bufferLength = this.headerBuffer.byteLength + read;
+                        this.headerBuffer.set(-read, scratch, 0, read);
                     } else {
                         this.headerBuffer = scratch.slice(0, read);
                     }
-                    const rnrn = Platform.bufferIndexOf(this.headerBuffer, 0, undefined, "\r\n\r\n");
+                    const rnrn = this.headerBuffer.indexOf("\r\n\r\n");
                     if (rnrn != -1) {
                         this._parseHeaders(rnrn);
                         this.headersFinished = true;
@@ -184,14 +183,14 @@ Host: ${request.url.hostname}\r
                 switch (transferEncodings[idx].trim()) {
                 case "chunked":
                     this.chunkyParser = new ChunkyParser;
-                    this.chunkyParser.onchunk = (chunk: ArrayBuffer) => {
+                    this.chunkyParser.onchunk = (chunk: DataBuffer) => {
                         Platform.trace("got a chunk right here", chunk.byteLength, typeof this.ondata);
                         if (this.ondata)
                             this.ondata(chunk, 0, chunk.byteLength);
                     };
                     this.chunkyParser.onerror = this._error.bind(this);
 
-                    this.chunkyParser.ondone = (buffer: ArrayBuffer | undefined) => {
+                    this.chunkyParser.ondone = (buffer: DataBuffer | undefined) => {
                         if (buffer) {
                             assert(this.networkPipe, "Must have networkPipe");
                             this.networkPipe.unread(buffer);
@@ -232,7 +231,7 @@ Host: ${request.url.hostname}\r
         return true;
     }
 
-    private _processResponseData(data: ArrayBuffer, offset: number, length: number): void { // have to copy data, the buffer will be reused
+    private _processResponseData(data: DataBuffer, offset: number, length: number): void { // have to copy data, the buffer will be reused
         Platform.trace("processing data", typeof this.chunkyParser, length);
         if (this.chunkyParser) {
             this.chunkyParser.feed(data, offset, length);
@@ -252,7 +251,7 @@ Host: ${request.url.hostname}\r
     }
 
     onheaders?: (headers: HTTPHeadersEvent) => void;
-    ondata?: (data: ArrayBuffer, offset: number, length: number) => void;
+    ondata?: (data: DataBuffer, offset: number, length: number) => void;
     onfinished?: () => void;
     onerror?: OnError;
 };

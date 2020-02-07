@@ -46,8 +46,8 @@ declare namespace nrdp {
     function mono(): number;
 
     function assert(cond: any, message?: string): void;
-    function atoutf8(input: Uint8Array | ArrayBuffer | string): Uint8Array;
-    function utf8toa(input: Uint8Array | ArrayBuffer | string, offset?: number, length?: number): string;
+    function atoutf8(input: Uint8Array | ArrayBuffer | DataBuffer | string): Uint8Array;
+    function utf8toa(input: Uint8Array | ArrayBuffer | DataBuffer | string, offset?: number, length?: number): string;
     function hash(type: string, data: string): Uint8Array;
     function btoa(buffer: Uint8Array | ArrayBuffer | string, returnUint8Array: true): Uint8Array;
     function btoa(buffer: Uint8Array | ArrayBuffer | string, returnUint8Array: false | undefined): string;

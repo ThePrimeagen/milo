@@ -1,4 +1,5 @@
 import Platform from "./#{target}/Platform";
+import { DataBuffer } from "./types";
 
 export function headerValue(headers: string[], header: string): string {
     const lower = header.toLowerCase() + ": ";
@@ -17,7 +18,7 @@ export function assert(condition: any, msg?: string): asserts condition {
     }
 }
 
-export function escapeData(data: Uint8Array | ArrayBuffer | string, offset?: number, length?: number): string {
+export function escapeData(data: Uint8Array | ArrayBuffer | DataBuffer | string, offset?: number, length?: number): string {
     if (typeof data !== "string") {
         data = Platform.utf8toa(data, offset || 0, length);
     } else if (offset && !length) {
