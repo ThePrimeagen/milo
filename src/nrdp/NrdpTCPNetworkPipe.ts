@@ -54,11 +54,9 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
             length = buf.byteLength;
         }
         offset = offset || 0;
-
         if (!length)
             throw new Error("0 length write");
 
-        assert(this.writeBuffers.length == this.writeBufferOffsets.length, "These should be the same length");
         assert(this.writeBuffers.length == this.writeBufferLengths.length, "These should be the same length");
         this.writeBuffers.push(buf);
         this.writeBufferOffsets.push(offset);

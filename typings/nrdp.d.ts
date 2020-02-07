@@ -1,9 +1,13 @@
 declare namespace nrdp {
+    type DataBuffer = import('../src/types').DataBuffer;
+    type IpVersion = import('../src/types').IpVersion;
+    type DnsResult = import('../src/types').DnsResult;
+
     namespace dns {
         function lookupHost(host: string,
-                            ipVersion: import('../src/types').IpVersion,
+                            ipVersion: IpVersion,
                             timeout: number,
-                            callback: (result: import('../src/types').DnsResult) => void): void;
+                            callback: (result: DnsResult) => void): void;
     }
 
     namespace device {
@@ -48,11 +52,11 @@ declare namespace nrdp {
     function assert(cond: any, message?: string): void;
     function atoutf8(input: Uint8Array | ArrayBuffer | DataBuffer | string): Uint8Array;
     function utf8toa(input: Uint8Array | ArrayBuffer | DataBuffer | string, offset?: number, length?: number): string;
-    function hash(type: string, data: string): Uint8Array;
-    function btoa(buffer: Uint8Array | ArrayBuffer | string, returnUint8Array: true): Uint8Array;
-    function btoa(buffer: Uint8Array | ArrayBuffer | string, returnUint8Array: false | undefined): string;
-    function btoa(buffer: Uint8Array | ArrayBuffer | string): string;
-    function atob(buffer: Uint8Array | ArrayBuffer | string, returnUint8Array: true): Uint8Array;
-    function atob(buffer: Uint8Array | ArrayBuffer | string, returnUint8Array: false | undefined): string;
-    function atob(buffer: Uint8Array | ArrayBuffer | string): string;
+    function hash(type: string, data: Uint8Array | ArrayBuffer | DataBuffer | string): Uint8Array;
+    function btoa(buffer: Uint8Array | ArrayBuffer | DataBuffer | string, returnUint8Array: true): Uint8Array;
+    function btoa(buffer: Uint8Array | ArrayBuffer | DataBuffer | string, returnUint8Array: false | undefined): string;
+    function btoa(buffer: Uint8Array | ArrayBuffer | DataBuffer | string): string;
+    function atob(buffer: Uint8Array | ArrayBuffer | DataBuffer | string, returnUint8Array: true): Uint8Array;
+    function atob(buffer: Uint8Array | ArrayBuffer | DataBuffer | string, returnUint8Array: false | undefined): string;
+    function atob(buffer: Uint8Array | ArrayBuffer | DataBuffer | string): string;
 }

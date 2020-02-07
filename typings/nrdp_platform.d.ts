@@ -1,23 +1,23 @@
-// import { DataBuffer } from "../src/types";
-
 declare namespace nrdp_platform {
-    function bufferIndexOf(haystack: Uint8Array | ArrayBuffer | string,
+    type DataBuffer = import('../src/types').DataBuffer;
+
+    function bufferIndexOf(haystack: Uint8Array | ArrayBuffer | DataBuffer | string,
                            haystackOffset: number,
                            haystackLength: number | undefined,
-                           needle: Uint8Array | ArrayBuffer | string,
+                           needle: Uint8Array | ArrayBuffer | string | DataBuffer,
                            needleOffset?: number,
                            needleLength?: number | undefined,
                            caseInsensitive?: boolean): number;
-    function bufferLastIndexOf(haystack: Uint8Array | ArrayBuffer | string,
+    function bufferLastIndexOf(haystack: Uint8Array | ArrayBuffer | DataBuffer | string,
                                haystackOffset: number,
                                haystackLength: number | undefined,
-                               needle: Uint8Array | ArrayBuffer | string,
+                               needle: Uint8Array | ArrayBuffer | DataBuffer | string,
                                needleOffset?: number,
                                needleLength?: number | undefined,
                                caseInsensitive?: boolean): number;
     function bufferSet(dest: Uint8Array | ArrayBuffer | DataBuffer,
                        destOffset: number,
-                       src: Uint8Array | ArrayBuffer | string,
+                       src: Uint8Array | ArrayBuffer | string | DataBuffer,
                        srcOffset?: number,
                        srcLength?: number | undefined): void;
     function random(length: number): Uint8Array;
