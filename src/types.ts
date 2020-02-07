@@ -1,112 +1,26 @@
+import { DataBuffer } from "./databuffer";
+
 export type IpVersion = 4 | 6;
 export type IpConnectivityMode = 4 | 6 | 10 | 0; // 0 is invalid, 10 is dual
 export type HTTPMethod = "POST" | "HEAD" | "PUT" | "DELETE" | "PATCH" | "GET";
 export type HTTPRequestHeaders = { [key: string]: string };
-export type encoding = "escaped" | "base32" | "base64" | "base64_urlsafe" | "base85" | "url" | "hex";
 
 export enum ErrorCode {
     None = 0
 };
 
-export interface DataBuffer {
-    new(bytes: number): DataBuffer;
-    new(ignored: null | number): DataBuffer;
-    new(data: string, encoding?: string): DataBuffer;
+// type ConcatTypes = ArrayBuffer | Uint8Array | DataBuffer | string;
+// type DataBufferConstructor = {
+//     new(bytes: number): DataBuffer;
+//     new(): DataBuffer;
+//     new(data: string, encoding?: string): DataBuffer;
+//     new(data: ArrayBuffer | DataBuffer | Uint8Array, offset?: number, length?: number): DataBuffer;
+//     concat(...args: ConcatTypes[]): DataBuffer
+// };
 
-    length: number;
-    offset: number;
-    readonly refCount: number;
-    bufferLength: number;
-
-    detach(): void;
-    clear(): void;
-
-    left(length: number): DataBuffer;
-    right(length: number): DataBuffer;
-    mid(offset: number, length: number): DataBuffer;
-
-    indexOf(needle: string | ArrayBuffer | DataBuffer | number | Uint8Array,
-            offset?: number, length?: number, caseInsensitive?: boolean): number;
-    lastIndexOf(needle: string | ArrayBuffer | DataBuffer | number | Uint8Array,
-                offset?: number, length?: number, caseInsensitive?: boolean): number;
-    includes(needle: string | ArrayBuffer | DataBuffer | number | Uint8Array,
-             offset?: number, length?: number, caseInsensitive?: boolean): boolean;
-    equals(other: string | ArrayBuffer | DataBuffer | Uint8Array): boolean;
-    fill(data: string | ArrayBuffer | DataBuffer | number | Uint8Array,
-         offset?: number, length?: number): void;
-    toString(offset?: number, length?: number, enc?: encoding): string;
-    encode(offset?: number, length?: number, enc?: encoding): DataBuffer;
-    decode(offset?: number, length?: number, enc?: encoding): DataBuffer;
-    toArrayBuffer(offset?: number, length?: number): ArrayBuffer;
-    toArray(offset?: number, length?: number): [number];
-    map(func: (val: number, i: number, buffer: DataBuffer) => number, thisValue?: any): DataBuffer;
-    reduce(func: (previousValue: any, val: number, i: number, buffer: DataBuffer) => any, previousValue?: any): any;
-    reduceRight(func: (previousValue: any, val: number, i: number, buffer: DataBuffer) => any, previousValue?: any): any;
-    reverse(): void;
-    sort(func?: (l: number, r: number) => number): void;
-    filter(func: (val: number, i: number, buffer: DataBuffer) => boolean, thisValue?: any): DataBuffer;
-    join(separator?: string): string;
-    forEach(func: (val: number, i: number, buffer: DataBuffer) => void, thisValue?: any): void;
-    every(func: (val: number, i: number, buffer: DataBuffer) => boolean, thisValue?: any): boolean;
-    find(func: (val: number, i: number, buffer: DataBuffer) => boolean, thisValue?: any): number | undefined;
-    findIndex(func: (val: number, i: number, buffer: DataBuffer) => boolean, thisValue?: any): number | undefined;
-    set(offset: number, src: string | ArrayBuffer | DataBuffer | number | Uint8Array, srcOffset?: number, srcLength?: number): void;
-
-    getUIntLE(offset: number, byteLength: 1 | 2 | 3 | 4 | 5 | 6): number;
-    getUIntBE(offset: number, byteLength: 1 | 2 | 3 | 4 | 5 | 6): number;
-    getIntLE(offset: number, byteLength: 1 | 2 | 3 | 4 | 5 | 6): number;
-    getIntBE(offset: number, byteLength: 1 | 2 | 3 | 4 | 5 | 6): number;
-
-    getUInt8(offset: number): number;
-    getInt8(offset: number): number;
-
-    getUInt16BE(offset: number): number;
-    getUInt16LE(offset: number): number;
-    getInt16BE(offset: number): number;
-    getInt16LE(offset: number): number;
-
-    getUInt32BE(offset: number): number;
-    getUInt32LE(offset: number): number;
-    getInt32BE(offset: number): number;
-    getInt32LE(offset: number): number;
-
-    getUInt64BE(offset: number): number;
-    getUInt64LE(offset: number): number;
-    getInt64BE(offset: number): number;
-    getInt64LE(offset: number): number;
-
-    getFloat32BE(offset: number): number;
-    getFloat32LE(offset: number): number;
-
-    getFloat64BE(offset: number): number;
-    getFloat64LE(offset: number): number;
-
-    setUInt8(offset: number): number;
-    setInt8(offset: number): number;
-
-    setUInt16BE(offset: number, val: number): number;
-    setUInt16LE(offset: number, val: number): number;
-    setInt16BE(offset: number, val: number): number;
-    setInt16LE(offset: number, val: number): number;
-
-    setUInt32BE(offset: number, val: number): number;
-    setUInt32LE(offset: number, val: number): number;
-    setInt32BE(offset: number, val: number): number;
-    setInt32LE(offset: number, val: number): number;
-
-    setUInt64BE(offset: number, val: number): number;
-    setUInt64LE(offset: number, val: number): number;
-    setInt64BE(offset: number, val: number): number;
-    setInt64LE(offset: number, val: number): number;
-
-    setFloat32BE(offset: number, val: number): number;
-    setFloat32LE(offset: number, val: number): number;
-
-    setFloat64BE(offset: number, val: number): number;
-    setFloat64LE(offset: number, val: number): number;
-
-    // static concat(...args: ArrayBuffer[] | Uint8Array[] | DataBuffer[]): DataBuffer;
-}
+// declare global {
+//     const DataBuffer: DataBufferConstructor;
+// }
 
 export interface DnsResult {
     errorCode: number;
@@ -155,19 +69,20 @@ export type OnClose = () => void;
 export type OnError = (code: number, message: string) => void;
 
 export interface SHA256Context {
-    add(buf: Uint8Array | ArrayBuffer | string): void;
+    add(buf: Uint8Array | ArrayBuffer | DataBuffer | string): void;
 
     final(): ArrayBuffer;
+    final(md: ArrayBuffer | Uint8Array | DataBuffer, offset?: number): number;
     reset(): void;
 };
 
 export interface NetworkPipe {
-    write(buf: Uint8Array | ArrayBuffer, offset: number, length: number): void;
+    write(buf: DataBuffer | Uint8Array | ArrayBuffer | string, offset: number, length: number): void;
     write(buf: string): void;
 
-    read(buf: Uint8Array | ArrayBuffer, offset: number, length: number): number;
+    read(buf: DataBuffer | Uint8Array | ArrayBuffer, offset: number, length: number): number;
 
-    unread(buf: ArrayBuffer): void;
+    unread(buf: DataBuffer | Uint8Array | ArrayBuffer): void;
 
     close(): void;
 
@@ -222,7 +137,7 @@ export interface HTTP {
     timeToFirstByteWritten?: number;
 
     onheaders?: (headers: HTTPHeadersEvent) => void;
-    ondata?: (data: ArrayBuffer, offset: number, length: number) => void;
+    ondata?: (data: DataBuffer, offset: number, length: number) => void;
     onfinished?: () => void;
     onerror?: OnError;
 };
@@ -247,7 +162,7 @@ export interface Platform {
 
     randomBytes(len: number): Uint8Array
 
-    writeFile(fileName: string, contents: Uint8Array | ArrayBuffer | string): boolean;
+    writeFile(fileName: string, contents: Uint8Array | ArrayBuffer | DataBuffer | string): boolean;
 
     stacktrace(): string;
 
@@ -267,7 +182,7 @@ export interface Platform {
     createSSLNetworkPipe(options: CreateSSLNetworkPipeOptions): Promise<NetworkPipe>;
     createSHA256Context(): SHA256Context;
 
-    bufferConcat(...args: ArrayBuffer[] | Uint8Array[]): ArrayBuffer;
+    bufferConcat(...args: ArrayBuffer[] | Uint8Array[] | DataBuffer[]): ArrayBuffer;
 
     bufferIndexOf(haystack: Uint8Array | ArrayBuffer | string,
                   haystackOffset: number,
@@ -283,11 +198,15 @@ export interface Platform {
                       needleOffset?: number,
                       needleLength?: number | undefined,
                       caseInsensitive?: boolean): number;
-    bufferSet(dest: Uint8Array | ArrayBuffer,
+    bufferSet(dest: Uint8Array | ArrayBuffer | DataBuffer,
               destOffset: number,
-              src: Uint8Array | ArrayBuffer | string,
+              src: Uint8Array | ArrayBuffer | DataBuffer,
               srcOffset?: number,
               srcLength?: number | undefined): void;
+
+    bufferSet(dest: Uint8Array | ArrayBuffer | DataBuffer,
+              destOffset: number,
+              src: string): void;
 
     lookupDnsHost(host: string,
                   ipVersion: IpVersion,
@@ -296,7 +215,7 @@ export interface Platform {
 
     UILanguages: string[];
     location: string;
-    scratch: ArrayBuffer;
+    scratch: DataBuffer;
 
     defaultRequestTimeouts: RequestTimeouts;
 

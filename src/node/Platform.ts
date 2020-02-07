@@ -27,7 +27,7 @@ function normalizeLength(buf: string | Uint8Array | ArrayBuffer): number {
 }
 
 class NodePlatform implements Platform {
-    constructor() {}
+    constructor() { }
 
     // One down, 40 to go
     sha1(input: string): Uint8Array {
@@ -38,7 +38,7 @@ class NodePlatform implements Platform {
     // base64 encode
     // fixme? anders....
     // @ts-ignore
-    btoa(buffer: Uint8Array|ArrayBuffer|string, returnUint8Array: boolean): string | Uint8Array {
+    btoa(buffer: Uint8Array | ArrayBuffer | string, returnUint8Array: boolean): string | Uint8Array {
         let out;
         if (typeof buffer === 'string') {
             out = btoa(buffer);
@@ -57,7 +57,7 @@ class NodePlatform implements Platform {
 
     // base64 decode
     // @ts-ignore
-    atob(buffer: Uint8Array|ArrayBuffer|string, returnUint8Array: false|undefined): string | Uint8Array {
+    atob(buffer: Uint8Array | ArrayBuffer | string, returnUint8Array: false | undefined): string | Uint8Array {
         let out;
         if (typeof buffer === 'string') {
             out = atob(buffer);
@@ -146,7 +146,7 @@ class NodePlatform implements Platform {
     }
 
     // "heremybigHHTTP string\r\n"
-    bufferIndexOf(haystack: Uint8Array | ArrayBuffer | string, haystackOffset: number, haystackLength: number|undefined, needle: Uint8Array | ArrayBuffer | string, needleOffset?: number, needleLength?: number|undefined): number {
+    bufferIndexOf(haystack: Uint8Array | ArrayBuffer | string, haystackOffset: number, haystackLength: number | undefined, needle: Uint8Array | ArrayBuffer | string, needleOffset?: number, needleLength?: number | undefined): number {
         haystackLength = haystackLength !== undefined ? haystackLength : normalizeLength(haystack);
         needleLength = needleLength !== undefined ? needleLength : normalizeLength(needle);
         needleOffset = needleOffset || 0;
@@ -161,20 +161,20 @@ class NodePlatform implements Platform {
         }
 
         const buffer = Buffer.from(haystack).
-                slice(haystackOffset, haystackOffset + haystackLength);
+            slice(haystackOffset, haystackOffset + haystackLength);
 
         if (typeof needle === 'string') {
             return buffer.
                 indexOf(needle.substr(needleOffset, needleLength));
         }
 
-        const needleBuf: Uint8Array  = toUint8Array(needle).
+        const needleBuf: Uint8Array = toUint8Array(needle).
             subarray(needleOffset, needleOffset + needleLength);
 
         return buffer.indexOf(needleBuf);
     }
 
-    bufferLastIndexOf(haystack: Uint8Array | ArrayBuffer | string, haystackOffset: number, haystackLength: number|undefined, needle: Uint8Array | ArrayBuffer | string, needleOffset?: number, needleLength?: number|undefined): number {
+    bufferLastIndexOf(haystack: Uint8Array | ArrayBuffer | string, haystackOffset: number, haystackLength: number | undefined, needle: Uint8Array | ArrayBuffer | string, needleOffset?: number, needleLength?: number | undefined): number {
         haystackLength = haystackLength !== undefined ? haystackLength : normalizeLength(haystack);
         needleLength = needleLength !== undefined ? needleLength : normalizeLength(needle);
         needleOffset = needleOffset || 0;
@@ -196,7 +196,7 @@ class NodePlatform implements Platform {
                 lastIndexOf(needle.substr(needleOffset, needleLength));
         }
 
-        const needleBuf: Uint8Array  = toUint8Array(needle).
+        const needleBuf: Uint8Array = toUint8Array(needle).
             subarray(needleOffset, needleOffset + needleLength);
 
         return buffer.lastIndexOf(needleBuf);
@@ -206,7 +206,7 @@ class NodePlatform implements Platform {
         dns.lookup(host, {
             family: ipVersion
         }, (err, address, family) => {
-            const res = { } as DnsResult;
+            const res = {} as DnsResult;
             if (err) {
                 // @ts-ignore
                 res.errorCode = err.errno;

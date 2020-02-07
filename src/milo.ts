@@ -2,12 +2,11 @@ import { Request, RequestData } from "./Request";
 import Platform from "./#{target}/Platform";
 import { NetworkPipe } from "./types";
 import { headerValue } from "./utils";
-// @ts-ignore
+import { DataBuffer } from "./databuffer";
 
 const requests = new Map();
 
 export function _load(data: RequestData, callback: Function): number {
-    // @ts-ignore
     const req = new Request(data);
     req.send().then(response => {
         // if (response.data) {
@@ -29,8 +28,9 @@ export function _wsUpgrade(data: RequestData): Promise<NetworkPipe> {
             data.headers = {};
         }
 
-        const arrayBufferKey = Platform.randomBytes(16);
-        const key = Platform.btoa(arrayBufferKey);
+        const arrayBufferKey = new DataBuffer(16);
+        arrayBufferKey.random();
+        const key = arrayBufferKey.toString(0, undefined, "base64");
         Platform.trace("key is", key, arrayBufferKey);
         data.headers["Upgrade"] = "websocket";
         data.headers["Connection"] = "Upgrade";

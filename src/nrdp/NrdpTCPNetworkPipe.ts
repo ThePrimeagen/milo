@@ -1,5 +1,9 @@
-import { CreateTCPNetworkPipeOptions, DnsResult, NetworkPipe, OnClose, OnData, OnError } from "../types";
+import {
+    CreateTCPNetworkPipeOptions, DnsResult, NetworkPipe,
+    OnClose, OnData, OnError
+} from "../types";
 import { NrdpPlatform } from "./Platform";
+import { DataBuffer } from "../databuffer";
 import N = nrdsocket;
 
 let platform: NrdpPlatform | undefined;
@@ -11,7 +15,7 @@ function assert(condition: any, msg?: string): asserts condition {
 
 export class NrdpTCPNetworkPipe implements NetworkPipe {
     private sock: number;
-    private writeBuffers: (Uint8Array | ArrayBuffer | string)[];
+    private writeBuffers: (Uint8Array | ArrayBuffer | DataBuffer | string)[];
     private writeBufferOffsets: number[];
     private writeBufferLengths: number[];
     private selectMode: number;
@@ -45,11 +49,10 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
 
     get closed() { return this.sock === -1; }
 
-    write(buf: Uint8Array | ArrayBuffer | string, offset?: number, length?: number): void {
+    write(buf: DataBuffer | string, offset?: number, length?: number): void {
         if (typeof buf === "string") {
-            const u8: Uint8Array = nrdp.atoutf8(buf);
-            length = u8.byteLength;
-            buf = u8;
+            buf = new DataBuffer(buf);
+            length = buf.byteLength;
         }
         offset = offset || 0;
 
@@ -68,7 +71,7 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
         }
     }
 
-    read(buf: Uint8Array | ArrayBuffer, offset: number, length: number): number {
+    read(buf: Uint8Array | ArrayBuffer | DataBuffer, offset: number, length: number): number {
         let bufferRead = 0;
         if (this.buffer) {
             const byteLength = this.buffer.byteLength;
@@ -106,7 +109,7 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
         return read + bufferRead;
     }
 
-    unread(buf: ArrayBuffer): void {
+    unread(buf: ArrayBuffer | Uint8Array | ArrayBuffer): void {
         if (this.buffer) {
             this.buffer = this.platform.bufferConcat(this.buffer, buf);
         } else {

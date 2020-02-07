@@ -1,22 +1,27 @@
-import { CreateSSLNetworkPipeOptions, CreateTCPNetworkPipeOptions, IpConnectivityMode, NetworkPipe, Platform, RequestTimeouts, SHA256Context } from "../types";
+import {
+    CreateSSLNetworkPipeOptions, CreateTCPNetworkPipeOptions, IpConnectivityMode,
+    NetworkPipe, Platform, RequestTimeouts, SHA256Context
+} from "../types";
+import { DataBuffer } from "../databuffer";
+import { nrdp_platform } from "./nrdp_platform";
 import createNrdpSSLNetworkPipe from "./NrdpSSLNetworkPipe";
 import createNrdpTCPNetworkPipe from "./NrdpTCPNetworkPipe";
 import N = nrdsocket;
 
-type BIO_ctrl_pending_type = (b:N.Struct) => number;
+type BIO_ctrl_pending_type = (b: N.Struct) => number;
 type BIO_ctrl_type = (bp: N.Struct, cmd: number, larg: number, parg: N.DataPointer | undefined) => number;
 type BIO_ctrl_wpending_type = (b: N.Struct) => number;
 type BIO_free_type = (a: N.Struct) => number;
 type BIO_int_ctrl_type = (bp: N.Struct, cmd: number, larg: number, iarg: number) => number;
-type BIO_new_mem_buf_type = (buf: ArrayBuffer | Uint8Array, len: number) => N.Struct;
+type BIO_new_mem_buf_type = (buf: ArrayBuffer | Uint8Array | DataBuffer, len: number) => N.Struct;
 type BIO_new_socket_type = (sock: number, close_flag: number) => N.Struct;
 type BIO_new_type = (ctx: N.Struct) => N.Struct;
-type BIO_read_type = (b: N.Struct, data: ArrayBuffer | Uint8Array, offset: number, dlen: number) => number;
+type BIO_read_type = (b: N.Struct, data: ArrayBuffer | Uint8Array | DataBuffer, offset: number, dlen: number) => number;
 type BIO_s_mem_type = () => N.Struct;
-type BIO_write_type = (b: N.Struct, data: ArrayBuffer | Uint8Array | string, offset: number, dlen: number) => number;
-type ERR_error_string_n_type = (e: number, buf: ArrayBuffer | Uint8Array, len: number) => void;
-type PEM_read_bio_X509_type = (bp: N.Struct, x: N.DataPointer | undefined, cb: N.Struct | undefined, u: ArrayBuffer | Uint8Array | undefined) => N.Struct;
-type SSL_CTX_ctrl_type = (ctx: N.Struct, cmd: number, larg: number, parg: ArrayBuffer | Uint8Array | undefined) => number;
+type BIO_write_type = (b: N.Struct, data: ArrayBuffer | Uint8Array | DataBuffer | string, offset: number, dlen: number) => number;
+type ERR_error_string_n_type = (e: number, buf: ArrayBuffer | Uint8Array | DataBuffer, len: number) => void;
+type PEM_read_bio_X509_type = (bp: N.Struct, x: N.DataPointer | undefined, cb: N.Struct | undefined, u: ArrayBuffer | Uint8Array | DataBuffer | undefined) => N.Struct;
+type SSL_CTX_ctrl_type = (ctx: N.Struct, cmd: number, larg: number, parg: ArrayBuffer | Uint8Array | DataBuffer | undefined) => number;
 type SSL_CTX_free_type = (ctx: N.Struct) => void;
 type SSL_CTX_get_cert_store_type = (ctx: N.Struct) => N.Struct;
 type SSL_CTX_new_type = (method: N.Struct) => N.Struct;
@@ -29,12 +34,12 @@ type SSL_free_type = (ssl: N.Struct) => void;
 type SSL_get_error_type = (ssl: N.Struct, ret: number) => number;
 type SSL_new_type = (ctx: N.Struct) => N.Struct;
 type SSL_pending_type = (ssl: N.Struct) => number;
-type SSL_read_type = (ssl: N.Struct, buf: ArrayBuffer | Uint8Array, offset: number, num: number) => number;
+type SSL_read_type = (ssl: N.Struct, buf: ArrayBuffer | Uint8Array | DataBuffer, offset: number, num: number) => number;
 type SSL_set_bio_type = (ssl: N.Struct, rbio: N.Struct | N.BIO, wbio: N.Struct | N.BIO) => void;
 type SSL_set_default_read_buffer_len_type = (s: N.Struct, len: number) => void;
 type SSL_set_read_ahead_type = (s: N.Struct, yes: number) => void;
 type SSL_up_ref_type = (s: N.Struct) => number;
-type SSL_write_type = (ssl: N.Struct, buf: ArrayBuffer | Uint8Array | string, offset: number, num: number) => number;
+type SSL_write_type = (ssl: N.Struct, buf: ArrayBuffer | Uint8Array | DataBuffer | string, offset: number, num: number) => number;
 type TLS_client_method_type = () => N.Struct;
 type X509_STORE_add_cert_type = (ctx: N.Struct, x: N.Struct) => number;
 type X509_VERIFY_PARAM_free_type = (param: N.Struct) => void;
@@ -46,7 +51,7 @@ export class NrdpPlatform implements Platform {
 
     private trustStoreHash: string;
     private x509s: N.Struct[];
-    private ERR_stringBuf: Uint8Array;
+    private ERR_stringBuf: DataBuffer;
 
     public BIO_ctrl: BIO_ctrl_type;
     public BIO_ctrl_pending: BIO_ctrl_pending_type;
@@ -236,7 +241,7 @@ export class NrdpPlatform implements Platform {
     public readonly SSL_VERIFY_POST_HANDSHAKE = 0x08;
 
     constructor() {
-        this.ERR_stringBuf = new Uint8Array(128);
+        this.ERR_stringBuf = new DataBuffer(128);
         this.trustStoreHash = "";
         this.x509s = [];
         // this.BIO_set_mem_eof_return = <BIO_set_mem_eof_return_type>N.bindFunction("void BIO_set_mem_eof_return(BIO *b, int v);");
@@ -279,7 +284,7 @@ export class NrdpPlatform implements Platform {
         this.X509_VERIFY_PARAM_set_time = <X509_VERIFY_PARAM_set_time_type>N.bindFunction("void X509_VERIFY_PARAM_set_time(X509_VERIFY_PARAM *param, time_t t);");
         this.X509_free = <X509_free_type>N.bindFunction("void X509_free(X509 *a);");
 
-        this.scratch = new ArrayBuffer(16 * 1024);
+        this.scratch = new DataBuffer(16 * 1024);
     }
 
     trustStore(): N.Struct[] {
@@ -305,7 +310,7 @@ export class NrdpPlatform implements Platform {
         // nrdp.l.success("error", error, ERR_stringBuf);
         let i;
         for (i = 0; i < this.ERR_stringBuf.byteLength; ++i) {
-            if (!this.ERR_stringBuf[i]) {
+            if (!this.ERR_stringBuf.get(i)) {
                 break;
             }
         }
@@ -315,7 +320,7 @@ export class NrdpPlatform implements Platform {
 
     sha1(input: string): Uint8Array { return nrdp.hash("sha1", input); }
 
-    public readonly scratch: ArrayBuffer;
+    public readonly scratch: DataBuffer;
 
     log(...args: any[]): void {
         args.unshift({ traceArea: "MILO" });
@@ -384,7 +389,7 @@ export class NrdpPlatform implements Platform {
     randomBytes = nrdp_platform.random;
     stacktrace = nrdp.stacktrace;
 
-    writeFile(fileName: string, contents: Uint8Array | ArrayBuffer | string): boolean {
+    writeFile(fileName: string, contents: Uint8Array | DataBuffer | ArrayBuffer | string): boolean {
         const fd = N.open(fileName, N.O_CREAT | N.O_WRONLY, 0o0664);
         if (fd === -1) {
             this.error(`Failed to open ${fileName} for writing`, N.errno, N.strerror());
@@ -411,7 +416,7 @@ export class NrdpPlatform implements Platform {
         return createNrdpSSLNetworkPipe(options, this);
     }
 
-    bufferConcat(...args: ArrayBuffer[] | Uint8Array[]) {
+    bufferConcat(...args: ArrayBuffer[] | Uint8Array[] | DataBuffer[]) {
         // @ts-ignore
         return ArrayBuffer.concat(...args);
     }

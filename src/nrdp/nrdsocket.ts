@@ -91,8 +91,8 @@ declare namespace nrdsocket {
     }
 
     // types
-    type Buffer = ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | Uint16Array | Int16Array | Uint32Array | Int32Array | Float32Array | Float64Array | DataView | DataPointer;
-    type ConstBuffer = string | ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | Uint16Array | Int16Array | Uint32Array | Int32Array | Float32Array | Float64Array | DataView | ConstDataPointer | DataPointer;
+    type Buffer = ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | Uint16Array | Int16Array | Uint32Array | Int32Array | Float32Array | Float64Array | DataView | DataBuffer;
+    type ConstBuffer = string | ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | Uint16Array | Int16Array | Uint32Array | Int32Array | Float32Array | Float64Array | DataView | ConstDataPointer | DataBuffer | DataPointer;
 
     type ForEachCallback = (key: any, value: any) => boolean;
     type SelectCallback = (fds: UnorderedMap) => void;

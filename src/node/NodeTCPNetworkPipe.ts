@@ -97,6 +97,7 @@ class NodeTCPNetworkPipe implements NetworkPipe {
         throw new Error("Not supported in Node.");
     }
 
+    // @ts-ignore
     write(buf: Uint8Array | ArrayBuffer | string, offset?: number, length?: number): void {
         if (this.state != State.Alive) {
             throw new Error(`Unable to write sockets in current state, ${this.state}`);
@@ -112,6 +113,7 @@ class NodeTCPNetworkPipe implements NetworkPipe {
         this.sock.write(normalizeUint8ArrayLen(buf, offset || 0, length));
     }
 
+    // @ts-ignore
     read(buf: Uint8Array | ArrayBuffer, offset: number, length: number): number {
         if (this.state != State.Alive) {
             throw new Error(`Unable to read sockets in current state, ${this.state}`);
@@ -149,7 +151,7 @@ class NodeTCPNetworkPipe implements NetworkPipe {
         return writeAmount;
     }
 
-    unread(buf: ArrayBuffer): void {
+    unread(buf: ArrayBuffer | Uint8Array | ArrayBuffer): void {
         assert(false, "Must implement this");
     }
 
@@ -166,7 +168,9 @@ export default function createTCPNetworkPipe(options: CreateTCPNetworkPipeOption
     console.log("Crea,ting TCP Network Pipe");
     return new Promise((res, rej) => {
         console.log("new Promise Crea,ting TCP Network Pipe");
+        // @ts-ignore
         const pipe = new NodeTCPNetworkPipe(options.host, options.port);
+        // @ts-ignore
         pipe.connection.then(res).catch(rej);
     });
 };
