@@ -3,8 +3,8 @@ import {
     Flag,
 } from '../types';
 
-import FrameWriter, { FRAME_HEADER_SIZE } from '../frame-writer';
-import { FRAME_HEADER_FLAGS_OFFSET } from '../utils';
+import FrameWriter from '../frame-writer';
+import { FRAME_HEADER_FLAGS_OFFSET, FRAME_HEADER_SIZE } from '../utils';
 
 function toArray(...args: number[]) {
     return args;
@@ -41,6 +41,8 @@ describe('FrameWriter', function() {
         new DataView(lengthExpBuf.buffer).setUint32(0, 70000);
         expect(frame.buffer.byteLength).toEqual(70000 + FRAME_HEADER_SIZE);
 
+        // TODO: How to fix this error?
+        // @ts-ignore
         expect(toArray(...length)).toEqual(toArray(...lengthExpBuf.slice(1)));
         expect(header[3]).toEqual(FrameType.HEADERS);
         expect(header[FRAME_HEADER_FLAGS_OFFSET]).toEqual(0);
