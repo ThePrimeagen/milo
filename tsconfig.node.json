@@ -5,6 +5,6 @@
         "outDir": "./build/node",
         "lib": ["es6"],
         "module": "CommonJS",
-        "target": "es6",
+        "target": "es6"
     }
 }

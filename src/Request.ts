@@ -173,6 +173,61 @@ export class Request {
         return this;
     }
 
+    static connect(url: string | RequestData, opts = {
+        timeouts: {
+            dnsTimeout: 10000,
+            connectTimeout: 10000,
+        },
+    }): Promise<NetworkPipe> {
+
+        let parsedUrl: Url;
+        if (typeof url === 'string') {
+            parsedUrl = new Url(url);
+        }
+        else {
+            parsedUrl = new Url(url.url);
+        }
+
+        let port: number = 0;
+        if (parsedUrl.port) {
+            port = parseInt(parsedUrl.port);
+        }
+
+        // Platform.trace("Request#send port", port);
+        let ssl = false;
+        switch (parsedUrl.protocol) {
+        case "https:":
+        case "wss:":
+            ssl = true;
+            if (!port) {
+                port = 443;
+            }
+            break;
+        default:
+            if (!port)
+                port = 80;
+            break;
+        }
+
+        // Platform.trace("Request#send creating TCP pipe");
+        const timeouts = opts.timeouts;
+        const tcpOpts = {
+            host: parsedUrl.hostname,
+            port: port,
+            dnsTimeout: timeouts && timeouts.dnsTimeout,
+            connectTimeout: timeouts && timeouts.connectTimeout,
+            ipVersion: 4 // gotta do happy eyeballs and send off multiple tcp network pipe things
+        } as CreateTCPNetworkPipeOptions;
+
+        return Platform.createTCPNetworkPipe(tcpOpts).then((pipe: NetworkPipe) => {
+            if (ssl) {
+                return Platform.createSSLNetworkPipe({ pipe: pipe });
+            } else {
+                return pipe;
+            }
+        });
+    }
+
     send(): Promise<RequestResponse> {
         this.requestResponse.networkStartTime = Platform.mono();
         // Platform.trace("send called", this.state, this.url);
@@ -209,11 +264,12 @@ export class Request {
         }
         // Platform.trace("Request#send creating TCP pipe");
         assert(this.requestData.timeouts);
+        const timeouts = this.requestData.timeouts;
         const tcpOpts = {
             host: this.url.hostname,
             port: port,
-            dnsTimeout: this.requestData.timeouts.dnsTimeout,
-            connectTimeout: this.requestData.timeouts.connectTimeout,
+            dnsTimeout: timeouts && timeouts.dnsTimeout,
+            connectTimeout: timeouts && timeouts.connectTimeout,
             ipVersion: 4 // gotta do happy eyeballs and send off multiple tcp network pipe things
         } as CreateTCPNetworkPipeOptions;
         Platform.createTCPNetworkPipe(tcpOpts).then((pipe: NetworkPipe) => {

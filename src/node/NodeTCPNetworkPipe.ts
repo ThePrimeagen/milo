@@ -59,6 +59,7 @@ class NodeTCPNetworkPipe implements NetworkPipe {
                     // Reuses a 16KiB Buffer for every read from the socket.
                     buffer: Buffer.alloc(32 * 1024),
                     callback: (nread: number, buf: Buffer): boolean => {
+                        debugger;
                         const copiedBuf = Buffer.allocUnsafe(nread);
                         buf.copy(copiedBuf, 0, 0, nread);
                         this.bufferPool.push(copiedBuf);
@@ -93,6 +94,7 @@ class NodeTCPNetworkPipe implements NetworkPipe {
         });
     }
 
+    // @ts-ignore
     get fd() {
         throw new Error("Not supported in Node.");
     }
@@ -165,9 +167,7 @@ class NodeTCPNetworkPipe implements NetworkPipe {
 // TODO: We only allow ipv4
 // we should create an opts
 export default function createTCPNetworkPipe(options: CreateTCPNetworkPipeOptions): Promise<NetworkPipe> {
-    console.log("Crea,ting TCP Network Pipe");
     return new Promise((res, rej) => {
-        console.log("new Promise Crea,ting TCP Network Pipe");
         // @ts-ignore
         const pipe = new NodeTCPNetworkPipe(options.host, options.port);
         // @ts-ignore

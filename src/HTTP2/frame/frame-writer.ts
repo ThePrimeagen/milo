@@ -5,6 +5,7 @@ import {
 
 import * as FrameUtils from './utils';
 
+const FRAME_HEADER_SIZE = FrameUtils.FRAME_HEADER_SIZE;
 const tmpBuffer = new Uint8Array(4);
 const tmpView = new DataView(tmpBuffer.buffer);
 
@@ -28,7 +29,6 @@ const tmpView = new DataView(tmpBuffer.buffer);
  |                           Padding (*)                       ...
  +---------------------------------------------------------------+
  */
-export const FRAME_HEADER_SIZE = 9;
 
 export default class FrameWriter {
     public buffer: Uint8Array;
@@ -59,10 +59,6 @@ export default class FrameWriter {
     write32(item: number) {
         this.view.setUint32(this.ptr, item);
         this.ptr += 4;
-    }
-
-    writeStr(item: string) {
-        // TODO: later?
     }
 
     write(item: Uint8Array) {
