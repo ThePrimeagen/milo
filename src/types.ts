@@ -176,6 +176,7 @@ export interface CreateSSLNetworkPipeOptions {
 export type OnData = () => void;
 export type OnClose = () => void;
 export type OnError = (code: number, message: string) => void;
+export type OnWritten = () => void;
 
 export interface SHA256Context {
     add(buf: Uint8Array | ArrayBuffer | DataBuffer | string): void;
@@ -186,8 +187,8 @@ export interface SHA256Context {
 };
 
 export interface NetworkPipe {
-    write(buf: DataBuffer | Uint8Array | ArrayBuffer | string, offset: number, length: number): void;
-    write(buf: string): void;
+    write(buf: DataBuffer | Uint8Array | ArrayBuffer | string, offset: number, length: number, callback?: OnWritten): void;
+    write(buf: string, callback?: OnWritten): void;
 
     read(buf: DataBuffer | Uint8Array | ArrayBuffer, offset: number, length: number): number;
 

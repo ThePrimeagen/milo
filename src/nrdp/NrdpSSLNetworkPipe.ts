@@ -1,4 +1,4 @@
-import { CreateSSLNetworkPipeOptions, NetworkPipe, OnClose, OnData, OnError, DataBuffer } from "../types";
+import { CreateSSLNetworkPipeOptions, NetworkPipe, OnClose, OnData, OnError, OnWritten, DataBuffer } from "../types";
 import { NrdpPlatform } from "./Platform";
 import N = nrdsocket;
 
@@ -22,6 +22,7 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
     private pipe: NetworkPipe;
     private connected: boolean;
     private writeBuffers: (Uint8Array | ArrayBuffer | string | DataBuffer)[];
+    private writeCallbacks?: (undefined | OnWritten)[];
     private writeBufferOffsets: number[];
     private writeBufferLengths: number[];
     private connectedCallback?: (error?: Error) => void;
@@ -37,6 +38,7 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
         this.connectedCallback = callback;
         this.connected = false;
         this.writeBuffers = [];
+        this.writeCallbacks = undefined;
         this.writeBufferOffsets = [];
         this.writeBufferLengths = [];
 
@@ -123,7 +125,7 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
     get dnsChannel() { return this.pipe.dnsChannel; }
     get closed() { return this.pipe.closed; }
 
-    write(buf: DataBuffer | string, offset?: number, length?: number): void {
+    write(buf: DataBuffer | string, offset?: number, length?: number, callback?: OnWritten): void {
         if (typeof buf === 'string') {
             length = buf.length;
         } else if (length === undefined) {
@@ -147,6 +149,11 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
             this.writeBuffers.push(buf);
             this.writeBufferOffsets.push(offset || 0);
             this.writeBufferLengths.push(length);
+            if (callback) {
+                if (!this.writeCallbacks)
+                    this.writeCallbacks = [];
+                this.writeCallbacks[this.writeBuffers.length - 1] = callback;
+            }
         } else {
             this._flushOutputBio();
         }
