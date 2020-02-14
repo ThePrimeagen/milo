@@ -91,8 +91,8 @@ export interface DataBuffer {
     getFloat64BE(offset: number): number;
     getFloat64LE(offset: number): number;
 
-    setUInt8(offset: number): number;
-    setInt8(offset: number): number;
+    setUInt8(offset: number, val: number): number;
+    setInt8(offset: number, val: number): number;
 
     setUInt16BE(offset: number, val: number): number;
     setUInt16LE(offset: number, val: number): number;
@@ -252,6 +252,7 @@ export interface HTTP {
 };
 
 export interface Platform {
+
     sha1(input: string): Uint8Array;
     // base64 encode
     btoa(buffer: Uint8Array | ArrayBuffer | string, returnUint8Array: true): Uint8Array;
