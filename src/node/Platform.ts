@@ -68,6 +68,14 @@ class NodePlatform implements Platform {
         return buf;
     }
 
+    huffmanEncode(input: string): DataBuffer {
+        return {} as DataBuffer;
+    }
+
+    huffmanDecode(input: DataBuffer): string {
+        return "";
+    }
+
     // @ts-ignore
     bufferSet(dest: Uint8Array | ArrayBuffer, destOffset: number,
         src: Uint8Array | ArrayBuffer | string, srcOffset?: number, srcLength?: number): void {

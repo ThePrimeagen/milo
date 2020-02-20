@@ -285,7 +285,7 @@ export interface Platform {
     // TODO: Ask anders
     stringLength(str: string, encoding: stringEncoding): number;
 
-    huffmanDecode(input: DataBuffer): Uint8Array;
+    huffmanDecode(input: DataBuffer): string;
     huffmanEncode(input: string): DataBuffer;
 
     sha1(input: string): Uint8Array;

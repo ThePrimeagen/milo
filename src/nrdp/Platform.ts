@@ -286,6 +286,16 @@ export class NrdpPlatform implements Platform {
         this.scratch = new DataBuffer(16 * 1024);
     }
 
+    huffmanEncode(input: string): DataBuffer {
+        throw new Error("Not Implemented");
+        return {} as DataBuffer;
+    }
+
+    huffmanDecode(input: DataBuffer): string {
+        throw new Error("Not Implemented");
+        return "";
+    }
+
     trustStore(): N.Struct[] {
         if (this.trustStoreHash != nrdp.trustStoreHash) {
             const trustStoreData = nrdp.trustStore;
