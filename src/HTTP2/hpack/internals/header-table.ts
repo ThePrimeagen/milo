@@ -1,4 +1,5 @@
 import getStaticList from './static-header-list';
+import Platform from "../../../#{target}/Platform";
 
 export type Name = string;
 export type NameValue = { name: string, value: string };
@@ -20,7 +21,7 @@ export interface HeaderTable {
 }
 
 const STATIC_TABLE_SIZE = 62;
-class DynamicTable implements HeaderTable {
+export default class DynamicTable implements HeaderTable {
 
     // TODO: I assume that this definitely has a type, just what are they.
     private byName: Map<string, number>;
@@ -29,6 +30,7 @@ class DynamicTable implements HeaderTable {
 
     private initializing: boolean;
     private maxSize: number;
+    private currentSize: number;
 
     private insertCount: number;
 
@@ -39,9 +41,10 @@ class DynamicTable implements HeaderTable {
         this.initializing = true
         this.maxSize = maxSize;
         this.insertCount = 0;
+        this.currentSize = 0;
 
         const staticList = getStaticList();
-        for (let i = 1; i < staticList.length; ++i) {
+        for (let i = 0; i < staticList.length; ++i) {
             const items = staticList[i];
             this.insert(items[0], items[1]);
         }
@@ -49,24 +52,20 @@ class DynamicTable implements HeaderTable {
         this.initializing = false;
     }
 
-    setSize(newSize: number):void {
-        const oldSize = this.maxSize;
+    setSize(newSize: number): void {
         this.maxSize = newSize;
-
-        if (newSize - oldSize < 0) {
-            // Trim the table.
-        }
+        this.resize(0);
     }
 
     getNameAndValue(idx: number): NameValue {
         const out = this.byIdx.get(idx);
 
         if (!out) {
-            throw new Error("Decode Error, missing index in dynamic table");
+            throw new Error(`Decode Error, missing index in dynamic table: idx ${idx}`);
         }
 
         if (typeof out === 'string') {
-            throw new Error("Decode Error, name-value pair expected but name was found.");
+            throw new Error(`Decode Error, name when name-value pair was requested: ${idx}.`);
         }
 
         return out;
@@ -76,11 +75,11 @@ class DynamicTable implements HeaderTable {
         const out = this.byIdx.get(idx);
 
         if (!out) {
-            throw new Error("Decode Error, missing index in dynamic table");
+            throw new Error(`Decode Error, missing index in dynamic table: idx ${idx}`);
         }
 
         if (typeof out !== 'string') {
-            throw new Error("Decode Error, name-value pair when name was requested.");
+            throw new Error(`Decode Error, name-value pair when name was requested: ${idx}.`);
         }
 
         return out;
@@ -90,22 +89,51 @@ class DynamicTable implements HeaderTable {
 
         const id = this.insertCount++ + 1;
 
+        // Adjust the table size
+        const size = Platform.stringLength(key, 'utf8') +
+            (value && Platform.stringLength(value, 'utf8') || 0);
+        this.resize(size);
+
+        // no insert is made.
+        // todo: should we log this?
+        if (this.maxSize < size) {
+            return -1;
+        }
+
         // Name only insert
         if (value === null) {
             this.byName.set(key, id);
-            return id;
+            this.byIdx.set(id, key);
+        }
+        else {
+
+            // TODO: It already exists, should our library ever run into this
+            // case?
+            let valueMap = this.byNameAndValue.get(key);
+            if (!valueMap) {
+                valueMap = new Map();
+                this.byNameAndValue.set(key, valueMap);
+            }
+
+            valueMap.set(value, id);
+            this.byIdx.set(id, {name: key, value});
         }
 
-        // TODO: It already exists, should our library ever run into this
-        // case?
-        let valueMap = this.byNameAndValue.get(key);
-        if (!valueMap) {
-            valueMap = new Map();
-            this.byNameAndValue.set(key, valueMap);
+        if (!this.initializing) {
+            this.currentSize += size;
         }
-
-        valueMap.set(value, id);
 
         return id;
+    }
+
+    private resize(sizeAdded: number) {
+        throw new Error("This needs to be implemented right meow");
+
+        // this sucks, can we do better?
+        const keys = new Array(this.byIdx.keys()).reverse();
+        const max = keys.length - 1;
+
+        for (let i = max; i >= 0 && this.currentSize > this.maxSize; ++i) {
+        }
     }
 }

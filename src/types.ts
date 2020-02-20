@@ -3,6 +3,7 @@ export type IpConnectivityMode = 4 | 6 | 10 | 0; // 0 is invalid, 10 is dual
 export type HTTPMethod = "POST" | "HEAD" | "PUT" | "DELETE" | "PATCH" | "GET";
 export type HTTPRequestHeaders = { [key: string]: string };
 export type encodingType = "escaped" | "base32" | "base64" | "base64_urlsafe" | "base85" | "url" | "hex";
+export type stringEncoding = "utf8";
 export type hashType = "sha1" | "sha256" | "sha512" | "md5";
 export type compressionMethod = "zlib" | "zlibbase64" | "zlibgzip" | "lzham" | "lz4";
 
@@ -19,14 +20,41 @@ export interface DataBuffer {
     detach(): DataBuffer;
     clear(): void;
 
+    /**
+     * Takes the left most bytes, equivalent to subarray(0, length).
+     *
+     * Shallow Copy
+     */
     left(length: number): DataBuffer;
+
+    /**
+     * Takes the right most bytes, equivalent to subarray(this.byteLength -
+     * length, this.byteLength).
+     *
+     * Shallow Copy
+     */
     right(length: number): DataBuffer;
+
+    /**
+     * Subarray with length instead of endIdx
+     *
+     * equivalent to.
+     * const offset = this.byteOffset + offset;
+     * subarray(offset, offset + length);
+     *
+     *
+     * Shallow Copy
+     */
     mid(offset?: number, length?: number): DataBuffer;
 
-    slice(offset?: number, length?: number): DataBuffer; // deep copy
+    /**
+     * Deep Copy
+     */
+    slice(offset?: number, length?: number): DataBuffer;
 
     indexOf(needle: string | ArrayBuffer | DataBuffer | number | Uint8Array,
             offset?: number, length?: number, caseInsensitive?: boolean): number;
+
     lastIndexOf(needle: string | ArrayBuffer | DataBuffer | number | Uint8Array,
                 offset?: number, length?: number, caseInsensitive?: boolean): number;
     includes(needle: string | ArrayBuffer | DataBuffer | number | Uint8Array,
@@ -253,6 +281,10 @@ export interface HTTP {
 
 export interface Platform {
 
+    // Maybe?
+    // TODO: Ask anders
+    stringLength(str: string, encoding: stringEncoding): number;
+
     sha1(input: string): Uint8Array;
     // base64 encode
     btoa(buffer: Uint8Array | ArrayBuffer | string, returnUint8Array: true): Uint8Array;
@@ -268,7 +300,7 @@ export interface Platform {
     atoutf8(input: Uint8Array | ArrayBuffer | string): Uint8Array;
 
     // uint8array to string
-    utf8toa(input: Uint8Array | ArrayBuffer | string, offset?: number, length?: number): string;
+    utf8toa(input: DataBuffer | Uint8Array | ArrayBuffer | string, offset?: number, length?: number): string;
 
     randomBytes(len: number): Uint8Array
 

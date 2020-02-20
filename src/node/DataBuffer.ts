@@ -1,32 +1,61 @@
+import Platform from '../#{target}/Platform';
 import {DataBuffer, encodingType, hashType, compressionMethod} from '../types';
+
+const tempAllocation = Buffer.alloc(1);
+
+function toString(item: string | DataBuffer | ArrayBuffer | Uint8Array | number): string {
+    if (typeof item === 'number') {
+        return String(item);
+    }
+
+    const uint8Array = Platform.atoutf8(item);
+    return uint8Array.toString();
+}
 
 // @ts-ignore
 export default class DB implements DataBuffer {
     private buffer: Buffer;
+
     public byteLength: number;
     public byteOffset: number;
     public bufferLength: number;
 
-    // TODO: What to do with this?
-    // Must because we are doing a realloc
-    // @ts-ignore
-    public refCount: number;
+    public readonly refCount: number;
 
-    constructor(byteCount: number | DataBuffer, offset?: number, length?: number) {
-        this.refCount = this.bufferLength =
-            this.byteLength = this.byteOffset = 0;
-        this.buffer = Buffer.alloc(1);
+    constructor(byteCountOrBuf: number | DataBuffer, offset?: number, length?: number) {
+        // Node does not have this notion nor can we reproduce it easily.
+        // Since node is meant to be a testing platform and not a performance
+        // platform, i'll just have it permentantly pegged to 1 and allow for
+        // garbage collection to do its thing.
+        this.refCount = 1;
+        this.bufferLength = this.byteLength = this.byteOffset = 0;
 
-        if (typeof byteCount === "number") {
-            this.constructFromByteCount(byteCount);
+        // This is done purely for typescript not to complain about
+        // initializing the variable within the constructor
+        this.buffer = tempAllocation;
+
+        if (typeof byteCountOrBuf === "number") {
+            this.constructFromByteCount(byteCountOrBuf);
         }
+
         else {
-            // TODO: This is for left, right, and mid... wtf do they mean..
+            offset = offset || 0;
+            length = length === undefined ?
+                (byteCountOrBuf.byteLength - offset) : length;
+
+            this.constructFromDataBuffer(byteCountOrBuf, offset, length);
         }
     }
 
+    private constructFromDataBuffer(buf: DataBuffer, offset: number, length: number) {
+        const b = buf as DB;
+        this.buffer = b.buffer.slice(offset, offset + length);
+        this.byteOffset = 0;
+        this.byteLength = length;
+        this.bufferLength = this.buffer.byteLength;
+    }
+
     private constructFromByteCount(byteCount: number) {
-        this.refCount = 0;
         this.buffer = Buffer.alloc(byteCount);
         this.bufferLength = this.byteLength = this.buffer.byteLength;
         this.byteOffset = this.buffer.byteOffset;
@@ -39,49 +68,95 @@ export default class DB implements DataBuffer {
         return [offset, length];
     }
 
-    // TODO: What does this even mean?
-    left(length: number): DataBuffer { return this; }
-    right(length: number): DataBuffer { return this; }
-    mid(offset?: number, length?: number): DataBuffer { return this; }
-    detach(): DataBuffer { return this; }
+    left(length: number): DataBuffer {
+        return new DB(this, this.byteOffset, length);
+    }
+    right(length: number): DataBuffer {
+        return new DB(this, this.byteLength - length, length);
+    }
+    mid(offset: number = 0, length?: number): DataBuffer {
+        return new DB(this, this.byteOffset + offset, length);
+    }
+
+    detach(): DataBuffer {
+        return this;
+    }
+
     clear(): void { }
 
     fill(data: string | ArrayBuffer | DataBuffer | number | Uint8Array,
         o?: number, l?: number) {
 
         const [offset, length] = this.getOffsetAndLength(o, l);
-
+        throw new Error("Not Implemented");
     }
 
     slice(o?: number, l?: number): DataBuffer {
         const [offset, length] = this.getOffsetAndLength(o, l);
-        const newBuffer = new DataBuffer(length);
-        newBuffer.fill(this, o, l);
+        const newBuffer = new DB(length);
+
+        this.buffer.copy(newBuffer.buffer, 0, offset, offset + length);
 
         return newBuffer;
     }
 
+    /**
+     * Hyper unoptimized.
+     * Convert everythng to string, and rely on the string to properly handle
+     * the case insensitive search
+     */
     indexOf(needle: string | ArrayBuffer | DataBuffer | number | Uint8Array,
         offset?: number, length?: number, caseInsensitive?: boolean): number {
-            throw new Error("Not Implement");
+
+        let thisStr = this.buffer.
+            slice(offset, length).toString();
+        let needleStr = toString(needle);
+
+        if (caseInsensitive) {
+            thisStr = thisStr.toLowerCase();
+            needleStr = needleStr.toLowerCase();
         }
+
+        return thisStr.indexOf(needleStr);
+    }
 
     lastIndexOf(needle: string | ArrayBuffer | DataBuffer | number | Uint8Array,
         offset?: number, length?: number, caseInsensitive?: boolean): number {
-            throw new Error("Not Implement");
+
+        let thisStr = this.buffer.
+            slice(offset, length).toString();
+        let needleStr = toString(needle);
+
+        if (caseInsensitive) {
+            thisStr = thisStr.toLowerCase();
+            needleStr = needleStr.toLowerCase();
         }
+
+        return thisStr.lastIndexOf(needleStr);
+    }
 
     includes(needle: string | ArrayBuffer | DataBuffer | number | Uint8Array,
         offset?: number, length?: number, caseInsensitive?: boolean): boolean {
-            throw new Error("Not Implement");
+        let thisStr = this.buffer.
+            slice(offset, length).toString();
+        let needleStr = toString(needle);
+
+        if (caseInsensitive) {
+            thisStr = thisStr.toLowerCase();
+            needleStr = needleStr.toLowerCase();
         }
 
+        return Boolean(~thisStr.indexOf(needleStr));
+    }
+
     equals(other: string | ArrayBuffer | DataBuffer | Uint8Array): boolean {
-        throw new Error("Not Implement");
+        return this.buffer.toString() === toString(other);
     }
 
     toString(offset?: number, length?: number, enc?: encodingType): string {
-        throw new Error("Not Implement");
+        return this.
+            buffer.
+            toString(enc || , offset, offset + length);
     }
 
     encode(enc: encodingType, offset?: number, length?: number): DataBuffer {

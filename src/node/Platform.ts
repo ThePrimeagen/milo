@@ -12,6 +12,7 @@ import {
     CreateSSLNetworkPipeOptions,
     SHA256Context,
     HTTPRequestHeaders,
+    stringEncoding,
 } from "../types";
 
 import createTCPNetworkPipe from "./NodeTCPNetworkPipe";
@@ -19,7 +20,8 @@ import createTCPNetworkPipe from "./NodeTCPNetworkPipe";
 import sha1 from "sha1";
 import btoa from "btoa";
 import atob from "atob";
-import DataBuffer from "./DataBuffer";
+import {DataBuffer} from "../types";
+import DB from "./DataBuffer";
 
 function toBuffer(buf: Uint8Array | ArrayBuffer | string) {
     // @ts-ignore
@@ -53,7 +55,11 @@ class NodePlatform implements Platform {
     public scratch: DataBuffer;
 
     constructor() {
-        this.scratch = new ArrayBuffer(16 * 1024);
+        this.scratch = new DB(16 * 1024);
+    }
+
+    stringLength(str: string, encoding: stringEncoding): number {
+        return Buffer.byteLength(str, encoding);
     }
 
     // One down, 40 to go
@@ -141,7 +147,7 @@ class NodePlatform implements Platform {
     }
 
     // TODO: Assumes Ascii
-    utf8toa(input: Uint8Array | ArrayBuffer | string, offset?: number, length?: number): string {
+    utf8toa(input: DataBuffer | Uint8Array | ArrayBuffer | string, offset?: number, length?: number): string {
         if (typeof input === 'string') {
             return input.substr(offset || 0, length || 0);
         }
@@ -150,12 +156,17 @@ class NodePlatform implements Platform {
         if (input instanceof ArrayBuffer) {
             buf = new Uint8Array(input);
         }
-        else {
+
+        else if (input instanceof Uint8Array) {
             buf = input;
         }
 
+        else {
+            buf = new Uint8Array(input.toArrayBuffer());
+        }
+
         if (offset !== undefined) {
-            const l = length === undefined ? normalizeLength(input) : length;
+            const l = length === undefined ? normalizeLength(buf) : length;
             buf = buf.slice(offset, l);
         }
 
