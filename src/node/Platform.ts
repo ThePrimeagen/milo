@@ -68,12 +68,14 @@ class NodePlatform implements Platform {
         return buf;
     }
 
-    huffmanEncode(input: string): DataBuffer {
+    huffmanEncode(input: string | DataBuffer): DataBuffer {
+        throw new Error("Not Implemented");
         return {} as DataBuffer;
     }
 
-    huffmanDecode(input: DataBuffer): string {
-        return "";
+    huffmanDecode(input: DataBuffer): DataBuffer {
+        throw new Error("Not Implemented");
+        return {} as DataBuffer;
     }
 
     // @ts-ignore
