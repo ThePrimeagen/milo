@@ -1,11 +1,7 @@
-### MVP
-* use hton\* functions.
-* send/recv packets with continuation.  Frame breaking done internally.
-* Be able to use node ws and my implementation to speak to one another.
-* ping and pong interleaving.
+### HTTP2
+* Basic frame validation process and ignores.
+    * https://tools.ietf.org/html/rfc7540#section-4.1
+    * ignore flags/types/reserved bit issues.
 
-### Basic error handling for the C level functions
-
-### Basic logic handling for bad frames and http requests.
-* HTTP handshake.
-* WS mask requirements.
+* Header compression and decrompression
+    * https://tools.ietf.org/html/rfc7540#section-4.3

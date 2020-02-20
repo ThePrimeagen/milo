@@ -53,6 +53,7 @@ Host: ${request.url.hostname}\r
             break;
         }
 
+        // BRB, Upping my bits above 3000...
         let scratch = Platform.scratch;
         this.networkPipe.ondata = () => {
             while (true) {
