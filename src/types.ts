@@ -285,6 +285,9 @@ export interface Platform {
     // TODO: Ask anders
     stringLength(str: string, encoding: stringEncoding): number;
 
+    huffmanDecode(input: DataBuffer): Uint8Array;
+    huffmanEncode(input: string): DataBuffer;
+
     sha1(input: string): Uint8Array;
     // base64 encode
     btoa(buffer: Uint8Array | ArrayBuffer | string, returnUint8Array: true): Uint8Array;
