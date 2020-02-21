@@ -1,0 +1,67 @@
+import staticList from './static';
+import Platform from '../Platform';
+
+const scratchBuffer = Buffer.alloc(50000);
+
+export default function encode(buffer: string | Buffer, offset: number = 0, length?: number): Buffer {
+    let buf: Buffer;
+
+    if (typeof buffer === 'string') {
+        buf = Buffer.from(buffer);
+    } else {
+        buf = buffer;
+    }
+
+    let ptr = 0;
+    let bitLen = 0;
+
+    for (let i = 0; i < buf.byteLength; ++i) {
+        const staticData: [Buffer, number] = staticList[buf[i]];
+
+        const bits = staticData[0];
+        let bitsRemaining = staticData[1] as number;
+        let fromBitPtr = 0;
+
+        bitLen += bitsRemaining;
+
+        do {
+            const idx = Math.floor(ptr / 8);
+            const bitIdx = ptr % 8;
+            const bitsToEncode = Math.min(8 - bitIdx, bitsRemaining);
+
+            const fromIdx = Math.floor(fromBitPtr / 8);
+            const fromBitIdx = fromBitPtr % 8;
+
+            /*
+             * It can always get worse
+            const valueToWrite = bits[fromIdx] & (2 ** (8 - fromBitIdx) - 1) &
+                (0xFF ^ (2 ** (8 - bitIdx) - 1));
+             */
+
+            const shiftRight = 8 - (fromBitIdx + bitsToEncode);
+            const shiftLeft = 8 - bitIdx;
+            const leftOnes = (2 ** (8 - fromBitIdx) - 1);
+            const value = ((bits[fromIdx] & leftOnes) >> shiftRight) << shiftLeft;
+
+            scratchBuffer[idx] |= value;
+
+            bitsRemaining -= bitsToEncode;
+            fromBitPtr += bitsToEncode;
+
+            console.log("Bits Remaining", bitsRemaining);
+        } while (bitsRemaining > 0);
+    }
+
+    const oLength = Math.ceil(bitLen / 8);
+    const outBuf = Buffer.alloc(oLength);
+    scratchBuffer.copy(outBuf, 0, 0, oLength);
+
+    const remainingOutBits = 8 - bitLen % 8;
+    outBuf[oLength] = outBuf[oLength] | (2 ** remainingOutBits - 1);
+
+    scratchBuffer.slice(0, oLength).fill(0);
+
+    return outBuf;
+};
+
+

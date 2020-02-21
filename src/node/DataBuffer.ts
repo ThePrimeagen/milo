@@ -154,9 +154,12 @@ export default class DB implements DataBuffer {
     }
 
     toString(offset?: number, length?: number, enc?: encodingType): string {
+        const o = offset || 0;
+        const l = this.byteLength - o;
+
         return this.
             buffer.
-            toString(enc || , offset, offset + length);
+            toString(enc || "utf8", o, l);
     }
 
     encode(enc: encodingType, offset?: number, length?: number): DataBuffer {
