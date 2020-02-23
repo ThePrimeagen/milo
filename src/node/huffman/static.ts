@@ -272,4 +272,43 @@ const staticList: [number, number][] = [
     [0x3fffffff, 30], // EOS
 ];
 
+export type StaticTreeNode = [StaticTreeNode | undefined | number, StaticTreeNode | undefined | number];
+
+function createStaticTreeNode(): StaticTreeNode {
+    return [undefined, undefined];
+}
+
+export function pluckBit(value: number, ptr: number): number {
+    return (value & 0x1 << ptr) ? 1 : 0;
+}
+
+export const staticTree: StaticTreeNode = createStaticTreeNode();
+
+staticList.forEach((item, i) => {
+    const value = item[0];
+    const bits = item[1];
+
+    let curr = staticTree;
+    let ptr = bits;
+
+    do {
+        const idx = pluckBit(value, --ptr);
+
+        if (curr[idx] === undefined) {
+            curr[idx] = createStaticTreeNode();
+        }
+        else if (typeof curr[idx] === 'number') {
+            throw new Error("You tree building skills are as good as your reading skills.");
+        }
+
+        // What am I doing wrong
+        // @ts-ignore
+        curr = curr[idx];
+
+    } while (ptr > 1);
+
+    const idx = pluckBit(value, 0);
+    curr[idx] = i;
+});
+
 export default staticList;

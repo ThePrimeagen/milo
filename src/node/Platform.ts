@@ -50,12 +50,10 @@ class NodePlatform implements Platform {
     public location: string = "?";
     public defaultRequestTimeouts = { };
     public standardHeaders: HTTPRequestHeaders = { };
-    // TODO: Implement data buffer
-    // @ts-ignore
     public scratch: DataBuffer;
 
     constructor() {
-        this.scratch = new DB(16 * 1024);
+        this.scratch = {} as DataBuffer;
     }
 
     stringLength(str: string, encoding: stringEncoding): number {
@@ -152,7 +150,7 @@ class NodePlatform implements Platform {
     }
 
     // string to uint8array
-    atoutf8(input: Uint8Array | ArrayBuffer | string): Uint8Array {
+    atoutf8(input: DataBuffer | Uint8Array | ArrayBuffer | string): Uint8Array {
         return toUint8Array(input);
     }
 

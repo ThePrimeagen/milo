@@ -1,3 +1,5 @@
+import {DataBuffer} from '../types';
+
 export function bufferToUint8Array(buf: Buffer) {
     return new Uint8Array(
         buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
@@ -40,7 +42,7 @@ function stringToUint8Array(str: string): Uint8Array {
     return new Uint8Array(buf);
 }
 
-export function toUint8Array(buf: string | Uint8Array | ArrayBuffer): Uint8Array {
+export function toUint8Array(buf: string | Uint8Array | ArrayBuffer | DataBuffer): Uint8Array {
 
     if (buf instanceof ArrayBuffer) {
         return new Uint8Array(buf);
@@ -48,8 +50,19 @@ export function toUint8Array(buf: string | Uint8Array | ArrayBuffer): Uint8Array
     else if (typeof buf === 'string') {
         return stringToUint8Array(buf);
     }
+    else if (buf instanceof Uint8Array) {
+        return buf;
+    }
 
-    return buf;
+    // NOTE:  This is only for Node implementation, should really be dropped
+    // as its horrifying
+    const out = new Uint8Array(buf.byteLength);
+
+    for (let i = 0; i < buf.byteLength; ++i) {
+        out[i] = buf.getUInt8(i);
+    }
+
+    return out;
 }
 
 export function createNonCopyBuffer(buf: Uint8Array | ArrayBuffer, offset: number = 0, length?: number): Buffer {

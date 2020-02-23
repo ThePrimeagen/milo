@@ -9,6 +9,7 @@
         "strictNullChecks": true,
         "strictPropertyInitialization": true,
         "strict": true,
+        "target": "es5",
         "baseUrl": ".",
         "rootDirs": [
             "src/nrdp",

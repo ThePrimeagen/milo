@@ -1,4 +1,4 @@
-import Platform from '../#{target}/Platform';
+import {toUint8Array} from './utils';
 import {DataBuffer, encodingType, hashType, compressionMethod} from '../types';
 
 const tempAllocation = Buffer.alloc(1);
@@ -8,11 +8,10 @@ function toString(item: string | DataBuffer | ArrayBuffer | Uint8Array | number)
         return String(item);
     }
 
-    const uint8Array = Platform.atoutf8(item);
+    const uint8Array = toUint8Array(item);
     return uint8Array.toString();
 }
 
-// @ts-ignore
 export default class DB implements DataBuffer {
     private buffer: Buffer;
 
@@ -21,6 +20,17 @@ export default class DB implements DataBuffer {
     public bufferLength: number;
 
     public readonly refCount: number;
+
+    static toBuffer(buf: DB): Buffer {
+        return buf.buffer.slice(0);
+    }
+
+    static fromBuffer(buf: Buffer) {
+        const db = new DB(buf.byteLength);
+        db.buffer = buf;
+
+        return db;
+    }
 
     constructor(byteCountOrBuf: number | DataBuffer, offset?: number, length?: number) {
         // Node does not have this notion nor can we reproduce it easily.
@@ -200,7 +210,10 @@ export default class DB implements DataBuffer {
     getIntLE(offset: number, byteLength: 1 | 2 | 3 | 4 | 5 | 6): number { throw new Error("Not Implemented"); }
     getIntBE(offset: number, byteLength: 1 | 2 | 3 | 4 | 5 | 6): number { throw new Error("Not Implemented"); }
 
-    getUInt8(offset: number): number { throw new Error("Not Implemented"); }
+    getUInt8(offset: number): number {
+        return this.buffer[this.byteOffset + offset];
+    }
+
     getInt8(offset: number): number { throw new Error("Not Implemented"); }
 
     getUInt16BE(offset: number): number { throw new Error("Not Implemented"); }
@@ -224,8 +237,15 @@ export default class DB implements DataBuffer {
     getFloat64BE(offset: number): number { throw new Error("Not Implemented"); }
     getFloat64LE(offset: number): number { throw new Error("Not Implemented"); }
 
-    setUInt8(offset: number): number { throw new Error("Not Implemented"); }
-    setInt8(offset: number): number { throw new Error("Not Implemented"); }
+    setUInt8(offset: number, value: number): number {
+        this.buffer.writeUInt8(value, this.byteOffset + offset);
+        return offset;
+    }
+
+    setInt8(offset: number, value: number): number {
+        this.buffer.writeInt8(value, this.byteOffset + offset);
+        return offset;
+    }
 
     setUInt16BE(offset: number, val: number): number { throw new Error("Not Implemented"); }
     setUInt16LE(offset: number, val: number): number { throw new Error("Not Implemented"); }
