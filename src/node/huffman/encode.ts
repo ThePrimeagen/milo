@@ -29,7 +29,7 @@ export default function encode(buffer: string | Buffer, offset: number = 0, leng
             const bitIdx = ptr % 8;
             const bitsToEncode = Math.min(8 - bitIdx, bitsRemaining);
             const valueToEncode = ((bits >> (bitsRemaining - bitsToEncode)) &
-                (2 ** bitsToEncode - 1)) << ((8 - bitIdx) - bitsToEncode);
+                                   ((2 ** bitsToEncode) - 1)) << ((8 - bitIdx) - bitsToEncode);
 
             scratchBuffer[idx] |= valueToEncode;
 
@@ -45,7 +45,7 @@ export default function encode(buffer: string | Buffer, offset: number = 0, leng
     scratchBuffer.copy(outBuf, 0, 0, oLength);
 
     const remainingOutBits = 8 - bitLen % 8;
-    outBuf[oLength - 1] = outBuf[oLength - 1] | (2 ** remainingOutBits - 1);
+    outBuf[oLength - 1] = outBuf[oLength - 1] | ((2 ** remainingOutBits) - 1);
 
     scratchBuffer.slice(0, oLength).fill(0);
 
