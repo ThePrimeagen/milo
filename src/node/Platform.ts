@@ -20,7 +20,7 @@ import createTCPNetworkPipe from "./NodeTCPNetworkPipe";
 import sha1 from "sha1";
 import btoa from "btoa";
 import atob from "atob";
-import {DataBuffer} from "../types";
+import { DataBuffer } from "../types";
 import DB from "./DataBuffer";
 
 function toBuffer(buf: Uint8Array | ArrayBuffer | string) {
@@ -48,8 +48,8 @@ function normalizeLength(buf: string | Uint8Array | ArrayBuffer): number {
 
 class NodePlatform implements Platform {
     public location: string = "?";
-    public defaultRequestTimeouts = { };
-    public standardHeaders: HTTPRequestHeaders = { };
+    public defaultRequestTimeouts = {};
+    public standardHeaders: HTTPRequestHeaders = {};
     public scratch: DataBuffer;
 
     constructor() {
@@ -78,12 +78,12 @@ class NodePlatform implements Platform {
 
     // @ts-ignore
     bufferSet(dest: Uint8Array | ArrayBuffer, destOffset: number,
-        src: Uint8Array | ArrayBuffer | string, srcOffset?: number, srcLength?: number): void {
+              src: Uint8Array | ArrayBuffer | string, srcOffset?: number, srcLength?: number): void {
 
         const destBuf = toBuffer(dest);
         const srcBuf = toBuffer(src);
 
-        srcBuf.copy(dest, destOffset, srcOffset, srcLength);
+        srcBuf.copy(destBuf, destOffset, srcOffset, srcLength);
     }
 
     createSHA256Context(): SHA256Context {
@@ -104,7 +104,7 @@ class NodePlatform implements Platform {
 
         try {
             throw new Error();
-        } catch(e) {
+        } catch (e) {
             out = e.stack.toString();
         }
 
