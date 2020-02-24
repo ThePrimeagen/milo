@@ -14,6 +14,9 @@ export default function encode(buffer: string | Buffer, offset: number = 0, leng
     let ptr = 0;
     let bitLen = 0;
 
+    if (typeof length === "undefined")
+        length = buf.byteLength;
+
     //    console.log("for ....", buf.byteLength, buf);
     for (let i = 0; i < buf.byteLength; ++i) {
         const staticData: [number, number] = staticList[buf[i]];
