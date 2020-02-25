@@ -30,6 +30,7 @@ export default class WS {
     private pipe: NetworkPipe;
     private closeCBs: CloseCB[];
     private dataCBs: DataCB[];
+    public onmessage?: (buf: Uint8Array) => void;
 
     constructor(pipe: NetworkPipe, opts: WSOptions = defaultOptions) {
         this.frame = new WSFramer(pipe, opts.maxFrameSize);
@@ -67,6 +68,10 @@ export default class WS {
 
                 case Opcodes.BinaryFrame:
                 case Opcodes.TextFrame:
+                    if (this.onmessage) {
+                        this.onmessage(buffer);
+                    }
+
                     this.dataCBs.forEach(cb => cb(state, buffer));
                     break;
 
