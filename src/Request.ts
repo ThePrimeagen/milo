@@ -372,7 +372,7 @@ export class Request {
             }
             assert(cacheKey, "Gotta have cacheKey");
             this.requestResponse.cacheKey = cacheKey;
-            Platform.log("got cache key", cacheKey);
+            // Platform.log("got cache key", cacheKey);
 
             assert(this.requestResponse.networkStartTime, "Gotta have networkStartTime");
             const req = {
@@ -438,7 +438,6 @@ export class Request {
     }
 
     private _onHeaders(event: HTTPHeadersEvent): void {
-        Platform.log("balls", this.requestResponse, event, typeof this.requestData.onData, typeof this.requestData.onChunk);
         this.requestResponse.statusCode = event.statusCode;
         this.requestResponse.headers = event.headers;
         this.transferEncoding = event.transferEncoding;
@@ -449,7 +448,6 @@ export class Request {
         if (!(this.transferEncoding & HTTPTransferEncoding.Chunked))
             this.requestData.onChunk = undefined;
         if (!this.requestData.onData && !this.requestData.onChunk) {
-            Platform.log("shit contentLength", event.contentLength);
             if (typeof event.contentLength === "undefined") {
                 this.responseDataArray = [];
             } else if (event.contentLength && event.contentLength > 0) {
@@ -476,7 +474,7 @@ export class Request {
             assert(typeof this.responseDataOffset !== "undefined", "Must have responseDataOffset");
             this.responseData.set(this.responseDataOffset, data, offset, length);
             this.responseDataOffset += length;
-            Platform.log("GOT DATA", this.responseDataOffset, "of", this.responseData.byteLength);
+            // Platform.log("GOT DATA", this.responseDataOffset, "of", this.responseData.byteLength);
             if (this.responseDataOffset == this.responseData.byteLength) {
                 this._transition(RequestState.Finished);
             }

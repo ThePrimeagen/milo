@@ -1,4 +1,4 @@
-import { Request, RequestData } from "./Request";
+import { Request, RequestData, RequestResponse } from "./Request";
 import Platform from "./#{target}/Platform";
 import { NetworkPipe } from "./types";
 import { headerValue } from "./utils";
@@ -107,11 +107,6 @@ export function ws(url: string, milo: boolean): Promise<WS> {
 let fuck = 0;
 export function wsTest(url: string, milo: boolean, dataFetchCount: number = 1024, big: boolean = false, nth: number = 1000) {
     ws(url, milo).then(ws => {
-        let intervalId = setInterval(() => {
-            if (++fuck % 10 == 0) {
-                Platform.log("fuck!", fuck);
-            }
-        }, 10);
         let dataCount = 0;
         let then = Date.now();
         let bytesReceived = 0;
@@ -127,7 +122,6 @@ export function wsTest(url: string, milo: boolean, dataFetchCount: number = 1024
                 Platform.log("Total Bytes Received:", bytesReceived);
                 Platform.log("Time Spent:", now - then);
                 Platform.log("Mbps:", (bytesReceived / (now - then)) * 1000);
-                clearInterval(intervalId);
                 return;
             } else if (dataCount < dataFetchCount) {
                 if (dataCount % nth == 0) {
@@ -143,4 +137,46 @@ export function wsTest(url: string, milo: boolean, dataFetchCount: number = 1024
 
         ws.send(big ? "sendBig" : "send");
     });
+}
+
+export function loadTest(url: string, milo: boolean, dataFetchCount: number = 1024, nth: number = 0) {
+    let then = Date.now();
+    let idx = 0;
+    let bytes = 0;
+    if (!nth)
+        nth = Math.ceil(dataFetchCount / 100);
+    function load() {
+        function onData(result: RequestResponse) {
+            if (!idx)
+                Platform.log(result);
+            if (!result)
+                throw new Error("BAD!");
+
+            if (result.statusCode != 200) {
+                throw new Error("Couldn't load " + JSON.stringify(result));
+            }
+
+            ++idx;
+            bytes += result.size || 0;
+            if (idx % nth == 0) {
+                Platform.log(`${idx}/${dataFetchCount}`);
+            }
+            if (idx === dataFetchCount) {
+                const now = Date.now();
+                Platform.log("Total Bytes Received:", bytes);
+                Platform.log("Time Spent:", now - then);
+                Platform.log("Mbps:", (bytes / (now - then)) * 1000);
+            } else {
+                load();
+            }
+        }
+
+        if (milo) {
+            _load({ url: url }, onData);
+        } else {
+            // @ts-ignore
+            nrdp.gibbon.load({ url: url, cache: "no-cache" }, onData);
+        }
+    }
+    load();
 }
