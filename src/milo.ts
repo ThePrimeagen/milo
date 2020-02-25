@@ -147,8 +147,8 @@ export function loadTest(url: string, milo: boolean, dataFetchCount: number = 10
         nth = Math.ceil(dataFetchCount / 100);
     function load() {
         function onData(result: RequestResponse) {
-            if (!idx)
-                Platform.log(result);
+            // if (!idx)
+            //     Platform.log(result);
             if (!result)
                 throw new Error("BAD!");
 
@@ -175,7 +175,7 @@ export function loadTest(url: string, milo: boolean, dataFetchCount: number = 10
             _load({ url: url }, onData);
         } else {
             // @ts-ignore
-            nrdp.gibbon.load({ url: url, cache: "no-cache" }, onData);
+            nrdp.gibbon.load({ url: url, cache: "no-cache", freshConnect: true }, onData);
         }
     }
     load();
