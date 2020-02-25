@@ -2,8 +2,14 @@ import { Request, RequestData } from "./Request";
 import Platform from "./#{target}/Platform";
 import { NetworkPipe } from "./types";
 import { headerValue } from "./utils";
+import WS, {WSState} from './ws';
 
 const requests = new Map();
+
+export {
+    WS,
+    WSState,
+};
 
 export function _load(data: RequestData, callback: Function): number {
     const req = new Request(data);
