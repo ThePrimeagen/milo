@@ -12,14 +12,69 @@ export enum ErrorCode {
 };
 
 export interface DataBuffer {
+    // properties
+    bufferLength: number;
     byteLength: number;
     byteOffset: number;
-    bufferLength: number;
     readonly refCount: number;
 
-    detach(): DataBuffer;
+    // methods
     clear(): void;
+    compare(other: string | ArrayBuffer | DataBuffer | Uint8Array | number | number[],
+            otherByteOffset?: number,
+            otherByteLength?: number,
+            selfByteOffset?: number,
+            selfByteLength?: number): -1 | 0 | 1;
+    compress(method: compressionMethod, offset?: number, length?: number): DataBuffer;
+    decode(enc: encodingType, offset?: number, length?: number): DataBuffer;
+    detach(): DataBuffer;
+    encode(enc: encodingType, offset?: number, length?: number): DataBuffer;
+    equals(other: string | ArrayBuffer | DataBuffer | Uint8Array | number | number[]): boolean;
+    every(func: (val: number, i: number, buffer: DataBuffer) => boolean, thisValue?: any): boolean;
+    fill(data: string | ArrayBuffer | DataBuffer | number | Uint8Array,
+         offset?: number, length?: number): void;
+    filter(func: (val: number, i: number, buffer: DataBuffer) => boolean, thisValue?: any): DataBuffer;
+    find(func: (val: number, i: number, buffer: DataBuffer) => boolean, thisValue?: any): number | undefined;
+    findIndex(func: (val: number, i: number, buffer: DataBuffer) => boolean, thisValue?: any): number | undefined;
+    forEach(func: (val: number, i: number, buffer: DataBuffer) => void, thisValue?: any): void;
 
+    get(offset: number): number;
+    getFloat32BE(offset: number): number;
+    getFloat32LE(offset: number): number;
+    getFloat64BE(offset: number): number;
+    getFloat64LE(offset: number): number;
+    getInt16BE(offset: number): number;
+    getInt16LE(offset: number): number;
+    getInt32BE(offset: number): number;
+    getInt32LE(offset: number): number;
+    getInt64BE(offset: number): number;
+    getInt64LE(offset: number): number;
+    getInt8(offset: number): number;
+    getIntBE(offset: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number;
+    getIntLE(offset: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number;
+    getUInt16BE(offset: number): number;
+    getUInt16LE(offset: number): number;
+    getUInt32BE(offset: number): number;
+    getUInt32LE(offset: number): number;
+    getUInt64BE(offset: number): number;
+    getUInt64LE(offset: number): number;
+    getUInt8(offset: number): number;
+    getUIntBE(offset: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number;
+    getUIntLE(offset: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number;
+
+    hash(hash: hashType, offset?: number, length?: number): DataBuffer;
+    hashToString(hash: hashType, offset?: number, length?: number): string;
+
+    includes(needle: string | ArrayBuffer | DataBuffer | number | Uint8Array | number[],
+             offset?: number, length?: number, caseInsensitive?: boolean): boolean;
+
+    indexOf(needle: string | ArrayBuffer | DataBuffer | number | Uint8Array | number[],
+            offset?: number, length?: number, caseInsensitive?: boolean): number;
+
+    isEmpty(): boolean;
+    join(separator?: string): string;
+    lastIndexOf(needle: string | ArrayBuffer | DataBuffer | number | Uint8Array | number[],
+                offset?: number, length?: number, caseInsensitive?: boolean): number;
     /**
      * Takes the left most bytes, equivalent to subarray(0, length).
      *
@@ -27,13 +82,7 @@ export interface DataBuffer {
      */
     left(length: number): DataBuffer;
 
-    /**
-     * Takes the right most bytes, equivalent to subarray(this.byteLength -
-     * length, this.byteLength).
-     *
-     * Shallow Copy
-     */
-    right(length: number): DataBuffer;
+    map(func: (val: number, i: number, buffer: DataBuffer) => number, thisValue?: any): DataBuffer;
 
     /**
      * Subarray with length instead of endIdx
@@ -47,112 +96,72 @@ export interface DataBuffer {
      */
     mid(offset?: number, length?: number): DataBuffer;
 
+    randomize(offset?: number, length?: number): void;
+    reduce(func: (previousValue: any, val: number, i: number, buffer: DataBuffer) => any, previousValue?: any): any;
+    reduceRight(func: (previousValue: any, val: number, i: number, buffer: DataBuffer) => any, previousValue?: any): any;
+
+    reverse(): void;
+
+    /**
+     * Takes the right most bytes, equivalent to subarray(this.byteLength -
+     * length, this.byteLength).
+     *
+     * Shallow Copy
+     */
+    right(length: number): DataBuffer;
+
+    set(offset: number, src: string | ArrayBuffer | DataBuffer | number | Uint8Array | number[],
+        srcOffset?: number, srcLength?: number): void;
+    setFloat32BE(offset: number, val: number): number;
+    setFloat32LE(offset: number, val: number): number;
+    setFloat64BE(offset: number, val: number): number;
+    setFloat64LE(offset: number, val: number): number;
+    setInt16BE(offset: number, val: number): number;
+    setInt16LE(offset: number, val: number): number;
+    setInt32BE(offset: number, val: number): number;
+    setInt32LE(offset: number, val: number): number;
+    setInt64BE(offset: number, val: number): number;
+    setInt64LE(offset: number, val: number): number;
+    setInt8(offset: number, val: number): number;
+    setIntBE(offset: number, value: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number;
+    setIntLE(offset: number, value: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number;
+    setUInt16BE(offset: number, val: number): number;
+    setUInt16LE(offset: number, val: number): number;
+    setUInt32BE(offset: number, val: number): number;
+    setUInt32LE(offset: number, val: number): number;
+    setUInt64BE(offset: number, val: number): number;
+    setUInt64LE(offset: number, val: number): number;
+    setUInt8(offset: number, val: number): number;
+    setUIntBE(offset: number, value: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number;
+    setUIntLE(offset: number, value: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number;
+
+    setView(byteOffset: number, byteLength: number): void;
+
     /**
      * Deep Copy
      */
     slice(offset?: number, length?: number): DataBuffer;
 
-    indexOf(needle: string | ArrayBuffer | DataBuffer | number | Uint8Array,
-            offset?: number, length?: number, caseInsensitive?: boolean): number;
-
-    lastIndexOf(needle: string | ArrayBuffer | DataBuffer | number | Uint8Array,
-                offset?: number, length?: number, caseInsensitive?: boolean): number;
-    includes(needle: string | ArrayBuffer | DataBuffer | number | Uint8Array,
-             offset?: number, length?: number, caseInsensitive?: boolean): boolean;
-    equals(other: string | ArrayBuffer | DataBuffer | Uint8Array): boolean;
-    fill(data: string | ArrayBuffer | DataBuffer | number | Uint8Array,
-         offset?: number, length?: number): void;
-    toString(offset?: number, length?: number, enc?: encodingType): string;
-    encode(enc: encodingType, offset?: number, length?: number): DataBuffer;
-    decode(enc: encodingType, offset?: number, length?: number): DataBuffer;
-    hash(hash: hashType, offset?: number, length?: number): DataBuffer;
-    hashToString(hash: hashType, offset?: number, length?: number): string;
-    compress(method: compressionMethod, offset?: number, length?: number): DataBuffer;
-    uncompress(method: compressionMethod, offset?: number, length?: number): string;
-    random(offset?: number, length?: number): void;
-
-    toArrayBuffer(offset?: number, length?: number): ArrayBuffer;
-    toArray(offset?: number, length?: number): [number];
-    reverse(): void;
-
     sort(func?: (l: number, r: number) => number): void;
-    every(func: (val: number, i: number, buffer: DataBuffer) => boolean, thisValue?: any): boolean;
-    filter(func: (val: number, i: number, buffer: DataBuffer) => boolean, thisValue?: any): DataBuffer;
-    forEach(func: (val: number, i: number, buffer: DataBuffer) => void, thisValue?: any): void;
-    join(separator?: string): string;
-    map(func: (val: number, i: number, buffer: DataBuffer) => number, thisValue?: any): DataBuffer;
-    reduce(func: (previousValue: any, val: number, i: number, buffer: DataBuffer) => any, previousValue?: any): any;
-    reduceRight(func: (previousValue: any, val: number, i: number, buffer: DataBuffer) => any, previousValue?: any): any;
 
-    find(func: (val: number, i: number, buffer: DataBuffer) => boolean, thisValue?: any): number | undefined;
-    findIndex(func: (val: number, i: number, buffer: DataBuffer) => boolean, thisValue?: any): number | undefined;
+    toArray(offset?: number, length?: number): [number];
+    toArrayBuffer(offset?: number, length?: number): ArrayBuffer;
 
-    get(offset: number): number;
-    set(offset: number, src: string | ArrayBuffer | DataBuffer | number | Uint8Array, srcOffset?: number, srcLength?: number): void;
-
-    getUIntLE(offset: number, byteLength: 1 | 2 | 3 | 4 | 5 | 6): number;
-    getUIntBE(offset: number, byteLength: 1 | 2 | 3 | 4 | 5 | 6): number;
-    getIntLE(offset: number, byteLength: 1 | 2 | 3 | 4 | 5 | 6): number;
-    getIntBE(offset: number, byteLength: 1 | 2 | 3 | 4 | 5 | 6): number;
-
-    getUInt8(offset: number): number;
-    getInt8(offset: number): number;
-
-    getUInt16BE(offset: number): number;
-    getUInt16LE(offset: number): number;
-    getInt16BE(offset: number): number;
-    getInt16LE(offset: number): number;
-
-    getUInt32BE(offset: number): number;
-    getUInt32LE(offset: number): number;
-    getInt32BE(offset: number): number;
-    getInt32LE(offset: number): number;
-
-    getUInt64BE(offset: number): number;
-    getUInt64LE(offset: number): number;
-    getInt64BE(offset: number): number;
-    getInt64LE(offset: number): number;
-
-    getFloat32BE(offset: number): number;
-    getFloat32LE(offset: number): number;
-
-    getFloat64BE(offset: number): number;
-    getFloat64LE(offset: number): number;
-
-    setUInt8(offset: number, val: number): number;
-    setInt8(offset: number, val: number): number;
-
-    setUInt16BE(offset: number, val: number): number;
-    setUInt16LE(offset: number, val: number): number;
-    setInt16BE(offset: number, val: number): number;
-    setInt16LE(offset: number, val: number): number;
-
-    setUInt32BE(offset: number, val: number): number;
-    setUInt32LE(offset: number, val: number): number;
-    setInt32BE(offset: number, val: number): number;
-    setInt32LE(offset: number, val: number): number;
-
-    setUInt64BE(offset: number, val: number): number;
-    setUInt64LE(offset: number, val: number): number;
-    setInt64BE(offset: number, val: number): number;
-    setInt64LE(offset: number, val: number): number;
-
-    setFloat32BE(offset: number, val: number): number;
-    setFloat32LE(offset: number, val: number): number;
-
-    setFloat64BE(offset: number, val: number): number;
-    setFloat64LE(offset: number, val: number): number;
-
-    // static concat(...args: ArrayBuffer[] | Uint8Array[] | DataBuffer[]): DataBuffer;
+    toString(offset?: number, length?: number, enc?: encodingType): string;
+    uncompress(method: compressionMethod, offset?: number, length?: number): string;
 }
 
-type ConcatTypes = ArrayBuffer | Uint8Array | DataBuffer | string;
+type ConcatTypes = ArrayBuffer | Uint8Array | DataBuffer | string | number[] | number;
 type DataBufferConstructor = {
     new(bytes: number): DataBuffer;
     new(): DataBuffer;
     new(data: string, encoding?: string): DataBuffer;
     new(data: ArrayBuffer | DataBuffer | Uint8Array, offset?: number, length?: number): DataBuffer;
+    compare(lhs: string | ArrayBuffer | DataBuffer | Uint8Array | number | number[],
+            rhs: string | ArrayBuffer | DataBuffer | Uint8Array | number | number[]): -1 | 0 | 1;
     concat(...args: ConcatTypes[]): DataBuffer
+    of(...args: ConcatTypes[]): DataBuffer;
+    random(size: number): DataBuffer;
 };
 
 declare global {
