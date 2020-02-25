@@ -1,6 +1,6 @@
 {
     "extends": "./tsconfig.json",
-    "exclude": ["**/__tests__/**"],
+    "exclude": ["**/__tests__/**", "examples"],
     "compilerOptions": {
         "outDir": "./build/nrdp",
         "lib": ["es6"],

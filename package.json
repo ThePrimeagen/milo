@@ -16,7 +16,7 @@
   "main": "build/node/src/milo.js",
   "scripts": {
     "build": "tsc -p tsconfig.nrdp.json && rollup -c rollup.nrdp.js",
-    "build:node": "tsc -p tsconfig.node.json",
+    "build:node": "tsc -p tsconfig.node.json && rollup -c rollup.node.js",
     "build:all": "npm run build && npm run build:node",
     "nrdp": "npm run build",
     "node": "npm run build:node",

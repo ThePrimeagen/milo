@@ -4,17 +4,19 @@ import commonjs from '@rollup/plugin-commonjs';
 import target from './rollup-target-plugin';
 
 export default {
-    input: 'build/nrdp/milo.js',
+    input: 'build/node/milo.js',
     output: {
-        dir: 'dist/',
-        format: 'iife',
-        name: "milo",
+        file: 'dist/milo.node.js',
+        format: 'cjs',
         exports: "named"
     }, plugins: [
         target({
-            target: 'nrdp'
+            target: 'node'
         }),
-        resolve(),
+        resolve({
+            preferBuiltins: true
+        }),
         commonjs()
-    ]
+    ],
+    external: [ 'fs', 'net', 'dns' ] 
 };
