@@ -163,7 +163,7 @@ export default class DB implements DataBuffer {
         return this.buffer.toString() === toString(other);
     }
 
-    toString(offset?: number, length?: number, enc?: encodingType): string {
+    toString(enc?: encodingType, offset?: number, length?: number): string {
         const o = offset || 0;
         const l = this.byteLength - o;
 

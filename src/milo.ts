@@ -2,7 +2,7 @@ import { Request, RequestData } from "./Request";
 import Platform from "./#{target}/Platform";
 import { NetworkPipe } from "./types";
 import { headerValue } from "./utils";
-import WS, {WSState} from './ws';
+import WS, { WSState } from './ws';
 
 const requests = new Map();
 
@@ -35,7 +35,7 @@ export function _wsUpgrade(data: RequestData): Promise<NetworkPipe> {
 
         const arrayBufferKey = new DataBuffer(16);
         arrayBufferKey.randomize();
-        const key = arrayBufferKey.toString(0, undefined, "base64");
+        const key = arrayBufferKey.toString("base64");
         Platform.trace("key is", key, arrayBufferKey);
         data.headers["Upgrade"] = "websocket";
         data.headers["Connection"] = "Upgrade";
@@ -65,31 +65,82 @@ export function _wsUpgrade(data: RequestData): Promise<NetworkPipe> {
     });
 }
 
-/*
-  export let ws: WS;
-  export function createWS(url: string): Promise<WS>
-  {
-  return _wsUpgrade({url: url}).then((networkPipe: NetworkPipe) => {
-  // @ts-ignore
-  Platform.trace("foo", WS);
-  Platform.trace(Object.keys(WS));
-  Platform.trace(typeof WS);
-  Platform.trace("ws", WS.ws);
-  ws = new WS(networkPipe);
-  Platform.trace("got thing here", ws);
-  return ws;
-  });
-  }
+let idx = 0;
+export function ws(url: string, milo: boolean): Promise<WS> {
+    if (milo) {
+        // @ts-ignore
+        return _wsUpgrade({ url }).then((pipe: NetworkPipe) => {
+            const id = ++idx;
+            const ws = new WS(pipe);
+            const ret = {
+                send: ws.send.bind(ws),
+                onmessage: (event: any) => { }
+            };
+            ws.onmessage = (buffer: Uint8Array) => {
+                if (ret.onmessage) {
+                    ret.onmessage({
+                        type: "message",
+                        websocket: id,
+                        opcode: 2,
+                        statusCode: 1000,
+                        buffer: buffer,
+                        binary: true
+                    });
+                };
+            };
+            return ret;
+        });
+    } else {
+        return new Promise((resolve, reject) => {
+            // @ts-ignore
+            let ws = new nrdp.WebSocket(url);
+            ws.onopen = () => {
+                resolve(ws);
+            };
+            ws.onerror = (err: any) => {
+                reject(err);
+            };
+        });
+    }
+}
 
-  export function _ssl(): void
-  {
-  Platform.createTCPNetworkPipe({ host: "www.google.com", port: 443 }).then((pipe: NetworkPipe) => {
-  Platform.trace("got pipe");
-  return Platform.createSSLNetworkPipe({ pipe: pipe });
-  }).then((sslPipe: NetworkPipe) => {
-  Platform.trace("Got ssl pipe");
-  }).catch((err: Error) => {
-  Platform.trace("got error", err);
-  });
-  }
-*/
+let fuck = 0;
+export function wsTest(url: string, milo: boolean, dataFetchCount: number = 1024, big: boolean = false, nth: number = 1000) {
+    ws(url, milo).then(ws => {
+        let intervalId = setInterval(() => {
+            if (++fuck % 10 == 0) {
+                Platform.log("fuck!", fuck);
+            }
+        }, 10);
+        let dataCount = 0;
+        let then = Date.now();
+        let bytesReceived = 0;
+
+        ws.onmessage = (event: any) => {
+            const bytesRead = event.buffer.byteLength;
+
+            bytesReceived += bytesRead;
+
+            // Platform.log(`${dataCount}/${dataFetchCount} ${bytesReceived}`);
+            if (++dataCount === dataFetchCount) {
+                const now = Date.now();
+                Platform.log("Total Bytes Received:", bytesReceived);
+                Platform.log("Time Spent:", now - then);
+                Platform.log("Mbps:", (bytesReceived / (now - then)) * 1000);
+                clearInterval(intervalId);
+                return;
+            } else if (dataCount < dataFetchCount) {
+                if (dataCount % nth == 0) {
+                    Platform.log(`${dataCount}/${dataFetchCount}`);
+                }
+                ws.send(big ? "sendBig" : "send");
+            }
+        };
+
+        // ws.onclose = () => {
+        //     Platform.log("close");
+        // }
+
+        ws.send(big ? "sendBig" : "send");
+    });
+}

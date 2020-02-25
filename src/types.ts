@@ -147,7 +147,7 @@ export interface DataBuffer {
     toArray(offset?: number, length?: number): [number];
     toArrayBuffer(offset?: number, length?: number): ArrayBuffer;
 
-    toString(offset?: number, length?: number, enc?: encodingType): string;
+    toString(enc?: encodingType, offset?: number, length?: number): string;
     uncompress(method: compressionMethod, offset?: number, length?: number): string;
 }
 
