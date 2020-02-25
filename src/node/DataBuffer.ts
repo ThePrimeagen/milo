@@ -1,5 +1,5 @@
-import {toUint8Array} from './utils';
-import {DataBuffer, encodingType, hashType, compressionMethod} from '../types';
+import { toUint8Array } from './utils';
+import { DataBuffer, encodingType, hashType, compressionMethod } from '../types';
 
 const tempAllocation = Buffer.alloc(1);
 
@@ -95,7 +95,7 @@ export default class DB implements DataBuffer {
     clear(): void { }
 
     fill(data: string | ArrayBuffer | DataBuffer | number | Uint8Array,
-        o?: number, l?: number) {
+         o?: number, l?: number) {
 
         const [offset, length] = this.getOffsetAndLength(o, l);
         throw new Error("Not Implemented");
@@ -116,7 +116,7 @@ export default class DB implements DataBuffer {
      * the case insensitive search
      */
     indexOf(needle: string | ArrayBuffer | DataBuffer | number | Uint8Array,
-        offset?: number, length?: number, caseInsensitive?: boolean): number {
+            offset?: number, length?: number, caseInsensitive?: boolean): number {
 
         let thisStr = this.buffer.
             slice(offset, length).toString();
@@ -131,7 +131,7 @@ export default class DB implements DataBuffer {
     }
 
     lastIndexOf(needle: string | ArrayBuffer | DataBuffer | number | Uint8Array,
-        offset?: number, length?: number, caseInsensitive?: boolean): number {
+                offset?: number, length?: number, caseInsensitive?: boolean): number {
 
         let thisStr = this.buffer.
             slice(offset, length).toString();
@@ -146,7 +146,7 @@ export default class DB implements DataBuffer {
     }
 
     includes(needle: string | ArrayBuffer | DataBuffer | number | Uint8Array,
-        offset?: number, length?: number, caseInsensitive?: boolean): boolean {
+             offset?: number, length?: number, caseInsensitive?: boolean): boolean {
         let thisStr = this.buffer.
             slice(offset, length).toString();
         let needleStr = toString(needle);
@@ -184,11 +184,11 @@ export default class DB implements DataBuffer {
     hashToString(hash: hashType, offset?: number, length?: number): string { throw new Error("Not Implemented"); }
     compress(method: compressionMethod, offset?: number, length?: number): DataBuffer { throw new Error("Not Implemented"); }
     uncompress(method: compressionMethod, offset?: number, length?: number): string { throw new Error("Not Implemented"); }
-    random(offset?: number, length?: number): void { throw new Error("Not Implemented"); }
+    randomize(offset?: number, length?: number): void { throw new Error("Not Implemented"); }
 
     toArrayBuffer(offset?: number, length?: number): ArrayBuffer { throw new Error("Not Implemented"); }
     toArray(offset?: number, length?: number): [number] { throw new Error("Not Implemented"); }
-    reverse(): void { throw new Error("Not Implemented"); }
+    reverse(offset?: number, length?: number): void { throw new Error("Not Implemented"); }
 
     sort(func?: (l: number, r: number) => number): void { throw new Error("Not Implemented"); }
     every(func: (val: number, i: number, buffer: DataBuffer) => boolean, thisValue?: any): boolean { throw new Error("Not Implemented"); }
@@ -267,6 +267,22 @@ export default class DB implements DataBuffer {
 
     setFloat64BE(offset: number, val: number): number { throw new Error("Not Implemented"); }
     setFloat64LE(offset: number, val: number): number { throw new Error("Not Implemented"); }
+
+    compare(other: string | ArrayBuffer | DataBuffer | Uint8Array | number | number[],
+            otherByteOffset?: number,
+            otherByteLength?: number,
+            selfByteOffset?: number,
+            selfByteLength?: number): -1 | 0 | 1 { throw new Error("Not Implemented"); }
+
+    isEmpty(): boolean { throw new Error("Not Implemented"); }
+
+    setIntBE(offset: number, value: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number { throw new Error("Not Implemented"); }
+    setIntLE(offset: number, value: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number { throw new Error("Not Implemented"); }
+
+    setUIntBE(offset: number, value: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number { throw new Error("Not Implemented"); }
+    setUIntLE(offset: number, value: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number { throw new Error("Not Implemented"); }
+
+    setView(byteOffset: number, byteLength: number): void { throw new Error("Not Implemented"); }
 
     // static concat(...args: ArrayBuffer[] | Uint8Array[] | DataBuffer[]): DataBuffer;
 }

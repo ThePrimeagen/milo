@@ -34,7 +34,7 @@ export function _wsUpgrade(data: RequestData): Promise<NetworkPipe> {
         }
 
         const arrayBufferKey = new DataBuffer(16);
-        arrayBufferKey.random();
+        arrayBufferKey.randomize();
         const key = arrayBufferKey.toString(0, undefined, "base64");
         Platform.trace("key is", key, arrayBufferKey);
         data.headers["Upgrade"] = "websocket";

@@ -100,7 +100,7 @@ export interface DataBuffer {
     reduce(func: (previousValue: any, val: number, i: number, buffer: DataBuffer) => any, previousValue?: any): any;
     reduceRight(func: (previousValue: any, val: number, i: number, buffer: DataBuffer) => any, previousValue?: any): any;
 
-    reverse(): void;
+    reverse(offset?: number, length?: number): void;
 
     /**
      * Takes the right most bytes, equivalent to subarray(this.byteLength -
