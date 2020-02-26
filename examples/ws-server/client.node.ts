@@ -25,7 +25,6 @@ async function run() {
     const ws = new WS(networkPipe);
 
     ws.onmessage = (buffer: Uint8Array) => {
-        console.log("LOOK AT THIS");
         const bytesRead = buffer.byteLength;
 
         bytesReceived += bytesRead;
