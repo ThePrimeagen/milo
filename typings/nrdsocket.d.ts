@@ -59,6 +59,8 @@ declare namespace nrdsocket {
         set(index: number, value: number): void;
         get(index: number): void;
 
+        null: boolean;
+
         clear(): void;
     }
 
