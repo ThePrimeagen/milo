@@ -47,7 +47,7 @@ export function _wsUpgrade(data: RequestData): Promise<NetworkPipe> {
         data.headers["Connection"] = "Upgrade";
         data.headers["Sec-WebSocket-Key"] = key;
         data.headers["Sec-WebSocket-Version"] = "13";
-        const req = new Request(data, false);
+        const req = new Request(data);
         req.send().then(response => {
             Platform.trace("Got response", response);
             if (response.statusCode !== 101)

@@ -1,4 +1,4 @@
-import { toUint8Array } from './utils';
+import { toUint8Array, bufferToArrayBufferCopy } from './utils';
 import { DataBuffer, encodingType, hashType, compressionMethod } from '../types';
 
 const tempAllocation = Buffer.alloc(1);
@@ -171,13 +171,13 @@ export default class DB implements DataBuffer {
         return this.buffer.toString() === toString(other);
     }
 
-    toString(enc?: encodingType, offset?: number, length?: number): string {
-        const o = offset || 0;
-        const l = this.byteLength - o;
+    toString(enc?: encodingType, o?: number, l?: number): string {
+        const [
+            offset,
+            length,
+        ] = this.getOffsetAndLength(o, l);
 
-        return this.
-            buffer.
-            toString(enc || "utf8", o, l);
+        return this.buffer.toString(enc || "utf8", offset, length);
     }
 
     encode(enc: encodingType, offset?: number, length?: number): DataBuffer {
@@ -192,20 +192,27 @@ export default class DB implements DataBuffer {
     hashToString(hash: hashType, offset?: number, length?: number): string { throw new Error("Not Implemented"); }
     compress(method: compressionMethod, offset?: number, length?: number): DataBuffer { throw new Error("Not Implemented"); }
     uncompress(method: compressionMethod, offset?: number, length?: number): string { throw new Error("Not Implemented"); }
-    randomize(offset?: number, length?: number): void {
-        offset = offset || 0;
-        length = length === undefined ? this.byteLength - offset : length;
 
+    randomize(o?: number, l?: number): void {
+        const [
+            offset,
+            length,
+        ] = this.getOffsetAndLength(o, l);
+
+        const offStart = this.byteOffset + offset;
         for (let i = 0; i < length; ++i) {
-            this.buffer[this.byteOffset + offset + i] = ~~(Math.random() * 256);
+            this.buffer[offStart + i] = (Math.random() * 256) | 0;
         }
     }
 
     // TODO: Clea,n up this length biz
-    toArrayBuffer(offset?: number, length?: number): ArrayBuffer {
-        offset = offset || 0;
-        length = length === undefined ? this.byteLength - offset : length;
-        return this.buffer.slice(this.byteOffset + offset, this.byteOffset + offset + length).buffer;
+    toArrayBuffer(o?: number, l?: number): ArrayBuffer {
+        const [
+            offset,
+            length,
+        ] = this.getOffsetAndLength(o, l);
+        const buf = this.buffer.slice(offset, offset + length);
+        return bufferToArrayBufferCopy(buf, 0, buf.byteLength);
     }
     toArray(offset?: number, length?: number): [number] { throw new Error("Not Implemented"); }
     reverse(offset?: number, length?: number): void { throw new Error("Not Implemented"); }

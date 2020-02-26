@@ -127,7 +127,6 @@ export class Request {
     id: number;
     networkPipe?: NetworkPipe;
 
-    private calculateCacheKey: boolean;
     private resolve?: Function;
     private reject?: Function;
     private requestResponse: RequestResponse;
@@ -138,12 +137,11 @@ export class Request {
     private transferEncoding: HTTPTransferEncoding;
     private http: HTTP;
 
-    constructor(data: RequestData | string, calculateCacheKey = true) {
+    constructor(data: RequestData | string) {
         this.transferEncoding = 0;
         this.responseDataLength = 0;
         this.id = ++nextId;
         this.requestResponse = new RequestResponse(this.id);
-        this.calculateCacheKey = calculateCacheKey;
 
         this.http = new HTTP1;
         this.http.onheaders = this._onHeaders.bind(this);
@@ -341,10 +339,6 @@ export class Request {
                         }
                     }
                 }
-            }
-
-            if (!this.calculateCacheKey) {
-                cacheKey = new ArrayBuffer(16);
             }
 
             assert(this.requestData.method, "Gotta have method");
