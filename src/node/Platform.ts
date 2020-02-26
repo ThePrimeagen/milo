@@ -1,5 +1,4 @@
 import fs from "fs";
-
 import dns from "dns";
 
 import { toUint8Array } from './utils';
@@ -22,6 +21,7 @@ import btoa from "btoa";
 import atob from "atob";
 import { DataBuffer } from "../types";
 import DB from "./DataBuffer";
+import {SHA256Context as SC} from "./SHA256Context";
 
 function toBuffer(buf: Uint8Array | ArrayBuffer | string) {
     // @ts-ignore
@@ -87,7 +87,7 @@ class NodePlatform implements Platform {
     }
 
     createSHA256Context(): SHA256Context {
-        throw new Error("Do I have to do this?");
+        return new SC() as SHA256Context;
     }
 
     writeFile(fileName: string, contents: Uint8Array | ArrayBuffer | string): boolean {
