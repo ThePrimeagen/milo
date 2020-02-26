@@ -1,3 +1,4 @@
+import DB from './DataBuffer';
 import {DataBuffer} from '../types';
 
 export function bufferToUint8Array(buf: Buffer) {
@@ -65,9 +66,12 @@ export function toUint8Array(buf: string | Uint8Array | ArrayBuffer | DataBuffer
     return out;
 }
 
-export function createNonCopyBuffer(buf: Uint8Array | ArrayBuffer, offset: number = 0, length?: number): Buffer {
-    return Buffer.
-        // @ts-ignore
-        from(buf.buffer ? buf.buffer : buf).slice(offset, offset + length);
+export function createNonCopyBuffer(buf: ArrayBuffer | DataBuffer, offset: number, length: number): Buffer {
+    if (buf instanceof ArrayBuffer) {
+        return Buffer.from(buf).slice(offset, offset + length);
+    }
+
+    const adjOffset = buf.byteOffset + offset;
+    return (buf as DB).buffer.slice(adjOffset, adjOffset + length);
 };
 

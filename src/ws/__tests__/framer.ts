@@ -253,7 +253,6 @@ describe("WS", function() {
         const ws = new WSFramer(pipe);
 
         ws.onFrame((contents) => {
-            debugger;
             expect(JSON.parse(Platform.utf8toa(contents))).toEqual(countObj);
             done();
         });

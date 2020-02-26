@@ -1,10 +1,12 @@
 import Url from "url-parse";
 import { HTTP1 } from "./HTTP1/HTTP1";
 import Platform from "./#{target}/Platform";
+import DataBuffer from "./#{target}/DataBuffer";
+
 import {
     CreateTCPNetworkPipeOptions, DnsResult, IpConnectivityMode,
     NetworkPipe, RequestTimeouts, HTTP, HTTPMethod, HTTPHeadersEvent,
-    HTTPTransferEncoding, ErrorCode, DataBuffer
+    HTTPTransferEncoding, ErrorCode, DataBuffer as IDataBuffer
 } from "./types";
 import { assert, escapeData } from "./utils";
 
@@ -91,7 +93,7 @@ export class RequestResponse {
     dns?: string;
     dnsChannel?: string;
     socket?: number;
-    data?: string | ArrayBuffer | Uint8Array | DataBuffer;
+    data?: string | ArrayBuffer | Uint8Array | IDataBuffer;
     size?: number;
     urls?: string[];
     headers: string[];
@@ -125,21 +127,23 @@ export class Request {
     id: number;
     networkPipe?: NetworkPipe;
 
+    private calculateCacheKey: boolean;
     private resolve?: Function;
     private reject?: Function;
     private requestResponse: RequestResponse;
-    private responseData?: DataBuffer;
+    private responseData?: IDataBuffer;
     private responseDataOffset?: number;
-    private responseDataArray?: DataBuffer[];
+    private responseDataArray?: IDataBuffer[];
     private responseDataLength: number;
     private transferEncoding: HTTPTransferEncoding;
     private http: HTTP;
 
-    constructor(data: RequestData | string) {
+    constructor(data: RequestData | string, calculateCacheKey = true) {
         this.transferEncoding = 0;
         this.responseDataLength = 0;
         this.id = ++nextId;
         this.requestResponse = new RequestResponse(this.id);
+        this.calculateCacheKey = calculateCacheKey;
 
         this.http = new HTTP1;
         this.http.onheaders = this._onHeaders.bind(this);
@@ -338,6 +342,11 @@ export class Request {
                     }
                 }
             }
+
+            if (!this.calculateCacheKey) {
+                cacheKey = new ArrayBuffer(16);
+            }
+
             assert(this.requestData.method, "Gotta have method");
             if (!cacheKey) {
                 let hash = this.requestData.headers["X-Gibbon-Hash"];
@@ -391,7 +400,7 @@ export class Request {
         case RequestState.Error:
             break;
         case RequestState.Finished:
-            let responseDataBuffer: DataBuffer;
+            let responseDataBuffer: IDataBuffer;
             if (this.responseDataArray) {
                 // Platform.trace("GOT HERE 1", this.responseDataArray);
                 responseDataBuffer = DataBuffer.concat.apply(undefined, this.responseDataArray);
@@ -461,7 +470,7 @@ export class Request {
         }
     }
 
-    private _onData(data: DataBuffer, offset: number, length: number): void { // have to copy data, the buffer will be reused
+    private _onData(data: IDataBuffer, offset: number, length: number): void { // have to copy data, the buffer will be reused
         this.responseDataLength += length;
         Platform.trace("got some data here", length);
         if (this.requestData.onData) {

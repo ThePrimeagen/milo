@@ -14,12 +14,15 @@ import {
     OnClose,
     OnError,
     DnsResult,
+    DataBuffer,
     CreateTCPNetworkPipeOptions
 } from "../types";
 
 import {
     assert
 } from "../utils";
+
+import DB from "./DataBuffer";
 
 enum State {
     Connecting = "Connecting",
@@ -59,7 +62,6 @@ class NodeTCPNetworkPipe implements NetworkPipe {
                     // Reuses a 16KiB Buffer for every read from the socket.
                     buffer: Buffer.alloc(32 * 1024),
                     callback: (nread: number, buf: Buffer): boolean => {
-                        debugger;
                         const copiedBuf = Buffer.allocUnsafe(nread);
                         buf.copy(copiedBuf, 0, 0, nread);
                         this.bufferPool.push(copiedBuf);
@@ -111,12 +113,13 @@ class NodeTCPNetworkPipe implements NetworkPipe {
           }
         */
 
-        assert(this.sock !== undefined, "Must have sock");
+        if (!this.sock) {
+            throw new Error("Must have sock");
+        }
         this.sock.write(normalizeUint8ArrayLen(buf, offset || 0, length));
     }
 
-    // @ts-ignore
-    read(buf: Uint8Array | ArrayBuffer, offset: number, length: number): number {
+    read(buf: DataBuffer | ArrayBuffer, offset: number, length: number): number {
         if (this.state != State.Alive) {
             throw new Error(`Unable to read sockets in current state, ${this.state}`);
         }
@@ -154,12 +157,17 @@ class NodeTCPNetworkPipe implements NetworkPipe {
     }
 
     unread(buf: ArrayBuffer | Uint8Array | ArrayBuffer): void {
-        assert(false, "Must implement this");
+        throw new Error("Must imprement this");
+        //assert(false, "Must implement this");
     }
 
     close(): void {
         // successfully destroy socket.
-        assert(this.sock !== undefined, "Must have sock");
+        //assert(this.sock !== undefined, "Must have sock");
+        if (!this.sock) {
+            throw new Error("Must have sock");
+        }
+
         this.sock.destroy();
     }
 };
