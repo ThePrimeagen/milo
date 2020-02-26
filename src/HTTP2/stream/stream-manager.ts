@@ -31,6 +31,8 @@ function zeroBit(value: number, bit: number) {
 
 export default class StreamManager {
     private pipe: NetworkPipe;
+    // TODO: REMOVE THIS AND USE THE H E DOUBLE HOCKEY STICKS READ BUFF FROM
+    // THE PLATFORM
     private readBuffer: DataBuffer;
     private nextId: number;
     private currentFrame: FrameConstructor;
