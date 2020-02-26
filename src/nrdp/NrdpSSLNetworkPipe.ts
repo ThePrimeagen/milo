@@ -48,7 +48,7 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
             this.platform.log("got verify", preverify_ok);
             return preverify_ok;
         });
-        //this.platform.SSL_CTX_set_verify(this.ssl_ctx, this.platform.SSL_VERIFY_PEER, cb);
+        this.platform.SSL_CTX_set_verify(this.ssl_ctx, this.platform.SSL_VERIFY_PEER, cb);
         this.platform.trace("cipher", nrdp.cipherList);
         this.platform.SSL_CTX_set_cipher_list(this.ssl_ctx, nrdp.cipherList);
         let ret = this.platform.SSL_CTX_ctrl(this.ssl_ctx, this.platform.SSL_CTRL_MODE,
@@ -277,7 +277,6 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
             assert(this.connectedCallback);
             this.connectedCallback();
             this.connectedCallback = undefined;
-
         }
     }
 
