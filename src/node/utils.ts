@@ -10,6 +10,14 @@ export function normalizeBufferLen(buf: string | Uint8Array | ArrayBuffer, offse
     return normalizeBuffer(buf, offset, offset + length);
 };
 
+export function bufferToArrayBufferCopy(buf: Buffer, offset: number, length: number): ArrayBuffer {
+    const out = new ArrayBuffer(buf.byteLength);
+    const view = new Uint8Array(out);
+
+    buf.copy(view, 0);
+    return out;
+}
+
 export function normalizeBuffer(buf: string | Uint8Array | ArrayBuffer, offset: number, endIdx?: number): Buffer {
     /*
     let outBuf;

@@ -1,6 +1,8 @@
 import crypto from 'crypto';
-import {DataBuffer} from '../types';
+
+import {DataBuffer, SHA256Context as ISC} from '../types';
 import DB from './DataBuffer';
+import {bufferToArrayBufferCopy} from './utils';
 
 /*
 const salt = 'abcdefghijklmnop!';
@@ -9,7 +11,7 @@ const hash = crypto.createHmac('sha256', salt)
                    .digest('hex');
  */
 
-export class SHA256Context {
+export class SHA256Context implements ISC {
     private salt: string;
     private hash: crypto.Hmac;
 
@@ -41,13 +43,24 @@ export class SHA256Context {
         this.hash = this.hash.update(new DataView(arrBuf));
     }
 
+
+    // Property 'final' in type 'SHA256Context' is not assignable to the same
+    // property in base type 'SHA256Context'.   Type '(md?: Uint8Array |
+    // ArrayBuffer | DataBuffer | undefined, offset?: number | undefined) =>
+    // number | ArrayBuffer' is not assignable to type '{ (): ArrayBuffer; (md:
+    // Uint8Array | ArrayBuffer | DataBuffer, offset?: number | undefined):
+    // number; }'.     Type 'number | ArrayBuffer' is not assignable to type
+    // 'ArrayBuffer'.       Type 'number' is not assignable to type
+    // 'ArrayBuffer'.
+    // @ts-ignore
     final(md?: ArrayBuffer | Uint8Array | DataBuffer, offset?: number): ArrayBuffer | number {
         if (md) {
             throw new Error("Not Implemented");
             return 0;
         }
 
-        return Buffer.from(this.hash.digest('hex')).buffer;
+        const buf = Buffer.from(this.hash.digest('hex'));
+        return bufferToArrayBufferCopy(buf, 0, buf.byteLength);
     }
 
     reset(): void {
