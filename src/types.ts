@@ -226,7 +226,7 @@ export interface NetworkPipe {
     write(buf: DataBuffer | Uint8Array | ArrayBuffer | string, offset: number, length: number): void;
     write(buf: string): void;
 
-    read(buf: DataBuffer | Uint8Array | ArrayBuffer, offset: number, length: number): number;
+    read(buf: ArrayBuffer | DataBuffer, offset: number, length: number): number;
 
     unread(buf: DataBuffer | Uint8Array | ArrayBuffer): void;
 

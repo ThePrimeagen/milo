@@ -1,6 +1,7 @@
 import staticList from './static';
 
 const scratchBuffer = Buffer.alloc(50000);
+const bitMasks = new Uint8Array(8).map((x, i) => 2 ** i - 1);
 
 export default function encode(buffer: string | Buffer, offset: number = 0, length?: number): Buffer {
     let buf: Buffer;

@@ -53,7 +53,7 @@ class NodePlatform implements Platform {
     public scratch: DataBuffer;
 
     constructor() {
-        this.scratch = {} as DataBuffer;
+        this.scratch = new DB(1024 * 32);
     }
 
     stringLength(str: string, encoding: stringEncoding): number {

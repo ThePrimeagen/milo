@@ -1,6 +1,7 @@
 import Platform from "../../#{target}/Platform";
 import {
-    NetworkPipe
+    NetworkPipe,
+    DataBuffer,
 } from '../../types';
 import FrameConstructor from '../frame/frame-constructor';
 import * as FrameUtils from '../frame/utils';
@@ -30,7 +31,7 @@ function zeroBit(value: number, bit: number) {
 
 export default class StreamManager {
     private pipe: NetworkPipe;
-    private readBuffer: Uint8Array;
+    private readBuffer: DataBuffer;
     private nextId: number;
     private currentFrame: FrameConstructor;
     private state: number;
@@ -38,7 +39,7 @@ export default class StreamManager {
 
     // TODO: Settings?
     constructor(pipe: NetworkPipe, settings = {}) {
-        this.readBuffer = new Uint8Array(BUFFER_SIZE);
+        this.readBuffer = new DataBuffer(BUFFER_SIZE);
         this.pipe = pipe;
         this.nextId = 1;
         this.currentFrame = new FrameConstructor();
@@ -125,6 +126,7 @@ export default class StreamManager {
     }
 
     private read() {
+        /*
         const bytesRead = this.pipe.read(this.readBuffer, 0, BUFFER_SIZE);
         let ptr = 0;
 
@@ -138,6 +140,7 @@ export default class StreamManager {
                 this.currentFrame.reset();
             }
         } while (ptr < bytesRead);
+         */
     }
 };
 

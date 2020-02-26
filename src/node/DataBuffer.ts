@@ -7,13 +7,16 @@ function toString(item: string | DataBuffer | ArrayBuffer | Uint8Array | number)
     if (typeof item === 'number') {
         return String(item);
     }
+    if (typeof item === 'string') {
+        return item;
+    }
 
     const uint8Array = toUint8Array(item);
     return uint8Array.toString();
 }
 
 export default class DB implements DataBuffer {
-    private buffer: Buffer;
+    public buffer: Buffer;
 
     public byteLength: number;
     public byteOffset: number;
@@ -32,7 +35,7 @@ export default class DB implements DataBuffer {
         return db;
     }
 
-    constructor(byteCountOrBuf: number | DataBuffer, offset?: number, length?: number) {
+    constructor(byteCountOrBuf: number | DataBuffer | Uint8Array, offset?: number, length?: number) {
         // Node does not have this notion nor can we reproduce it easily.
         // Since node is meant to be a testing platform and not a performance
         // platform, i'll just have it permentantly pegged to 1 and allow for
@@ -57,9 +60,14 @@ export default class DB implements DataBuffer {
         }
     }
 
-    private constructFromDataBuffer(buf: DataBuffer, offset: number, length: number) {
-        const b = buf as DB;
-        this.buffer = b.buffer.slice(offset, offset + length);
+    private constructFromDataBuffer(buf: DataBuffer | Uint8Array, offset: number, length: number) {
+        if (buf instanceof Uint8Array) {
+            this.buffer = Buffer.from(buf.subarray(offset, offset + length));
+        }
+        else {
+            this.buffer = (buf as DB).buffer.slice(offset, offset + length);
+        }
+
         this.byteOffset = 0;
         this.byteLength = length;
         this.bufferLength = this.buffer.byteLength;
@@ -71,11 +79,11 @@ export default class DB implements DataBuffer {
         this.byteOffset = this.buffer.byteOffset;
     }
 
-    private getOffsetAndLength(offset?: number, length?: number) {
+    private getOffsetAndLength(offset?: number, len?: number) {
         offset = offset === undefined ? 0 : offset;
-        length = length === undefined ? 0 : this.buffer.byteLength - offset;
+        len = len === undefined ? this.buffer.byteLength - offset : len;
 
-        return [offset, length];
+        return [offset, len];
     }
 
     left(length: number): DataBuffer {
@@ -184,9 +192,21 @@ export default class DB implements DataBuffer {
     hashToString(hash: hashType, offset?: number, length?: number): string { throw new Error("Not Implemented"); }
     compress(method: compressionMethod, offset?: number, length?: number): DataBuffer { throw new Error("Not Implemented"); }
     uncompress(method: compressionMethod, offset?: number, length?: number): string { throw new Error("Not Implemented"); }
-    randomize(offset?: number, length?: number): void { throw new Error("Not Implemented"); }
+    randomize(offset?: number, length?: number): void {
+        offset = offset || 0;
+        length = length === undefined ? this.byteLength - offset : length;
 
-    toArrayBuffer(offset?: number, length?: number): ArrayBuffer { throw new Error("Not Implemented"); }
+        for (let i = 0; i < length; ++i) {
+            this.buffer[this.byteOffset + offset + i] = ~~(Math.random() * 256);
+        }
+    }
+
+    // TODO: Clea,n up this length biz
+    toArrayBuffer(offset?: number, length?: number): ArrayBuffer {
+        offset = offset || 0;
+        length = length === undefined ? this.byteLength - offset : length;
+        return this.buffer.slice(this.byteOffset + offset, this.byteOffset + offset + length).buffer;
+    }
     toArray(offset?: number, length?: number): [number] { throw new Error("Not Implemented"); }
     reverse(offset?: number, length?: number): void { throw new Error("Not Implemented"); }
 
@@ -284,5 +304,21 @@ export default class DB implements DataBuffer {
 
     setView(byteOffset: number, byteLength: number): void { throw new Error("Not Implemented"); }
 
-    // static concat(...args: ArrayBuffer[] | Uint8Array[] | DataBuffer[]): DataBuffer;
+    static concat(...args: ArrayBuffer[] | Uint8Array[] | DataBuffer[]): DataBuffer {
+        const normalizedArr: Uint8Array[] = [];
+        for (let i = 0; i < args.length; ++i) {
+            const arg = args[i];
+            if (arg instanceof ArrayBuffer) {
+                normalizedArr.push(new Uint8Array(arg));
+            }
+            if (arg instanceof Uint8Array) {
+                normalizedArr.push(arg);
+            }
+
+            normalizedArr.push((arg as DB).buffer);
+        }
+
+        const normBuf = Buffer.concat(normalizedArr);
+        return new DB(normBuf);
+    }
 }

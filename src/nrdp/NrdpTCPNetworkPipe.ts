@@ -68,7 +68,7 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
         }
     }
 
-    read(buf: Uint8Array | ArrayBuffer | DataBuffer, offset: number, length: number): number {
+    read(buf: DataBuffer, offset: number, length: number): number {
         let bufferRead = 0;
         if (this.buffer) {
             const byteLength = this.buffer.byteLength;

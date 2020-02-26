@@ -2,8 +2,12 @@ import {
     NetworkPipe,
 } from '../../src/types';
 
-import WS, {WSState} from '../../src/ws/index';
-import {_wsUpgrade} from '../../src/milo';
+import {
+    WS,
+    WSState,
+    _wsUpgrade,
+    // @ts-ignore
+} from '../../dist/milo.node.js';
 
 async function run() {
     let dataCount = 0;
@@ -15,13 +19,13 @@ async function run() {
     const dataFetchCount = 10000;
 
     const buf = new ArrayBuffer(byteLength);
-    debugger
     const networkPipe = await _wsUpgrade({
         url: "ws://localhost:1337/",
     });
     const ws = new WS(networkPipe);
 
-    ws.onData((state: WSState, buffer: Uint8Array) => {
+    ws.onmessage = (buffer: Uint8Array) => {
+        console.log("LOOK AT THIS");
         const bytesRead = buffer.byteLength;
 
         bytesReceived += bytesRead;
@@ -36,13 +40,12 @@ async function run() {
         else if (dataCount < dataFetchCount) {
             ws.send("send");
         }
-    });
+    };
 
     ws.onClose(() => {
         console.log("close");
     });
 
-    debugger
     ws.send("send");
 }
 

@@ -1,5 +1,6 @@
 import { Request, RequestData, RequestResponse } from "./Request";
 import Platform from "./#{target}/Platform";
+import DataBuffer from "./#{target}/DataBuffer";
 import { NetworkPipe } from "./types";
 import { headerValue } from "./utils";
 import WS, { WSState } from './ws';
@@ -33,15 +34,20 @@ export function _wsUpgrade(data: RequestData): Promise<NetworkPipe> {
             data.headers = {};
         }
 
+        // TODO: Ask Jordan, WHY TYPESCRIPT WHY...
+        // @ts-ignore
         const arrayBufferKey = new DataBuffer(16);
+
         arrayBufferKey.randomize();
         const key = arrayBufferKey.toString("base64");
+
+
         Platform.trace("key is", key, arrayBufferKey);
         data.headers["Upgrade"] = "websocket";
         data.headers["Connection"] = "Upgrade";
         data.headers["Sec-WebSocket-Key"] = key;
         data.headers["Sec-WebSocket-Version"] = "13";
-        const req = new Request(data);
+        const req = new Request(data, false);
         req.send().then(response => {
             Platform.trace("Got response", response);
             if (response.statusCode !== 101)
@@ -104,7 +110,7 @@ export function ws(url: string, milo: boolean): Promise<WS> {
     }
 }
 
-let fuck = 0;
+let f_ck = 0;
 export function wsTest(url: string, milo: boolean, dataFetchCount: number = 1024, big: boolean = false, nth: number = 1000) {
     ws(url, milo).then(ws => {
         let dataCount = 0;

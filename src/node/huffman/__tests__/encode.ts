@@ -1,6 +1,7 @@
+import DataBuffer from '../../DataBuffer';
 import encode from '../encode';
 
-describe("encode", function() {
+describe.only("encode", function() {
     it("encode simple 1", function() {
         const one = "1";
         const expected = Buffer.from([
@@ -29,7 +30,7 @@ describe("encode", function() {
     it("encode https://www.example.com, rfc ", function() {
         // https://www.example.com
         // 9d29 ad17 1863 c78f 0b97 c8e9 ae82 ae43 d3
-        const d = [
+        const d = Buffer.from([
             0x9d,
             0x29,
             0xad,
@@ -47,11 +48,9 @@ describe("encode", function() {
             0xae,
             0x43,
             0xd3,
-        ];
-        const expected = new DataBuffer(17);
-        d.forEach((x, i) => expected.setUInt8(i, x));
+        ]);
 
-        expect(encode("https://www.example.com")).toEqual(expected);
+        expect(encode("https://www.example.com")).toEqual(d);
     });
 });
 

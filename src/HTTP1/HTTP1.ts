@@ -58,6 +58,7 @@ Host: ${request.url.hostname}\r
         this.networkPipe.ondata = () => {
             while (true) {
                 assert(this.networkPipe, "Must have network pipe");
+
                 const read = this.networkPipe.read(scratch, 0, scratch.byteLength);
                 Platform.trace("We read some bytes from the pipe", read, this.headersFinished);
                 if (read <= 0) {
