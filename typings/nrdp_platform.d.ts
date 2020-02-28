@@ -28,4 +28,6 @@ declare namespace nrdp_platform {
         final(md: Uint8Array | ArrayBuffer | DataBuffer): number;
         reset(): void;
     }
+
+    function utf8Length(str: string): number;
 }

@@ -15,9 +15,10 @@
   "author": "",
   "main": "build/node/src/milo.js",
   "scripts": {
-    "build": "tsc -p tsconfig.nrdp.json && rollup -c rollup.nrdp.js",
+    "build:nrdp": "tsc -p tsconfig.nrdp.json && rollup -c rollup.nrdp.js",
     "build:node": "tsc -p tsconfig.node.json && rollup -c rollup.node.js",
-    "build:all": "npm run build && npm run build:node",
+    "build:all": "npm run build:nrdp && npm run build:node",
+    "build": "npm run build:all",
     "nrdp": "npm run build",
     "node": "npm run build:node",
     "all": "npm run build:all",

@@ -10,8 +10,7 @@ import {
     CreateTCPNetworkPipeOptions,
     CreateSSLNetworkPipeOptions,
     SHA256Context,
-    HTTPRequestHeaders,
-    stringEncoding,
+    HTTPRequestHeaders
 } from "../types";
 
 import createTCPNetworkPipe from "./NodeTCPNetworkPipe";
@@ -56,8 +55,8 @@ class NodePlatform implements Platform {
         this.scratch = new DB(1024 * 32);
     }
 
-    stringLength(str: string, encoding: stringEncoding): number {
-        return Buffer.byteLength(str, encoding);
+    utf8Length(str: string): number {
+        return Buffer.from(str, "utf8").byteLength;
     }
 
     // One down, 40 to go

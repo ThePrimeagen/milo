@@ -90,8 +90,8 @@ export default class DynamicTable implements HeaderTable {
         const id = this.insertCount++ + 1;
 
         // Adjust the table size
-        const size = Platform.stringLength(key, 'utf8') +
-            (value && Platform.stringLength(value, 'utf8') || 0);
+        const size = Platform.utf8Length(key) +
+            (value && Platform.utf8Length(value) || 0);
         this.resize(size);
 
         // no insert is made.
@@ -116,7 +116,7 @@ export default class DynamicTable implements HeaderTable {
             }
 
             valueMap.set(value, id);
-            this.byIdx.set(id, {name: key, value});
+            this.byIdx.set(id, { name: key, value });
         }
 
         if (!this.initializing) {

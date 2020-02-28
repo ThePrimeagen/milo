@@ -1,7 +1,6 @@
 import {
     CreateSSLNetworkPipeOptions, CreateTCPNetworkPipeOptions, IpConnectivityMode,
-    NetworkPipe, Platform, RequestTimeouts, SHA256Context, DataBuffer,
-    stringEncoding
+    NetworkPipe, Platform, RequestTimeouts, SHA256Context, DataBuffer
 } from "../types";
 import createNrdpSSLNetworkPipe from "./NrdpSSLNetworkPipe";
 import createNrdpTCPNetworkPipe from "./NrdpTCPNetworkPipe";
@@ -401,10 +400,7 @@ export class NrdpPlatform implements Platform {
     randomBytes = nrdp_platform.random;
     stacktrace = nrdp.stacktrace;
 
-    stringLength(str: string, encoding: stringEncoding): number {
-        // TODO: Probably should implement this.
-        return 42;
-    }
+    utf8Length(str: string): number { return nrdp_platform.utf8Length(str); }
 
     writeFile(fileName: string, contents: Uint8Array | DataBuffer | ArrayBuffer | string): boolean {
         const fd = N.open(fileName, N.O_CREAT | N.O_WRONLY, 0o0664);

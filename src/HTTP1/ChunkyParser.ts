@@ -12,7 +12,7 @@ export class ChunkyParser {
 
     feed(data: DataBuffer, offset: number, length: number): void {
         Platform.assert(this.onchunk, "Gotta have an onchunk");
-        this.buffers.push(data.mid(offset, length).detach());
+        this.buffers.push(data.slice(offset, length));
         this.available += length;
         this._process();
     }

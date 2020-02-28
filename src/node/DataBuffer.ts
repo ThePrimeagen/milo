@@ -86,13 +86,13 @@ export default class DB implements DataBuffer {
         return [offset, len];
     }
 
-    left(length: number): DataBuffer {
+    leftSubarray(length: number): DataBuffer {
         return new DB(this, this.byteOffset, length);
     }
-    right(length: number): DataBuffer {
+    rightSubarray(length: number): DataBuffer {
         return new DB(this, this.byteLength - length, length);
     }
-    mid(offset: number = 0, length?: number): DataBuffer {
+    subarray(offset: number = 0, length?: number): DataBuffer {
         return new DB(this, this.byteOffset + offset, length);
     }
 

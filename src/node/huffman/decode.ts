@@ -1,11 +1,11 @@
 import DataBuffer from '../DataBuffer';
-import {DataBuffer as IDataBuffer} from '../../types';
-import {StaticTreeNode, staticTree, pluckBit} from './static';
+import { DataBuffer as IDataBuffer } from '../../types';
+import { StaticTreeNode, staticTree, pluckBit } from './static';
 
 const scratchBuffer = Buffer.alloc(50000);
 
 export default function decode(buf: DataBuffer, offset: number = 0, length?: number): IDataBuffer {
-    const buffer: Buffer = DataBuffer.toBuffer(buf.mid(offset, length) as DataBuffer);
+    const buffer: Buffer = DataBuffer.toBuffer(buf.subarray(offset, length) as DataBuffer);
 
     let ptr = 0;
     let curr: StaticTreeNode = staticTree;
@@ -32,7 +32,7 @@ export default function decode(buf: DataBuffer, offset: number = 0, length?: num
                 curr = nextCurr;
             }
 
-        } while(bitPtr);
+        } while (bitPtr);
     }
 
     if (onlyOnes === 0) {

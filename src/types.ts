@@ -2,8 +2,7 @@ export type IpVersion = 4 | 6;
 export type IpConnectivityMode = 4 | 6 | 10 | 0; // 0 is invalid, 10 is dual
 export type HTTPMethod = "POST" | "HEAD" | "PUT" | "DELETE" | "PATCH" | "GET";
 export type HTTPRequestHeaders = { [key: string]: string };
-export type encodingType = "escaped" | "base32" | "base64" | "base64_urlsafe" | "base85" | "url" | "hex";
-export type stringEncoding = "utf8";
+export type encodingType = "escaped" | "base32" | "base64" | "base64_urlsafe" | "base85" | "url" | "hex" | "utf8";
 export type hashType = "sha1" | "sha256" | "sha512" | "md5";
 export type compressionMethod = "zlib" | "zlibbase64" | "zlibgzip" | "lzham" | "lz4";
 
@@ -25,14 +24,24 @@ export interface DataBuffer {
             otherByteLength?: number,
             selfByteOffset?: number,
             selfByteLength?: number): -1 | 0 | 1;
+    /**
+     * Deep Copy
+     */
     compress(method: compressionMethod, offset?: number, length?: number): DataBuffer;
+    /**
+     * Deep Copy
+     */
     decode(enc: encodingType, offset?: number, length?: number): DataBuffer;
-    detach(): DataBuffer;
+    detach(): void;
     encode(enc: encodingType, offset?: number, length?: number): DataBuffer;
     equals(other: string | ArrayBuffer | DataBuffer | Uint8Array | number | number[]): boolean;
     every(func: (val: number, i: number, buffer: DataBuffer) => boolean, thisValue?: any): boolean;
     fill(data: string | ArrayBuffer | DataBuffer | number | Uint8Array,
          offset?: number, length?: number): void;
+
+    /**
+     * Deep Copy
+     */
     filter(func: (val: number, i: number, buffer: DataBuffer) => boolean, thisValue?: any): DataBuffer;
     find(func: (val: number, i: number, buffer: DataBuffer) => boolean, thisValue?: any): number | undefined;
     findIndex(func: (val: number, i: number, buffer: DataBuffer) => boolean, thisValue?: any): number | undefined;
@@ -80,22 +89,9 @@ export interface DataBuffer {
      *
      * Shallow Copy
      */
-    left(length: number): DataBuffer;
+    leftSubarray(length: number): DataBuffer;
 
     map(func: (val: number, i: number, buffer: DataBuffer) => number, thisValue?: any): DataBuffer;
-
-    /**
-     * Subarray with length instead of endIdx
-     *
-     * equivalent to.
-     * const offset = this.byteOffset + offset;
-     * subarray(offset, offset + length);
-     *
-     *
-     * Shallow Copy
-     */
-    mid(offset?: number, length?: number): DataBuffer;
-
     randomize(offset?: number, length?: number): void;
     reduce(func: (previousValue: any, val: number, i: number, buffer: DataBuffer) => any, previousValue?: any): any;
     reduceRight(func: (previousValue: any, val: number, i: number, buffer: DataBuffer) => any, previousValue?: any): any;
@@ -108,7 +104,7 @@ export interface DataBuffer {
      *
      * Shallow Copy
      */
-    right(length: number): DataBuffer;
+    rightSubarray(length: number): DataBuffer;
 
     set(offset: number, src: string | ArrayBuffer | DataBuffer | number | Uint8Array | number[],
         srcOffset?: number, srcLength?: number): void;
@@ -144,7 +140,24 @@ export interface DataBuffer {
 
     sort(func?: (l: number, r: number) => number): void;
 
+
+    /**
+     * Subarray with length instead of endIdx
+     *
+     * equivalent to.
+     * const offset = this.byteOffset + offset;
+     * subarray(offset, offset + length);
+     *
+     *
+     * Shallow Copy
+     */
+    subarray(offset?: number, length?: number): DataBuffer;
+
     toArray(offset?: number, length?: number): [number];
+
+    /**
+     * Deep Copy
+     */
     toArrayBuffer(offset?: number, length?: number): ArrayBuffer;
 
     toString(enc?: encodingType, offset?: number, length?: number): string;
@@ -289,10 +302,8 @@ export interface HTTP {
 };
 
 export interface Platform {
-
-    // Maybe?
-    // TODO: Ask anders
-    stringLength(str: string, encoding: stringEncoding): number;
+    // return number of octets
+    utf8Length(str: string): number;
 
     huffmanDecode(input: DataBuffer): DataBuffer;
     huffmanEncode(input: string | DataBuffer): DataBuffer;
