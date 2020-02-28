@@ -18,10 +18,6 @@ import {
     CreateTCPNetworkPipeOptions
 } from "../types";
 
-import {
-    assert
-} from "../utils";
-
 import DB from "./DataBuffer";
 
 enum State {
