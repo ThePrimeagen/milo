@@ -12,8 +12,21 @@ function toString(item: string | DataBuffer | ArrayBuffer | Uint8Array | number)
     return uint8Array.toString();
 }
 
+class DBData {
+    constructor(buf: Buffer) {
+        this.ref = 1;
+        this.buffer = buf;
+    }
+    ref: number;
+    buffer: Buffer;
+};
+
 export default class DB implements DataBuffer {
-    private buffer: Buffer;
+    private data: DBData;
+
+    private get buffer() {
+        return data.buffer;
+    }
 
     public byteLength: number;
     public byteOffset: number;
@@ -27,7 +40,7 @@ export default class DB implements DataBuffer {
 
     static fromBuffer(buf: Buffer) {
         const db = new DB(buf.byteLength);
-        db.buffer = buf;
+        db.data.buffer = buf;
 
         return db;
     }
