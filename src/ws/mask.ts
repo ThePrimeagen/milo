@@ -1,7 +1,11 @@
-export default function mask(buf: Uint8Array, offset: number, length: number, mask: Uint8Array) {
+import {IDataBuffer} from '../types'
+
+function mask(buf: IDataBuffer, offset: number, length: number, mask: Uint8Array) {
     for (let i = offset, j = 0; j < length; ++j, ++i) {
-        buf[i] = buf[i] ^ ((mask[j % 4]) & 0xFF);
+        buf.setUInt8(i, buf.getUInt8(i) ^ ((mask[j % 4]) & 0xFF));
     }
-};
+}
+
+export default mask;
 
 

@@ -1,6 +1,6 @@
 import {
     CreateTCPNetworkPipeOptions, DnsResult, NetworkPipe,
-    OnClose, OnData, OnError, DataBuffer
+    OnClose, OnData, OnError, IDataBuffer
 } from "../types";
 import { NrdpPlatform } from "./Platform";
 import N = nrdsocket;
@@ -14,7 +14,7 @@ function assert(condition: any, msg?: string): asserts condition {
 
 export class NrdpTCPNetworkPipe implements NetworkPipe {
     private sock: number;
-    private writeBuffers: (Uint8Array | ArrayBuffer | DataBuffer | string)[];
+    private writeBuffers: (Uint8Array | ArrayBuffer | IDataBuffer | string)[];
     private writeBufferOffsets: number[];
     private writeBufferLengths: number[];
     private selectMode: number;
@@ -48,7 +48,7 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
 
     get closed() { return this.sock === -1; }
 
-    write(buf: DataBuffer | string, offset?: number, length?: number): void {
+    write(buf: IDataBuffer | string, offset?: number, length?: number): void {
         if (typeof buf === "string") {
             buf = new DataBuffer(buf);
             length = buf.byteLength;
@@ -68,7 +68,7 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
         }
     }
 
-    read(buf: DataBuffer, offset: number, length: number): number {
+    read(buf: IDataBuffer, offset: number, length: number): number {
         let bufferRead = 0;
         if (this.buffer) {
             const byteLength = this.buffer.byteLength;

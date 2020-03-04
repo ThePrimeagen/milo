@@ -1,9 +1,9 @@
 import { toUint8Array, bufferToArrayBufferCopy } from './utils';
-import { DataBuffer, encodingType, hashType, compressionMethod } from '../types';
+import { IDataBuffer, encodingType, hashType, compressionMethod } from '../types';
 
 const tempAllocation = Buffer.alloc(1);
 
-function toString(item: string | DataBuffer | ArrayBuffer | Uint8Array | number): string {
+function toString(item: string | IDataBuffer | ArrayBuffer | Uint8Array | number): string {
     if (typeof item === 'number') {
         return String(item);
     }
@@ -15,27 +15,39 @@ function toString(item: string | DataBuffer | ArrayBuffer | Uint8Array | number)
     return uint8Array.toString();
 }
 
-export default class DB implements DataBuffer {
+/**
+ * Probably should actually make an encoding table, but as of now we only have
+ * one type.  Likely hex will be the next.
+ */
+function convertEncodingType(str: encodingType): "utf8" {
+    return "utf8";
+}
+
+export default class DataBuffer implements IDataBuffer {
     public buffer: Buffer;
 
     public byteLength: number;
     public byteOffset: number;
     public bufferLength: number;
 
+    // TODO: Figure this part out.  We need to get a data buffer class.
     public readonly refCount: number;
 
-    static toBuffer(buf: DB): Buffer {
-        return buf.buffer.slice(0);
+    static toBuffer(buf: DataBuffer | IDataBuffer): Buffer {
+        // Note: This is safe since all IDataBuffer's on the node side is
+        // DataBuffer class.
+        return (buf as DataBuffer).buffer.slice(0);
     }
 
     static fromBuffer(buf: Buffer) {
-        const db = new DB(buf.byteLength);
+        const db = new DataBuffer(buf.byteLength);
         db.buffer = buf;
 
         return db;
     }
 
-    constructor(byteCountOrBuf: number | DataBuffer | Uint8Array, offset?: number, length?: number) {
+    constructor(byteCountOrBuf: number | IDataBuffer | Uint8Array | ArrayBuffer | string, offsetOrEnc?: number | encodingType, length?: number) {
+
         // Node does not have this notion nor can we reproduce it easily.
         // Since node is meant to be a testing platform and not a performance
         // platform, i'll just have it permentantly pegged to 1 and allow for
@@ -51,21 +63,42 @@ export default class DB implements DataBuffer {
             this.constructFromByteCount(byteCountOrBuf);
         }
 
-        else {
-            offset = offset || 0;
-            length = length === undefined ?
-                (byteCountOrBuf.byteLength - offset) : length;
+        else if (typeof byteCountOrBuf === "string") {
+            if (typeof offsetOrEnc === "number") {
+                throw new Error(`Cannot construct a DataBuffer with a string
+and offset.  The second argument can be a string encoding.
+Please see src/types.ts for DataBufferConstructor options.`);
+            }
 
-            this.constructFromDataBuffer(byteCountOrBuf, offset, length);
+            offsetOrEnc = convertEncodingType(offsetOrEnc || "utf8");
+
+            this.buffer = Buffer.from(byteCountOrBuf, offsetOrEnc);
+            this.bufferLength = this.byteLength = this.buffer.byteLength;
+            this.byteOffset = 0;
+        }
+
+        else {
+            if (typeof offsetOrEnc === "string") {
+                throw new Error(`You cannot construct a DataBuffer with a
+string value for the second parameter, offset.`);
+
+            }
+
+            offsetOrEnc = offsetOrEnc || 0;
+            length = length === undefined ?
+                (byteCountOrBuf.byteLength - offsetOrEnc) : length;
+
+            this.constructFromIDataBuffer(byteCountOrBuf, offsetOrEnc, length);
         }
     }
 
-    private constructFromDataBuffer(buf: DataBuffer | Uint8Array, offset: number, length: number) {
-        if (buf instanceof Uint8Array) {
-            this.buffer = Buffer.from(buf.subarray(offset, offset + length));
+    private constructFromIDataBuffer(buf: ArrayBuffer | IDataBuffer | Uint8Array, offset: number, length: number) {
+        if (buf instanceof Uint8Array || buf instanceof ArrayBuffer) {
+            // always copy
+            this.buffer = Buffer.from(buf.slice(offset, offset + length));
         }
         else {
-            this.buffer = (buf as DB).buffer.slice(offset, offset + length);
+            this.buffer = (buf as DataBuffer).buffer.slice(offset, offset + length);
         }
 
         this.byteOffset = 0;
@@ -86,32 +119,40 @@ export default class DB implements DataBuffer {
         return [offset, len];
     }
 
-    leftSubarray(length: number): DataBuffer {
-        return new DB(this, this.byteOffset, length);
+    leftSubarray(length: number): IDataBuffer {
+        return new DataBuffer(this, this.byteOffset, length);
+    }
+    subarray(offset: number = 0, length?: number): IDataBuffer {
+        // TODO: bounds check
+
+        const buf = new DataBuffer(0);
+        buf.buffer = this.buffer;
+        buf.byteLength = length || this.byteLength - offset;
+        buf.byteOffset = this.byteOffset + offset;
+        buf.bufferLength = this.bufferLength;
+
+        return buf;
     }
     rightSubarray(length: number): DataBuffer {
-        return new DB(this, this.byteLength - length, length);
-    }
-    subarray(offset: number = 0, length?: number): DataBuffer {
-        return new DB(this, this.byteOffset + offset, length);
+        return new DataBuffer(this, this.byteLength - length, length);
     }
 
-    detach(): DataBuffer {
-        return this;
+    detach(): void {
+        // TODO: Fill it in
     }
 
     clear(): void { }
 
-    fill(data: string | ArrayBuffer | DataBuffer | number | Uint8Array,
+    fill(data: string | ArrayBuffer | IDataBuffer | number | Uint8Array,
          o?: number, l?: number) {
 
         const [offset, length] = this.getOffsetAndLength(o, l);
         throw new Error("Not Implemented");
     }
 
-    slice(o?: number, l?: number): DataBuffer {
+    slice(o?: number, l?: number): IDataBuffer {
         const [offset, length] = this.getOffsetAndLength(o, l);
-        const newBuffer = new DB(length);
+        const newBuffer = new DataBuffer(length);
 
         this.buffer.copy(newBuffer.buffer, 0, offset, offset + length);
 
@@ -123,7 +164,7 @@ export default class DB implements DataBuffer {
      * Convert everythng to string, and rely on the string to properly handle
      * the case insensitive search
      */
-    indexOf(needle: string | ArrayBuffer | DataBuffer | number | Uint8Array,
+    indexOf(needle: string | ArrayBuffer | IDataBuffer | number | Uint8Array,
             offset?: number, length?: number, caseInsensitive?: boolean): number {
 
         let thisStr = this.buffer.
@@ -138,7 +179,7 @@ export default class DB implements DataBuffer {
         return thisStr.indexOf(needleStr);
     }
 
-    lastIndexOf(needle: string | ArrayBuffer | DataBuffer | number | Uint8Array,
+    lastIndexOf(needle: string | ArrayBuffer | IDataBuffer | number | Uint8Array,
                 offset?: number, length?: number, caseInsensitive?: boolean): number {
 
         let thisStr = this.buffer.
@@ -153,7 +194,7 @@ export default class DB implements DataBuffer {
         return thisStr.lastIndexOf(needleStr);
     }
 
-    includes(needle: string | ArrayBuffer | DataBuffer | number | Uint8Array,
+    includes(needle: string | ArrayBuffer | IDataBuffer | number | Uint8Array,
              offset?: number, length?: number, caseInsensitive?: boolean): boolean {
         let thisStr = this.buffer.
             slice(offset, length).toString();
@@ -167,7 +208,7 @@ export default class DB implements DataBuffer {
         return Boolean(~thisStr.indexOf(needleStr));
     }
 
-    equals(other: string | ArrayBuffer | DataBuffer | Uint8Array): boolean {
+    equals(other: string | ArrayBuffer | IDataBuffer | Uint8Array): boolean {
         return this.buffer.toString() === toString(other);
     }
 
@@ -177,20 +218,23 @@ export default class DB implements DataBuffer {
             length,
         ] = this.getOffsetAndLength(o, l);
 
-        return this.buffer.toString(enc || "utf8", offset, length);
+        // TODO: Fix getOffsetAndLength.  Should normalize offset for ease of
+        // use
+        return this.buffer.toString(enc || "utf8",
+            this.byteOffset + offset, length);
     }
 
-    encode(enc: encodingType, offset?: number, length?: number): DataBuffer {
+    encode(enc: encodingType, offset?: number, length?: number): IDataBuffer {
         throw new Error("Not Implement");
     }
 
-    decode(enc: encodingType, offset?: number, length?: number): DataBuffer {
+    decode(enc: encodingType, offset?: number, length?: number): IDataBuffer {
         throw new Error("Not Implement");
     }
 
-    hash(hash: hashType, offset?: number, length?: number): DataBuffer { throw new Error("Not Implemented"); }
+    hash(hash: hashType, offset?: number, length?: number): IDataBuffer { throw new Error("Not Implemented"); }
     hashToString(hash: hashType, offset?: number, length?: number): string { throw new Error("Not Implemented"); }
-    compress(method: compressionMethod, offset?: number, length?: number): DataBuffer { throw new Error("Not Implemented"); }
+    compress(method: compressionMethod, offset?: number, length?: number): IDataBuffer { throw new Error("Not Implemented"); }
     uncompress(method: compressionMethod, offset?: number, length?: number): string { throw new Error("Not Implemented"); }
 
     randomize(o?: number, l?: number): void {
@@ -214,23 +258,69 @@ export default class DB implements DataBuffer {
         const buf = this.buffer.slice(offset, offset + length);
         return bufferToArrayBufferCopy(buf, 0, buf.byteLength);
     }
-    toArray(offset?: number, length?: number): [number] { throw new Error("Not Implemented"); }
+
+    toArray(o?: number, l?: number): number[] {
+        const [
+            offset,
+            length,
+        ] = this.getOffsetAndLength(o, l);
+
+        const out: number[] = [];
+        for (let i = 0, idx = offset; i < length; ++i, ++idx) {
+            out[i] = this.buffer[idx];
+        }
+
+        return out;
+    }
+
     reverse(offset?: number, length?: number): void { throw new Error("Not Implemented"); }
 
     sort(func?: (l: number, r: number) => number): void { throw new Error("Not Implemented"); }
-    every(func: (val: number, i: number, buffer: DataBuffer) => boolean, thisValue?: any): boolean { throw new Error("Not Implemented"); }
-    filter(func: (val: number, i: number, buffer: DataBuffer) => boolean, thisValue?: any): DataBuffer { throw new Error("Not Implemented"); }
-    forEach(func: (val: number, i: number, buffer: DataBuffer) => void, thisValue?: any): void { throw new Error("Not Implemented"); }
+    every(func: (val: number, i: number, buffer: IDataBuffer) => boolean, thisValue?: any): boolean { throw new Error("Not Implemented"); }
+    filter(func: (val: number, i: number, buffer: IDataBuffer) => boolean, thisValue?: any): IDataBuffer { throw new Error("Not Implemented"); }
+    forEach(func: (val: number, i: number, buffer: IDataBuffer) => void, thisValue?: any): void { throw new Error("Not Implemented"); }
     join(separator?: string): string { throw new Error("Not Implemented"); }
-    map(func: (val: number, i: number, buffer: DataBuffer) => number, thisValue?: any): DataBuffer { throw new Error("Not Implemented"); }
-    reduce(func: (previousValue: any, val: number, i: number, buffer: DataBuffer) => any, previousValue?: any): any { throw new Error("Not Implemented"); }
-    reduceRight(func: (previousValue: any, val: number, i: number, buffer: DataBuffer) => any, previousValue?: any): any { throw new Error("Not Implemented"); }
+    map(func: (val: number, i: number, buffer: IDataBuffer) => number, thisValue?: any): IDataBuffer { throw new Error("Not Implemented"); }
+    reduce(func: (previousValue: any, val: number, i: number, buffer: IDataBuffer) => any, previousValue?: any): any { throw new Error("Not Implemented"); }
+    reduceRight(func: (previousValue: any, val: number, i: number, buffer: IDataBuffer) => any, previousValue?: any): any { throw new Error("Not Implemented"); }
 
-    find(func: (val: number, i: number, buffer: DataBuffer) => boolean, thisValue?: any): number | undefined { throw new Error("Not Implemented"); }
-    findIndex(func: (val: number, i: number, buffer: DataBuffer) => boolean, thisValue?: any): number | undefined { throw new Error("Not Implemented"); }
+    find(func: (val: number, i: number, buffer: IDataBuffer) => boolean, thisValue?: any): number | undefined { throw new Error("Not Implemented"); }
+    findIndex(func: (val: number, i: number, buffer: IDataBuffer) => boolean, thisValue?: any): number | undefined { throw new Error("Not Implemented"); }
 
     get(offset: number): number { throw new Error("Not Implemented"); }
-    set(offset: number, src: string | ArrayBuffer | DataBuffer | number | Uint8Array, srcOffset?: number, srcLength?: number): void { throw new Error("Not Implemented"); }
+
+    //
+    // TODO: Conflicted on this.  Should putting a src into this buffer that's
+    // too large.  Should we act like a Uint8Array?
+    set(o: number, src: string | ArrayBuffer | IDataBuffer, srcOffset?: number, srcLength?: number): void {
+        const offset = o + this.byteOffset;
+        srcOffset = srcOffset || 0;
+
+        let buf: Buffer;
+        if (src instanceof DataBuffer) {
+            srcLength = srcLength || src.byteLength;
+            for (let i = 0, idx = srcOffset; i < srcLength; ++i, ++idx) {
+                this.buffer[o + i] = src.getUInt8(idx);
+            }
+            return;
+        }
+
+        if (typeof src === 'string') {
+            buf = Buffer.from(src);
+        }
+        else {
+            srcLength = srcLength || src.byteLength;
+
+            // How to get rid of this.  I clearly got rid of it by doing the
+            // first if in this function.
+            // @ts-ignore
+            buf = Buffer.from(src.slice(srcOffset, srcLength));
+        }
+
+        for (let i = 0; i < buf.length; ++i) {
+            this.buffer[o + i] = buf[i];
+        }
+    }
 
     getUIntLE(offset: number, byteLength: 1 | 2 | 3 | 4 | 5 | 6): number { throw new Error("Not Implemented"); }
     getUIntBE(offset: number, byteLength: 1 | 2 | 3 | 4 | 5 | 6): number { throw new Error("Not Implemented"); }
@@ -243,7 +333,10 @@ export default class DB implements DataBuffer {
 
     getInt8(offset: number): number { throw new Error("Not Implemented"); }
 
-    getUInt16BE(offset: number): number { throw new Error("Not Implemented"); }
+    getUInt16BE(offset: number): number {
+        return this.buffer.readUInt16BE(offset);
+    }
+
     getUInt16LE(offset: number): number { throw new Error("Not Implemented"); }
     getInt16BE(offset: number): number { throw new Error("Not Implemented"); }
     getInt16LE(offset: number): number { throw new Error("Not Implemented"); }
@@ -274,8 +367,16 @@ export default class DB implements DataBuffer {
         return offset;
     }
 
-    setUInt16BE(offset: number, val: number): number { throw new Error("Not Implemented"); }
-    setUInt16LE(offset: number, val: number): number { throw new Error("Not Implemented"); }
+    setUInt16BE(offset: number, val: number): number {
+        this.buffer.writeUInt16BE(val, this.byteOffset + offset);
+        return offset;
+    }
+
+    setUInt16LE(offset: number, val: number): number {
+        this.buffer.writeUInt16LE(val, this.byteOffset + offset);
+        return offset;
+    }
+
     setInt16BE(offset: number, val: number): number { throw new Error("Not Implemented"); }
     setInt16LE(offset: number, val: number): number { throw new Error("Not Implemented"); }
 
@@ -295,7 +396,7 @@ export default class DB implements DataBuffer {
     setFloat64BE(offset: number, val: number): number { throw new Error("Not Implemented"); }
     setFloat64LE(offset: number, val: number): number { throw new Error("Not Implemented"); }
 
-    compare(other: string | ArrayBuffer | DataBuffer | Uint8Array | number | number[],
+    compare(other: string | ArrayBuffer | IDataBuffer | Uint8Array | number | number[],
             otherByteOffset?: number,
             otherByteLength?: number,
             selfByteOffset?: number,
@@ -311,21 +412,21 @@ export default class DB implements DataBuffer {
 
     setView(byteOffset: number, byteLength: number): void { throw new Error("Not Implemented"); }
 
-    static concat(...args: ArrayBuffer[] | Uint8Array[] | DataBuffer[]): DataBuffer {
+    static concat(...args: ArrayBuffer[] | Uint8Array[] | IDataBuffer[]): IDataBuffer {
         const normalizedArr: Uint8Array[] = [];
         for (let i = 0; i < args.length; ++i) {
             const arg = args[i];
             if (arg instanceof ArrayBuffer) {
                 normalizedArr.push(new Uint8Array(arg));
             }
-            if (arg instanceof Uint8Array) {
+            else if (arg instanceof Uint8Array) {
                 normalizedArr.push(arg);
             }
 
-            normalizedArr.push((arg as DB).buffer);
+            normalizedArr.push((arg as DataBuffer).buffer);
         }
 
         const normBuf = Buffer.concat(normalizedArr);
-        return new DB(normBuf);
+        return new DataBuffer(normBuf);
     }
 }

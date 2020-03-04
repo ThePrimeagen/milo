@@ -6,7 +6,7 @@ import DataBuffer from "./#{target}/DataBuffer";
 import {
     CreateTCPNetworkPipeOptions, DnsResult, IpConnectivityMode,
     NetworkPipe, RequestTimeouts, HTTP, HTTPMethod, HTTPHeadersEvent,
-    HTTPTransferEncoding, ErrorCode, DataBuffer as IDataBuffer
+    HTTPTransferEncoding, ErrorCode, IDataBuffer
 } from "./types";
 import { assert, escapeData } from "./utils";
 

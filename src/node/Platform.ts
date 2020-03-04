@@ -18,8 +18,8 @@ import createTCPNetworkPipe from "./NodeTCPNetworkPipe";
 import sha1 from "sha1";
 import btoa from "btoa";
 import atob from "atob";
-import { DataBuffer } from "../types";
-import DB from "./DataBuffer";
+import { IDataBuffer } from "../types";
+import DataBuffer from "./DataBuffer";
 import {SHA256Context as SC} from "./SHA256Context";
 
 function toBuffer(buf: Uint8Array | ArrayBuffer | string) {
@@ -49,10 +49,10 @@ class NodePlatform implements Platform {
     public location: string = "?";
     public defaultRequestTimeouts = {};
     public standardHeaders: HTTPRequestHeaders = {};
-    public scratch: DataBuffer;
+    public scratch: IDataBuffer;
 
     constructor() {
-        this.scratch = new DB(1024 * 32);
+        this.scratch = new DataBuffer(1024 * 32);
     }
 
     utf8Length(str: string): number {
@@ -65,14 +65,14 @@ class NodePlatform implements Platform {
         return buf;
     }
 
-    huffmanEncode(input: string | DataBuffer): DataBuffer {
+    huffmanEncode(input: string | IDataBuffer): IDataBuffer {
         throw new Error("Not Implemented");
-        return {} as DataBuffer;
+        return {} as IDataBuffer;
     }
 
-    huffmanDecode(input: DataBuffer): DataBuffer {
+    huffmanDecode(input: IDataBuffer): IDataBuffer {
         throw new Error("Not Implemented");
-        return {} as DataBuffer;
+        return {} as IDataBuffer;
     }
 
     // @ts-ignore
@@ -113,7 +113,7 @@ class NodePlatform implements Platform {
     // base64 encode
     // fixme? anders....
     // @ts-ignore
-    btoa(buffer: Uint8Array | ArrayBuffer | string, returnUint8Array: boolean): string | Uint8Array {
+    btoa(buffer: Uint8Array | ArrayBuffer | string, returnUint8Array?: boolean): string | Uint8Array {
         let out;
         if (typeof buffer === 'string') {
             out = btoa(buffer);
@@ -149,14 +149,14 @@ class NodePlatform implements Platform {
     }
 
     // string to uint8array
-    atoutf8(input: DataBuffer | Uint8Array | ArrayBuffer | string): Uint8Array {
+    atoutf8(input: IDataBuffer | Uint8Array | ArrayBuffer | string): Uint8Array {
         return toUint8Array(input);
     }
 
     // TODO: Assumes Ascii
-    utf8toa(input: DataBuffer | Uint8Array | ArrayBuffer | string, offset?: number, length?: number): string {
+    utf8toa(input: IDataBuffer | Uint8Array | ArrayBuffer | string, offset?: number, length?: number): string {
         if (typeof input === 'string') {
-            return input.substr(offset || 0, length || 0);
+            return input.substr(offset || 0, length || input.length);
         }
 
         let buf: Uint8Array;

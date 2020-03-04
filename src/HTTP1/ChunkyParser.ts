@@ -1,16 +1,16 @@
 import Platform from "../#{target}/Platform";
 import { assert, escapeData } from "../utils";
-import { OnError, DataBuffer } from "../types";
+import { OnError, IDataBuffer } from "../types";
 
 export class ChunkyParser {
-    private buffers: DataBuffer[] = [];
+    private buffers: IDataBuffer[] = [];
     private offset: number = 0;
     private dataNeeded: number = -1;
     private available: number = 0;
     constructor() {
     }
 
-    feed(data: DataBuffer, offset: number, length: number): void {
+    feed(data: IDataBuffer, offset: number, length: number): void {
         Platform.assert(this.onchunk, "Gotta have an onchunk");
         this.buffers.push(data.slice(offset, length));
         this.available += length;
@@ -84,8 +84,8 @@ export class ChunkyParser {
         }
     }
 
-    ondone?: (buffer: DataBuffer | undefined) => void;
-    onchunk?: (chunk: DataBuffer) => void;
+    ondone?: (buffer: IDataBuffer | undefined) => void;
+    onchunk?: (chunk: IDataBuffer) => void;
     onerror?: OnError;
 
     private _consume(bytes: number): void {
@@ -110,7 +110,7 @@ export class ChunkyParser {
         this.available -= consumed;
     }
 
-    private _extractChunk(size: number): DataBuffer {
+    private _extractChunk(size: number): IDataBuffer {
         Platform.assert(this.available >= size, "available's gotta be more than size");
         // grab the whole first chunk
         if (!this.offset && this.buffers[0].byteLength === size) {

@@ -1,3 +1,6 @@
+import { IDataBuffer, } from '../types'
+import DataBuffer from '../#{target}/DataBuffer'
+
 const r = "\r".charCodeAt(0);
 const n = "\n".charCodeAt(0);
 const newLine = [r, n];
@@ -15,7 +18,7 @@ export function parse64BigInt(buffer: Uint8Array, offset: number): BigInt {
 };
 
 export class BufferPool {
-    private pool: Uint8Array[];
+    private pool: IDataBuffer[];
     private size: number;
 
     constructor(size: number) {
@@ -25,13 +28,13 @@ export class BufferPool {
 
     malloc() {
         if (this.pool.length === 0) {
-            this.pool.push(new Uint8Array(this.size));
+            this.pool.push(new DataBuffer(this.size));
         }
 
         return this.pool.pop();
     }
 
-    free(buffer: Uint8Array) {
+    free(buffer: IDataBuffer) {
         this.pool.push(buffer);
     }
 

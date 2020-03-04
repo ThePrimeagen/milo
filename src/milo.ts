@@ -1,7 +1,7 @@
 import { Request, RequestData, RequestResponse } from "./Request";
 import Platform from "./#{target}/Platform";
 import DataBuffer from "./#{target}/DataBuffer";
-import { NetworkPipe } from "./types";
+import { NetworkPipe, IDataBuffer } from "./types";
 import { headerValue } from "./utils";
 import WS, { WSState } from './ws';
 
@@ -82,7 +82,7 @@ export function ws(url: string, milo: boolean): Promise<WS> {
                 send: ws.send.bind(ws),
                 onmessage: (event: any) => { }
             };
-            ws.onmessage = (buffer: Uint8Array) => {
+            ws.onmessage = (buffer: IDataBuffer) => {
                 if (ret.onmessage) {
                     ret.onmessage({
                         type: "message",

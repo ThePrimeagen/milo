@@ -10,7 +10,7 @@ export enum ErrorCode {
     None = 0
 };
 
-export interface DataBuffer {
+export interface IDataBuffer {
     // properties
     bufferLength: number;
     byteLength: number;
@@ -19,7 +19,7 @@ export interface DataBuffer {
 
     // methods
     clear(): void;
-    compare(other: string | ArrayBuffer | DataBuffer | Uint8Array | number | number[],
+    compare(other: string | ArrayBuffer | IDataBuffer | Uint8Array | number | number[],
             otherByteOffset?: number,
             otherByteLength?: number,
             selfByteOffset?: number,
@@ -27,25 +27,25 @@ export interface DataBuffer {
     /**
      * Deep Copy
      */
-    compress(method: compressionMethod, offset?: number, length?: number): DataBuffer;
+    compress(method: compressionMethod, offset?: number, length?: number): IDataBuffer;
     /**
      * Deep Copy
      */
-    decode(enc: encodingType, offset?: number, length?: number): DataBuffer;
+    decode(enc: encodingType, offset?: number, length?: number): IDataBuffer;
     detach(): void;
-    encode(enc: encodingType, offset?: number, length?: number): DataBuffer;
-    equals(other: string | ArrayBuffer | DataBuffer | Uint8Array | number | number[]): boolean;
-    every(func: (val: number, i: number, buffer: DataBuffer) => boolean, thisValue?: any): boolean;
-    fill(data: string | ArrayBuffer | DataBuffer | number | Uint8Array,
+    encode(enc: encodingType, offset?: number, length?: number): IDataBuffer;
+    equals(other: string | ArrayBuffer | IDataBuffer | Uint8Array | number | number[]): boolean;
+    every(func: (val: number, i: number, buffer: IDataBuffer) => boolean, thisValue?: any): boolean;
+    fill(data: string | ArrayBuffer | IDataBuffer | number | Uint8Array,
          offset?: number, length?: number): void;
 
     /**
      * Deep Copy
      */
-    filter(func: (val: number, i: number, buffer: DataBuffer) => boolean, thisValue?: any): DataBuffer;
-    find(func: (val: number, i: number, buffer: DataBuffer) => boolean, thisValue?: any): number | undefined;
-    findIndex(func: (val: number, i: number, buffer: DataBuffer) => boolean, thisValue?: any): number | undefined;
-    forEach(func: (val: number, i: number, buffer: DataBuffer) => void, thisValue?: any): void;
+    filter(func: (val: number, i: number, buffer: IDataBuffer) => boolean, thisValue?: any): IDataBuffer;
+    find(func: (val: number, i: number, buffer: IDataBuffer) => boolean, thisValue?: any): number | undefined;
+    findIndex(func: (val: number, i: number, buffer: IDataBuffer) => boolean, thisValue?: any): number | undefined;
+    forEach(func: (val: number, i: number, buffer: IDataBuffer) => void, thisValue?: any): void;
 
     get(offset: number): number;
     getFloat32BE(offset: number): number;
@@ -71,30 +71,30 @@ export interface DataBuffer {
     getUIntBE(offset: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number;
     getUIntLE(offset: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number;
 
-    hash(hash: hashType, offset?: number, length?: number): DataBuffer;
+    hash(hash: hashType, offset?: number, length?: number): IDataBuffer;
     hashToString(hash: hashType, offset?: number, length?: number): string;
 
-    includes(needle: string | ArrayBuffer | DataBuffer | number | Uint8Array | number[],
+    includes(needle: string | ArrayBuffer | IDataBuffer | number | Uint8Array | number[],
              offset?: number, length?: number, caseInsensitive?: boolean): boolean;
 
-    indexOf(needle: string | ArrayBuffer | DataBuffer | number | Uint8Array | number[],
+    indexOf(needle: string | ArrayBuffer | IDataBuffer | number | Uint8Array | number[],
             offset?: number, length?: number, caseInsensitive?: boolean): number;
 
     isEmpty(): boolean;
     join(separator?: string): string;
-    lastIndexOf(needle: string | ArrayBuffer | DataBuffer | number | Uint8Array | number[],
+    lastIndexOf(needle: string | ArrayBuffer | IDataBuffer | number | Uint8Array | number[],
                 offset?: number, length?: number, caseInsensitive?: boolean): number;
     /**
      * Takes the left most bytes, equivalent to subarray(0, length).
      *
      * Shallow Copy
      */
-    leftSubarray(length: number): DataBuffer;
+    leftSubarray(length: number): IDataBuffer;
 
-    map(func: (val: number, i: number, buffer: DataBuffer) => number, thisValue?: any): DataBuffer;
+    map(func: (val: number, i: number, buffer: IDataBuffer) => number, thisValue?: any): IDataBuffer;
     randomize(offset?: number, length?: number): void;
-    reduce(func: (previousValue: any, val: number, i: number, buffer: DataBuffer) => any, previousValue?: any): any;
-    reduceRight(func: (previousValue: any, val: number, i: number, buffer: DataBuffer) => any, previousValue?: any): any;
+    reduce(func: (previousValue: any, val: number, i: number, buffer: IDataBuffer) => any, previousValue?: any): any;
+    reduceRight(func: (previousValue: any, val: number, i: number, buffer: IDataBuffer) => any, previousValue?: any): any;
 
     reverse(offset?: number, length?: number): void;
 
@@ -104,9 +104,9 @@ export interface DataBuffer {
      *
      * Shallow Copy
      */
-    rightSubarray(length: number): DataBuffer;
+    rightSubarray(length: number): IDataBuffer;
 
-    set(offset: number, src: string | ArrayBuffer | DataBuffer | number | Uint8Array | number[],
+    set(offset: number, src: string | ArrayBuffer | IDataBuffer | number | Uint8Array | number[],
         srcOffset?: number, srcLength?: number): void;
     setFloat32BE(offset: number, val: number): number;
     setFloat32LE(offset: number, val: number): number;
@@ -136,7 +136,7 @@ export interface DataBuffer {
     /**
      * Deep Copy
      */
-    slice(offset?: number, length?: number): DataBuffer;
+    slice(offset?: number, length?: number): IDataBuffer;
 
     sort(func?: (l: number, r: number) => number): void;
 
@@ -151,9 +151,9 @@ export interface DataBuffer {
      *
      * Shallow Copy
      */
-    subarray(offset?: number, length?: number): DataBuffer;
+    subarray(offset?: number, length?: number): IDataBuffer;
 
-    toArray(offset?: number, length?: number): [number];
+    toArray(offset?: number, length?: number): number[];
 
     /**
      * Deep Copy
@@ -164,17 +164,17 @@ export interface DataBuffer {
     uncompress(method: compressionMethod, offset?: number, length?: number): string;
 }
 
-type ConcatTypes = ArrayBuffer | Uint8Array | DataBuffer | string | number[] | number;
+type ConcatTypes = ArrayBuffer | Uint8Array | IDataBuffer | string | number[] | number;
 type DataBufferConstructor = {
-    new(bytes: number): DataBuffer;
-    new(): DataBuffer;
-    new(data: string, encoding?: string): DataBuffer;
-    new(data: ArrayBuffer | DataBuffer | Uint8Array, offset?: number, length?: number): DataBuffer;
-    compare(lhs: string | ArrayBuffer | DataBuffer | Uint8Array | number | number[],
-            rhs: string | ArrayBuffer | DataBuffer | Uint8Array | number | number[]): -1 | 0 | 1;
-    concat(...args: ConcatTypes[]): DataBuffer
-    of(...args: ConcatTypes[]): DataBuffer;
-    random(size: number): DataBuffer;
+    new(bytes: number): IDataBuffer;
+    new(): IDataBuffer;
+    new(data: string, encoding?: string): IDataBuffer;
+    new(data: ArrayBuffer | IDataBuffer | Uint8Array, offset?: number, length?: number): IDataBuffer;
+    compare(lhs: string | ArrayBuffer | IDataBuffer | Uint8Array | number | number[],
+            rhs: string | ArrayBuffer | IDataBuffer | Uint8Array | number | number[]): -1 | 0 | 1;
+    concat(...args: ConcatTypes[]): IDataBuffer
+    of(...args: ConcatTypes[]): IDataBuffer;
+    random(size: number): IDataBuffer;
 };
 
 declare global {
@@ -228,20 +228,20 @@ export type OnClose = () => void;
 export type OnError = (code: number, message: string) => void;
 
 export interface SHA256Context {
-    add(buf: Uint8Array | ArrayBuffer | DataBuffer | string): void;
+    add(buf: Uint8Array | ArrayBuffer | IDataBuffer | string): void;
 
     final(): ArrayBuffer;
-    final(md: ArrayBuffer | Uint8Array | DataBuffer, offset?: number): number;
+    final(md: ArrayBuffer | Uint8Array | IDataBuffer, offset?: number): number;
     reset(): void;
 };
 
 export interface NetworkPipe {
-    write(buf: DataBuffer | Uint8Array | ArrayBuffer | string, offset: number, length: number): void;
+    write(buf: IDataBuffer | Uint8Array | ArrayBuffer | string, offset: number, length: number): void;
     write(buf: string): void;
 
-    read(buf: ArrayBuffer | DataBuffer, offset: number, length: number): number;
+    read(buf: ArrayBuffer | IDataBuffer, offset: number, length: number): number;
 
-    unread(buf: DataBuffer | Uint8Array | ArrayBuffer): void;
+    unread(buf: IDataBuffer | Uint8Array | ArrayBuffer): void;
 
     close(): void;
 
@@ -296,7 +296,7 @@ export interface HTTP {
     timeToFirstByteWritten?: number;
 
     onheaders?: (headers: HTTPHeadersEvent) => void;
-    ondata?: (data: DataBuffer, offset: number, length: number) => void;
+    ondata?: (data: IDataBuffer, offset: number, length: number) => void;
     onfinished?: () => void;
     onerror?: OnError;
 };
@@ -305,8 +305,8 @@ export interface Platform {
     // return number of octets
     utf8Length(str: string): number;
 
-    huffmanDecode(input: DataBuffer): DataBuffer;
-    huffmanEncode(input: string | DataBuffer): DataBuffer;
+    huffmanDecode(input: IDataBuffer): IDataBuffer;
+    huffmanEncode(input: string | IDataBuffer): IDataBuffer;
 
     sha1(input: string): Uint8Array;
     // base64 encode
@@ -323,11 +323,11 @@ export interface Platform {
     atoutf8(input: Uint8Array | ArrayBuffer | string): Uint8Array;
 
     // uint8array to string
-    utf8toa(input: DataBuffer | Uint8Array | ArrayBuffer | string, offset?: number, length?: number): string;
+    utf8toa(input: IDataBuffer | Uint8Array | ArrayBuffer | string, offset?: number, length?: number): string;
 
     randomBytes(len: number): Uint8Array
 
-    writeFile(fileName: string, contents: Uint8Array | ArrayBuffer | DataBuffer | string): boolean;
+    writeFile(fileName: string, contents: Uint8Array | ArrayBuffer | IDataBuffer | string): boolean;
 
     stacktrace(): string;
 
@@ -347,7 +347,7 @@ export interface Platform {
     createSSLNetworkPipe(options: CreateSSLNetworkPipeOptions): Promise<NetworkPipe>;
     createSHA256Context(): SHA256Context;
 
-    bufferConcat(...args: ArrayBuffer[] | Uint8Array[] | DataBuffer[]): ArrayBuffer;
+    bufferConcat(...args: ArrayBuffer[] | Uint8Array[] | IDataBuffer[]): ArrayBuffer;
 
     bufferIndexOf(haystack: Uint8Array | ArrayBuffer | string,
                   haystackOffset: number,
@@ -363,13 +363,13 @@ export interface Platform {
                       needleOffset?: number,
                       needleLength?: number | undefined,
                       caseInsensitive?: boolean): number;
-    bufferSet(dest: Uint8Array | ArrayBuffer | DataBuffer,
+    bufferSet(dest: Uint8Array | ArrayBuffer | IDataBuffer,
               destOffset: number,
-              src: Uint8Array | ArrayBuffer | DataBuffer,
+              src: Uint8Array | ArrayBuffer | IDataBuffer,
               srcOffset?: number,
               srcLength?: number | undefined): void;
 
-    bufferSet(dest: Uint8Array | ArrayBuffer | DataBuffer,
+    bufferSet(dest: Uint8Array | ArrayBuffer | IDataBuffer,
               destOffset: number,
               src: string): void;
 
@@ -380,7 +380,7 @@ export interface Platform {
 
     UILanguages: string[];
     location: string;
-    scratch: DataBuffer;
+    scratch: IDataBuffer;
 
     defaultRequestTimeouts: RequestTimeouts;
 

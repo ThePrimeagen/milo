@@ -1,7 +1,9 @@
 import Platform from "../../#{target}/Platform";
+import DataBuffer from "../../#{target}/DataBuffer";
+
 import {
     NetworkPipe,
-    DataBuffer,
+    IDataBuffer,
 } from '../../types';
 import FrameConstructor from '../frame/frame-constructor';
 import * as FrameUtils from '../frame/utils';
@@ -33,7 +35,7 @@ export default class StreamManager {
     private pipe: NetworkPipe;
     // TODO: REMOVE THIS AND USE THE H E DOUBLE HOCKEY STICKS READ BUFF FROM
     // THE PLATFORM
-    private readBuffer: DataBuffer;
+    private readBuffer: IDataBuffer;
     private nextId: number;
     private currentFrame: FrameConstructor;
     private state: number;

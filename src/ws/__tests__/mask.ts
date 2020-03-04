@@ -1,4 +1,6 @@
 import maskFn from '../mask';
+import {IDataBuffer} from '../../types';
+import DataBuffer from '../../#{target}/DataBuffer';
 
 // FOR YOU JELMEGA
 // LittleEndian is going to be BBAABBAA
@@ -18,7 +20,6 @@ const unmaskedArr = [0xFF, 0x00, 0x00, 0xFF, 0x0F, 0xF0, 0x0F, 0xF0];
 const maskedArr =   [0x55, 0xBB, 0xAA, 0x44, 0xA5, 0x4B, 0xA5, 0x4B];
 
 const arr = Uint8Array.from(unmaskedArr);
-const buf = Buffer.from(arr);
 
 function isLittleEndian() {
     const arrayBuffer = new ArrayBuffer(2);
@@ -31,21 +32,21 @@ function isLittleEndian() {
     return uint16array[0] === 0xBBAA;
 }
 
-function checkBuf(buf: Uint8Array, arr: number[], offset: number = 0) {
+function checkBuf(buf: IDataBuffer, arr: number[], offset: number = 0) {
     for (let i = 0; i < arr.length; ++i) {
-        expect(buf[offset + i]).toEqual(arr[i]);
+        expect(buf.getUInt8(offset + i)).toEqual(arr[i]);
     }
 }
 
 describe("WS", function() {
     it("should mask properly", function() {
-        const b = new Uint8Array(1000);
-        buf.copy(b, 0);
+        const b = new DataBuffer(1000);
+        b.set(0, arr);
 
-        maskFn(b, 0, buf.length, maskBuf);
+        maskFn(b, 0, arr.byteLength, maskBuf);
         checkBuf(b, maskedArr);
 
-        maskFn(b, 0, buf.length, maskBuf);
+        maskFn(b, 0, arr.byteLength, maskBuf);
         checkBuf(b, unmaskedArr);
     });
 });
