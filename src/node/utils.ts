@@ -1,5 +1,5 @@
 import DB from './DataBuffer';
-import {DataBuffer} from '../types';
+import {IDataBuffer} from '../types';
 
 export function bufferToUint8Array(buf: Buffer) {
     return new Uint8Array(
@@ -51,7 +51,7 @@ function stringToUint8Array(str: string): Uint8Array {
     return new Uint8Array(buf);
 }
 
-export function toUint8Array(buf: string | Uint8Array | ArrayBuffer | DataBuffer): Uint8Array {
+export function toUint8Array(buf: string | Uint8Array | ArrayBuffer | IDataBuffer): Uint8Array {
 
     if (buf instanceof ArrayBuffer) {
         return new Uint8Array(buf);
@@ -74,7 +74,7 @@ export function toUint8Array(buf: string | Uint8Array | ArrayBuffer | DataBuffer
     return out;
 }
 
-export function createNonCopyBuffer(buf: ArrayBuffer | DataBuffer, offset: number, length: number): Buffer {
+export function createNonCopyBuffer(buf: ArrayBuffer | IDataBuffer, offset: number, length: number): Buffer {
     if (buf instanceof ArrayBuffer) {
         return Buffer.from(buf).slice(offset, offset + length);
     }

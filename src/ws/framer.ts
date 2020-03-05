@@ -1,4 +1,5 @@
 import Platform from '../#{target}/Platform';
+import DataBuffer from '../#{target}/DataBuffer'
 
 import {
     BufferPool,
@@ -6,7 +7,8 @@ import {
 } from './buffer';
 
 import {
-    NetworkPipe
+    NetworkPipe,
+    IDataBuffer,
 } from '../types';
 
 import {
@@ -27,7 +29,7 @@ import {
 // @ts-ignore
 } from 'network-byte-order';
 
-type WSCallback = (buffer: Uint8Array, state: WSState) => void;
+type WSCallback = (buffer: IDataBuffer, state: WSState) => void;
 
 enum State {
     Waiting = 1,
@@ -36,22 +38,11 @@ enum State {
     ParsingBody,
 };
 
-// NOTE: For teh stream, not for the streamer
-// 1.  How to open up, insert, command, and quit.
-// 2.  How to hjkl
-// 3.  How to wb
-// 4.  How to yp
-// 5.  How to d
-// 6.  How to ft
-// 7.  How to xs
-// 8.  How to ci({|(|[)
-// 9.  How to $%
-//
 // TODO: Probably should do some sort of object pool.
-
 const MAX_HEADER_SIZE = 8;
 const headerPool = new BufferPool(MAX_HEADER_SIZE);
 
+// TODO: Rotate pools.
 const maskNumber = 0xAABBAABB;
 const maskBuf = new Uint8Array(4);
 const maskView = new DataView(maskBuf.buffer);
@@ -66,7 +57,7 @@ function generateMask(): Uint8Array {
 }
 
 export function constructFrameHeader(
-    buf: Uint8Array,
+    buf: IDataBuffer,
     isFinished: boolean,
     opCode: number,
     payloadLength: number,
@@ -80,7 +71,7 @@ export function constructFrameHeader(
     }
 
     firstByte |= (opCode & 0xF);
-    buf[ptr++] = firstByte;
+    buf.setUInt8(ptr++, firstByte);
 
     // payload encoding
     let secondByte = 0;
@@ -94,26 +85,29 @@ export function constructFrameHeader(
     }
     else if (payloadLength < 0xFFFF) {
         secondByte |= (126 & 0x7F);
-        // TODO: check my endiannes first.  This assumes LittleEndian to BigEndian.
-        htons(buf, ptr, payloadLength);
-
+        buf.setUInt16BE(ptr, payloadLength);
         ptr += 2;
     }
     else {
+        // TODO: put an exception in WS Constructor if you attempt to make
+        // frames larger than 64KB
+        //
+        // TODO: Or should we allow it?  Maybe?
+        //
         // NOTE: This should just never be an option.  It really is
         // insanity wolf to make a packet this big that would throttle the
         // whole ws pipeline.
         throw new Error('Bad implementation, Prime');
     }
 
-    buf[1] = secondByte;
+    buf.setUInt8(1, secondByte);
 
     if (mask !== undefined) {
-        buf.set(mask, ptr);
+        buf.set(ptr, mask);
         ptr += 4;
     }
 
-  return ptr;
+    return ptr;
 }
 
 export type WSState = {
@@ -125,10 +119,10 @@ export type WSState = {
     isMasked: boolean;
     mask: Uint8Array;
     payloadLength: number;
-    payload: Uint8Array;
+    payload: IDataBuffer;
     isControlFrame: boolean;
     payloadPtr: number;
-    payloads?: Uint8Array[];
+    payloads?: IDataBuffer[];
     state: State;
 };
 
@@ -176,7 +170,7 @@ export default class WSFramer {
     }
 
     // TODO: Contiuation frames, spelt wrong
-    send(buf: Uint8Array, offset: number,
+    send(buf: IDataBuffer, offset: number,
         length: number, frameType: Opcodes = Opcodes.BinaryFrame) {
 
         if (length > 2 ** 32) {
@@ -191,7 +185,8 @@ export default class WSFramer {
 
         const header = headerPool.malloc();
         assert(header, "Gotta have header");
-        header[0] = 0;
+
+        header.setUInt8(0, 0);
 
         do {
             const ptrStart = ptr;
@@ -205,15 +200,12 @@ export default class WSFramer {
             const headerEnd = constructFrameHeader(
                 header, true, ft, frameSize, mask);
 
-            const fullBuf = new Uint8Array(headerEnd + frameSize);
+            const fullBuf = new DataBuffer(headerEnd + frameSize);
 
-            fullBuf.set(header);
+            fullBuf.set(0, header);
 
-            const framedFrameSize = Math.min(frameSize, endIdx - ptr);
-            const sub = new Uint8Array(buf.buffer, ptr, framedFrameSize);
-
-            fullBuf.set(sub, headerEnd);
-            ptr += sub.byteLength;
+            fullBuf.set(headerEnd, buf, ptr, frameSize);
+            ptr += frameSize;
 
             maskFn(fullBuf, headerEnd, frameSize, mask);
 
@@ -229,8 +221,16 @@ export default class WSFramer {
         headerPool.free(header);
     }
 
-    isControlFrame(packet: Uint8Array): boolean {
-        const opCode = (packet[0] & 0x0F);
+    /**
+     * Does some basic logic to check if the header is completed.
+     */
+    isHeaderComplete(packet: IDataBuffer, offset: number, length: number): boolean {
+        let ptr = offset;
+        throw new Error("Not Implemented");
+    }
+
+    isControlFrame(packet: IDataBuffer, offset: number): boolean {
+        const opCode = (packet.getUInt8(offset) & 0x0F);
 
         return opCode === Opcodes.Ping ||
             opCode === Opcodes.Pong ||
@@ -238,7 +238,7 @@ export default class WSFramer {
     }
 
     // TODO: Handle Continuation.
-    processStreamData(packet: Uint8Array, offset: number, endIdx: number) {
+    processStreamData(packet: IDataBuffer, offset: number, endIdx: number) {
 
         if (this.closed) {
             throw new Error("Hey, closed for business bud.");
@@ -253,7 +253,7 @@ export default class WSFramer {
 
                 // ITS GONNA DO IT.
                 if (state.state === State.Waiting &&
-                    this.isControlFrame(packet)) {
+                    this.isControlFrame(packet, ptr)) {
                     state = this.controlState;
                 }
 
@@ -270,10 +270,11 @@ export default class WSFramer {
                     const payloadByteLength = state.payload.byteLength;
 
                     assert(headerBuf, "Gotta have headerBuf");
-                    headerBuf.set(state.payload);
-                    headerBuf.set(
-                        packet.subarray(offset, offset + headerBuf.length - payloadByteLength),
-                        payloadByteLength);
+
+                    headerBuf.set(0, state.payload, 0, payloadByteLength);
+                        packet.subarray(ptr, headerBuf.byteLength - payloadByteLength),
+                        headerBuf.set(payloadByteLength, packet, ptr,
+                            headerBuf.byteLength - payloadByteLength);
 
                     nextPtrOffset =
                         this.parseHeader(state, headerBuf, 0, MAX_HEADER_SIZE);
@@ -289,10 +290,7 @@ export default class WSFramer {
                 if (nextPtrOffset === false) {
 
                     state.state = State.WaitingForCompleteHeader;
-
-                    // TODO: Copies in the whole header as its an incomplete
-                    // header so we don't know the length.
-                    state.payload = packet.slice(ptr, endIdx);
+                    state.payload = packet.slice(ptr, endIdx - ptr);
 
                     break;
                 }
@@ -358,14 +356,14 @@ export default class WSFramer {
     // TODO: Endianness????
     //
     // Send 126 bytes to find out how they order their bytes.
-    private parseHeader(state: WSState, packet: Uint8Array, offset: number, endIdx: number): number | boolean {
+    private parseHeader(state: WSState, packet: IDataBuffer, offset: number, endIdx: number): number | boolean {
 
         if (endIdx - offset < MAX_HEADER_SIZE) {
             return false;
         }
 
         let ptr = offset;
-        const byte1 = packet[ptr++];
+        const byte1 = packet.getUInt8(ptr++);
         state.isFinished = (byte1 & (0x80)) >>> 7 === 1;
 
         state.rsv1 = (byte1 & 0x40) >> 6;
@@ -382,44 +380,43 @@ export default class WSFramer {
             state.opcode = opcode;
         }
 
-        const byte2 = packet[ptr++];
+        const byte2 = packet.getUInt8(ptr++);
 
         state.isMasked = (byte2 & 0x80) >>> 7 === 1;
 
         state.payloadLength =  (byte2 & 0x7F);
 
         if (state.payloadLength === 126) {
-            state.payloadLength = ntohs(packet, ptr);
+            state.payloadLength = packet.getUInt16BE(ptr);
             ptr += 2;
         }
 
         else if (state.payloadLength === 127) {
-            const pView = new DataView(packet.buffer);
-            // big endian
-            const payloadB = pView.getUint32(ptr + 4);
+            assert(packet.getUInt32BE(ptr) === 0, "Nope. As of now, we don't allow larger than this ever.  Why would you ever send this much data through a WS anyways?  What's wrong with you...");
+            state.payloadLength = packet.getUInt32BE(ptr + 4);
 
-            state.payloadLength = Number(payloadB);
             ptr += 8;
         }
 
         if (state.isMasked) {
             state.mask = new Uint8Array(4);
+            const maskBuf = packet.subarray(ptr, 4);
+            state.mask[0] = maskBuf.getUInt8(0);
+            state.mask[1] = maskBuf.getUInt8(1);
+            state.mask[2] = maskBuf.getUInt8(2);
+            state.mask[3] = maskBuf.getUInt8(3);
 
-            const maskInView = new DataView(packet.subarray(ptr, ptr + 4).buffer);
-            const stateMaskView = new DataView(state.mask.buffer);
-
-            stateMaskView.setUint32(0, maskView.getUint32(0));
             ptr += 4;
         }
 
         state.payloadPtr = 0;
-        state.payload = new Uint8Array(state.payloadLength);
+        state.payload = new DataBuffer(state.payloadLength);
 
         return ptr;
     }
 
     private parseBody(
-        state: WSState, packet: Uint8Array,
+        state: WSState, packet: IDataBuffer,
         offset: number, endIdx: number): number {
 
         // TODO: When the packet has multiple frames in it, i need to be able
@@ -427,10 +424,12 @@ export default class WSFramer {
 
         // TODO: is this ever needed?
         const remaining = state.payloadLength - state.payloadPtr;
-        const sub = packet.subarray(offset, endIdx);
-        state.payload.set(sub, state.payloadPtr);
+        const sub = packet.subarray(offset, endIdx - offset);
+
+        state.payload.set(state.payloadPtr, sub);
         const copyAmount = sub.byteLength;
 
+        debugger;
         if (state.isMasked) {
             maskFn(state.payload, state.payloadPtr, copyAmount, state.mask);
         }
@@ -447,38 +446,14 @@ export default class WSFramer {
     private pushFrame(state: WSState) {
         let buf = state.payload;
 
-        // const fState = Object.
-        //     keys(state).
-        //     // @ts-ignore
-        //     reduce((acc, k) => {
-
-
-        //     // @ts-ignore
-        //         if (state[k] instanceof Buffer) {
-        //     // @ts-ignore
-        //             acc[k] = `Buffer(${state[k].byteLength})`;
-        //     // @ts-ignore
-        //         }
-        //     // @ts-ignore
-        //         else {
-        //     // @ts-ignore
-        //             acc[k] = state[k];
-        //         }
-        //         return acc;
-        //     }, {});
-
-        //console.log("PushFrame", buf.byteLength, fState);
-
         if (state.payloads && state.payloads.length) {
             state.payloads.push(state.payload);
 
             // buf = Buffer.concat(state.payloads);
-            buf = new Uint8Array(Platform.bufferConcat.apply(undefined, state.payloads));
+            buf = DataBuffer.concat(...state.payloads);
             state.payloads = undefined;
         }
 
-        // TODO: Continuation Frame
-        // TODONE: *** YEAH
         this.callbacks.forEach(cb => cb(buf, state));
     }
 };

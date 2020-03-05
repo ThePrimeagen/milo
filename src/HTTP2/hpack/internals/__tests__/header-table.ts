@@ -7,7 +7,6 @@ describe("HeaderTable", function() {
     it("should be able to look up or resolve static value.", function() {
         const table = new HeaderTable(1024 * 16);
 
-        debugger;
         for (let i = 0; i < staticList.length; ++i) {
 
             const [

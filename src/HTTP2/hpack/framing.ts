@@ -1,7 +1,7 @@
 import assert from "assert";
 
 import Platform from "../../#{target}/Platform";
-import {DataBuffer} from "../../types";
+import {IDataBuffer} from "../../types";
 import {HeaderTable} from "./internals/header-table";
 
 // NOTE: The state of the header parser is not reentrant (I believe) therefore
@@ -12,7 +12,7 @@ const state = {
     ptr: 0
 };
 
-function readString(len: number, huffed: boolean, data: DataBuffer): string {
+function readString(len: number, huffed: boolean, data: IDataBuffer): string {
     // I have to do something with this...
     let buf = data;
     let strLen = len;
@@ -29,7 +29,7 @@ function readString(len: number, huffed: boolean, data: DataBuffer): string {
     return out;
 }
 
-function readVarInt(n: number, data: DataBuffer): number {
+function readVarInt(n: number, data: IDataBuffer): number {
     /**
      * Implementation from : https://tools.ietf.org/html/rfc7541#section-5.1
      *
@@ -68,7 +68,7 @@ function reset(offset: number) {
 }
 
 /** Returns the number of bytes written */
-function writeVarInt(n: number, value: number, data: DataBuffer, offset: number = 0): void {
+function writeVarInt(n: number, value: number, data: IDataBuffer, offset: number = 0): void {
     /**
      * Implementation from : https://tools.ietf.org/html/rfc7541#section-5.1
      *
@@ -102,7 +102,7 @@ function writeVarInt(n: number, value: number, data: DataBuffer, offset: number 
     data.setUInt8(state.ptr++, I);
 }
 
-export default function parseHeaders(dynTable: HeaderTable, data: DataBuffer, offset: number = 0, length?: number): {[key: string]: string} {
+export default function parseHeaders(dynTable: HeaderTable, data: IDataBuffer, offset: number = 0, length?: number): {[key: string]: string} {
     length = length === undefined ? data.byteLength - offset : length;
 
     // TODO: do we need more things?

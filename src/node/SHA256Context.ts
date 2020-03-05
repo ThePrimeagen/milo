@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 
-import {DataBuffer, SHA256Context as ISC} from '../types';
+import {IDataBuffer, SHA256Context as ISC} from '../types';
 import DB from './DataBuffer';
 import {bufferToArrayBufferCopy} from './utils';
 
@@ -24,7 +24,7 @@ export class SHA256Context implements ISC {
         this.reset();
     }
 
-    add(buf: Uint8Array | ArrayBuffer | DataBuffer | string): void {
+    add(buf: Uint8Array | ArrayBuffer | IDataBuffer | string): void {
         let arrBuf: ArrayBuffer;
         if (buf instanceof DB) {
             arrBuf = buf.toArrayBuffer();
@@ -46,14 +46,14 @@ export class SHA256Context implements ISC {
 
     // Property 'final' in type 'SHA256Context' is not assignable to the same
     // property in base type 'SHA256Context'.   Type '(md?: Uint8Array |
-    // ArrayBuffer | DataBuffer | undefined, offset?: number | undefined) =>
+    // ArrayBuffer | IDataBuffer | undefined, offset?: number | undefined) =>
     // number | ArrayBuffer' is not assignable to type '{ (): ArrayBuffer; (md:
-    // Uint8Array | ArrayBuffer | DataBuffer, offset?: number | undefined):
+    // Uint8Array | ArrayBuffer | IDataBuffer, offset?: number | undefined):
     // number; }'.     Type 'number | ArrayBuffer' is not assignable to type
     // 'ArrayBuffer'.       Type 'number' is not assignable to type
     // 'ArrayBuffer'.
     // @ts-ignore
-    final(md?: ArrayBuffer | Uint8Array | DataBuffer, offset?: number): ArrayBuffer | number {
+    final(md?: ArrayBuffer | Uint8Array | IDataBuffer, offset?: number): ArrayBuffer | number {
         if (md) {
             throw new Error("Not Implemented");
             return 0;

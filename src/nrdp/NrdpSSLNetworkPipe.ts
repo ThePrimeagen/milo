@@ -1,4 +1,7 @@
-import { CreateSSLNetworkPipeOptions, NetworkPipe, OnClose, OnData, OnError, DataBuffer } from "../types";
+import {
+    CreateSSLNetworkPipeOptions, NetworkPipe,
+    OnClose, OnData, OnError, IDataBuffer
+} from "../types";
 import { NrdpPlatform } from "./Platform";
 import N = nrdsocket;
 
@@ -21,12 +24,12 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
     private outputBio: N.Struct;
     private pipe: NetworkPipe;
     private connected: boolean;
-    private writeBuffers: (Uint8Array | ArrayBuffer | string | DataBuffer)[];
+    private writeBuffers: (Uint8Array | ArrayBuffer | string | IDataBuffer)[];
     private writeBufferOffsets: number[];
     private writeBufferLengths: number[];
     private connectedCallback?: (error?: Error) => void;
     private platform: NrdpPlatform;
-    private buffer?: DataBuffer;
+    private buffer?: IDataBuffer;
 
     public firstByteRead?: number;
     public firstByteWritten?: number;
@@ -123,7 +126,7 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
     get dnsChannel() { return this.pipe.dnsChannel; }
     get closed() { return this.pipe.closed; }
 
-    write(buf: DataBuffer | string, offset?: number, length?: number): void {
+    write(buf: IDataBuffer | string, offset?: number, length?: number): void {
         if (typeof buf === 'string') {
             length = buf.length;
         } else if (length === undefined) {
@@ -152,7 +155,7 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
         }
     }
 
-    read(buf: DataBuffer, offset: number, length: number): number {
+    read(buf: IDataBuffer, offset: number, length: number): number {
         let bufferRead = 0;
         if (this.buffer) {
             const byteLength = this.buffer.byteLength;
@@ -222,7 +225,7 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
         return read + bufferRead;
     }
 
-    unread(buf: ArrayBuffer | Uint8Array | DataBuffer): void {
+    unread(buf: ArrayBuffer | Uint8Array | IDataBuffer): void {
         if (this.buffer) {
             this.buffer.bufferLength = this.buffer.byteLength + buf.byteLength;
             this.buffer.set(0, buf);

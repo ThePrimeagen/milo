@@ -1,6 +1,6 @@
 import {
     HTTP, HTTPMethod, HTTPTransferEncoding, HTTPRequest, NetworkPipe,
-    HTTPHeadersEvent, OnError, ErrorCode, DataBuffer
+    HTTPHeadersEvent, OnError, ErrorCode, IDataBuffer
 } from "../types";
 import Platform from "../#{target}/Platform";
 import { ChunkyParser } from "./ChunkyParser";
@@ -12,7 +12,7 @@ export class HTTP1 implements HTTP {
     request?: HTTPRequest;
     public timeToFirstByteRead?: number;
     public timeToFirstByteWritten?: number;
-    private headerBuffer?: DataBuffer;
+    private headerBuffer?: IDataBuffer;
     private connection?: string;
     private headersFinished: boolean;
     private chunkyParser?: ChunkyParser;
@@ -185,14 +185,14 @@ Host: ${request.url.hostname}\r
                 switch (transferEncodings[idx].trim()) {
                 case "chunked":
                     this.chunkyParser = new ChunkyParser;
-                    this.chunkyParser.onchunk = (chunk: DataBuffer) => {
+                    this.chunkyParser.onchunk = (chunk: IDataBuffer) => {
                         Platform.trace("got a chunk right here", chunk.byteLength, typeof this.ondata);
                         if (this.ondata)
                             this.ondata(chunk, 0, chunk.byteLength);
                     };
                     this.chunkyParser.onerror = this._error.bind(this);
 
-                    this.chunkyParser.ondone = (buffer: DataBuffer | undefined) => {
+                    this.chunkyParser.ondone = (buffer: IDataBuffer | undefined) => {
                         if (buffer) {
                             assert(this.networkPipe, "Must have networkPipe");
                             this.networkPipe.unread(buffer);
@@ -233,7 +233,7 @@ Host: ${request.url.hostname}\r
         return true;
     }
 
-    private _processResponseData(data: DataBuffer, offset: number, length: number): void { // have to copy data, the buffer will be reused
+    private _processResponseData(data: IDataBuffer, offset: number, length: number): void { // have to copy data, the buffer will be reused
         Platform.trace("processing data", typeof this.chunkyParser, length);
         if (this.chunkyParser) {
             this.chunkyParser.feed(data, offset, length);
@@ -253,7 +253,7 @@ Host: ${request.url.hostname}\r
     }
 
     onheaders?: (headers: HTTPHeadersEvent) => void;
-    ondata?: (data: DataBuffer, offset: number, length: number) => void;
+    ondata?: (data: IDataBuffer, offset: number, length: number) => void;
     onfinished?: () => void;
     onerror?: OnError;
 };

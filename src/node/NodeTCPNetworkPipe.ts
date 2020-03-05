@@ -14,11 +14,11 @@ import {
     OnClose,
     OnError,
     DnsResult,
-    DataBuffer,
+    IDataBuffer,
     CreateTCPNetworkPipeOptions
 } from "../types";
 
-import DB from "./DataBuffer";
+import DataBuffer from "./DataBuffer";
 
 enum State {
     Connecting = "Connecting",
@@ -115,7 +115,7 @@ class NodeTCPNetworkPipe implements NetworkPipe {
         this.sock.write(normalizeUint8ArrayLen(buf, offset || 0, length));
     }
 
-    read(buf: DataBuffer | ArrayBuffer, offset: number, length: number): number {
+    read(buf: IDataBuffer | ArrayBuffer, offset: number, length: number): number {
         if (this.state != State.Alive) {
             throw new Error(`Unable to read sockets in current state, ${this.state}`);
         }
@@ -125,10 +125,17 @@ class NodeTCPNetworkPipe implements NetworkPipe {
         }
 
         const endIdx = offset + length;
-        const writeBuf = createNonCopyBuffer(buf, offset, length);
 
         let writeAmount = 0;
         let currentIdx = 0;
+        let writeBuf: Buffer;
+        if (buf instanceof ArrayBuffer) {
+            writeBuf = Buffer.from(buf);
+        }
+        else {
+            writeBuf = (buf as DataBuffer).buffer;
+            currentIdx = buf.byteOffset;
+        }
 
         do {
             const b = this.bufferPool[0];
@@ -138,6 +145,7 @@ class NodeTCPNetworkPipe implements NetworkPipe {
             writeAmount += localReadAmount;
 
             b.copy(writeBuf, currentIdx, this.bufferIdx, this.bufferIdx + localReadAmount);
+
             currentIdx += localReadAmount;
             this.bufferIdx += localReadAmount;
 

@@ -1,7 +1,10 @@
 import WSFramer, {WSState} from './framer';
 import Platform from "../#{target}/Platform";
+import DataBuffer from "../#{target}/DataBuffer";
+
 import {
-    NetworkPipe
+    NetworkPipe,
+    IDataBuffer,
 } from '../types';
 
 import {
@@ -9,41 +12,50 @@ import {
     WSOptions
 } from './types';
 
-type CloseCB = (buf: Uint8Array) => void;
-
-// TODO: Do we need frame type?
-type DataCB = (state: WSState, buf: Uint8Array) => void;
-
 const defaultOptions = {
-    maxFrameSize: 8192
+    maxFrameSize: 8192,
+    poolInternals: false,
+    noCopySentBuffers: false,
 } as WSOptions;
 
-const readBuffer = new ArrayBuffer(4096);
-const readView = new Uint8Array(readBuffer);
+const readView = new DataBuffer(16 * 1024);
 
 export {
     WSState
 };
 
+export type CallbackNames = "message" | "close" | "open" | "error";
+export type CallbackMap = {
+    message: ((buf: IDataBuffer) => void)[];
+    close: ((code: number, buf: IDataBuffer) => void)[];
+    open: (() => void)[];
+    error: ((error: Error) => void)[];
+};
+
 export default class WS {
     private frame: WSFramer;
     private pipe: NetworkPipe;
-    private closeCBs: CloseCB[];
-    private dataCBs: DataCB[];
-    public onmessage?: (buf: Uint8Array) => void;
+    private callbacks: CallbackMap;
+
+    public onmessage?: (buf: IDataBuffer) => void;
 
     constructor(pipe: NetworkPipe, opts: WSOptions = defaultOptions) {
+        this.callbacks = {
+            message: [],
+            close: [],
+            open: [],
+            error: [],
+        };
+
         this.frame = new WSFramer(pipe, opts.maxFrameSize);
         this.pipe = pipe;
-        this.closeCBs = [];
-        this.dataCBs = [];
 
         // The pipe is ready to read.
         pipe.ondata = () => {
             let bytesRead;
             while (1) {
 
-                bytesRead = pipe.read(readBuffer, 0, readBuffer.byteLength);
+                bytesRead = pipe.read(readView, 0, readView.byteLength);
                 if (bytesRead <=  0) {
                     break;
                 }
@@ -52,10 +64,15 @@ export default class WS {
             }
         };
 
-        this.frame.onFrame((buffer: Uint8Array, state: WSState) => {
+        this.frame.onFrame((buffer: IDataBuffer, state: WSState) => {
             switch (state.opcode) {
                 case Opcodes.CloseConnection:
-                    this.closeCBs.forEach(cb => cb(buffer));
+                    const code = buffer.getUInt16BE(0);
+                    const restOfData = buffer.subarray(2);
+
+                    this.callbacks.close.forEach(cb => {
+                        cb(code, restOfData);
+                    });
 
                     // attempt to close the sockfd.
                     this.pipe.close();
@@ -63,7 +80,7 @@ export default class WS {
                     break;
 
                 case Opcodes.Ping:
-                    this.frame.send(buffer, 0, buffer.length, Opcodes.Pong);
+                    this.frame.send(buffer, 0, buffer.byteLength, Opcodes.Pong);
                     break;
 
                 case Opcodes.BinaryFrame:
@@ -71,8 +88,6 @@ export default class WS {
                     if (this.onmessage) {
                         this.onmessage(buffer);
                     }
-
-                    this.dataCBs.forEach(cb => cb(state, buffer));
                     break;
 
                 default:
@@ -81,37 +96,37 @@ export default class WS {
         });
     }
 
-    send(obj: Uint8Array | object | string) {
+    // Don't know how to do this well...
+    on(callbackName: CallbackNames, callback: (...args: any[]) => void) {
+        this.callbacks[callbackName].push(callback);
+    }
 
-        let bufOut = null;
+    sendJSON(obj: object) {
+        this.send(JSON.stringify(obj));
+    }
+
+    send(obj: IDataBuffer | Uint8Array | string) {
+
+        let bufOut: IDataBuffer;
         let len;
         let opcode = Opcodes.BinaryFrame;
 
         if (obj instanceof Uint8Array) {
+            bufOut = new DataBuffer(obj);
             opcode = Opcodes.BinaryFrame;
-            bufOut = obj;
         }
 
-        else if (typeof obj === 'object' || obj === null) {
-            const str = JSON.stringify(obj);
-            bufOut = Platform.atoutf8(str);
-            opcode = Opcodes.TextFrame;
+        else if (obj instanceof DataBuffer) {
+            bufOut = obj;
+            opcode = Opcodes.BinaryFrame;
         }
 
         else {
-            bufOut = Platform.atoutf8(obj);
+            bufOut = new DataBuffer(obj);
             opcode = Opcodes.TextFrame;
         }
 
-        this.frame.send(bufOut, 0, bufOut.length, opcode);
-    }
-
-    onClose(cb: CloseCB) {
-        this.closeCBs.push(cb);
-    }
-
-    onData(cb: DataCB) {
-        this.dataCBs.push(cb);
+        this.frame.send(bufOut, 0, bufOut.byteLength, opcode);
     }
 
     private handleControlFrame(buffer: Uint8Array, state: WSState) {

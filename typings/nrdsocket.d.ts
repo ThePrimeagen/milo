@@ -93,9 +93,9 @@ declare namespace nrdsocket {
     }
 
     // types
-    type DataBuffer = import('../src/types').DataBuffer;
-    type Buffer = ArrayBuffer | Uint8Array | DataBuffer;
-    type ConstBuffer = string | ArrayBuffer | Uint8Array | ConstDataPointer | DataBuffer | DataPointer;
+    type IDataBuffer = import('../src/types').IDataBuffer;
+    type Buffer = ArrayBuffer | Uint8Array | IDataBuffer;
+    type ConstBuffer = string | ArrayBuffer | Uint8Array | ConstDataPointer | IDataBuffer | DataPointer;
 
     type ForEachCallback = (key: any, value: any) => boolean;
     type SelectCallback = (fds: UnorderedMap) => void;
