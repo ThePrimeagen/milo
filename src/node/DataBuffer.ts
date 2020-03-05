@@ -112,6 +112,7 @@ string value for the second parameter, offset.`);
         this.byteOffset = this.buffer.byteOffset;
     }
 
+    // TODO: Make this incorportate this.byteOffset
     private getOffsetAndLength(offset?: number, len?: number) {
         offset = offset === undefined ? 0 : offset;
         len = len === undefined ? this.buffer.byteLength - offset : len;
@@ -122,6 +123,7 @@ string value for the second parameter, offset.`);
     leftSubarray(length: number): IDataBuffer {
         return new DataBuffer(this, this.byteOffset, length);
     }
+
     subarray(offset: number = 0, length?: number): IDataBuffer {
         // TODO: bounds check
 
@@ -150,6 +152,7 @@ string value for the second parameter, offset.`);
         throw new Error("Not Implemented");
     }
 
+    // TODO: This clearly sucks.  It has a bug, slice(0) totally ruins it all.
     slice(o?: number, l?: number): IDataBuffer {
         const [offset, length] = this.getOffsetAndLength(o, l);
         const newBuffer = new DataBuffer(length);
@@ -318,7 +321,7 @@ string value for the second parameter, offset.`);
         }
 
         for (let i = 0; i < buf.length; ++i) {
-            this.buffer[o + i] = buf[i];
+            this.buffer[offset + i] = buf[i];
         }
     }
 

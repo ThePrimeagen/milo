@@ -6,7 +6,6 @@ import WSFramer, {constructFrameHeader} from '../framer';
 import {Opcodes} from '../types';
 import {IDataBuffer} from '../../types';
 import maskFn from '../mask';
-import * as NBO from 'network-byte-order';
 
 // @ts-ignore
 const pipe = {
@@ -62,6 +61,40 @@ describe("WS", function() {
     beforeEach(function() {
         // @ts-ignore
         pipe.write.mockClear();
+    });
+
+    it("small payload masked", function(done) {
+        const buf = new DataBuffer(7);
+        const ptr = constructFrameHeader(
+            buf, true, Opcodes.BinaryFrame, 1, maskBuf);
+
+        buf.setUInt8(6, 69 ^ maskBuf[0]);
+
+        const ws = new WSFramer(pipe);
+
+        ws.onFrame((contents: IDataBuffer) => {
+            expect(contents.getUInt8(0)).toEqual(69);
+            done();
+        });
+
+        ws.processStreamData(buf, 0, 7);
+    });
+
+    it("small payload", function(done) {
+        const buf = new DataBuffer(3);
+        const ptr = constructFrameHeader(
+            buf, true, Opcodes.BinaryFrame, 1);
+
+        buf.setUInt8(2, 69);
+
+        const ws = new WSFramer(pipe);
+
+        ws.onFrame((contents: IDataBuffer) => {
+            expect(contents.getUInt8(0)).toEqual(69);
+            done();
+        });
+
+        ws.processStreamData(buf, 0, 3);
     });
 
     it("can parse a single frame", function() {
@@ -128,13 +161,13 @@ describe("WS", function() {
         maskFn(b2, 0, 2, maskBuf);
 
         const sendBuf0: Uint8Array = getBufferFromSend(pipe.write, 0);
-        expect(sendBuf0.subarray(6)).toEqual(b0);
+        expect(sendBuf0.slice(6)).toEqual(b0);
 
         const sendBuf1: Uint8Array = getBufferFromSend(pipe.write, 1);
-        expect(sendBuf1.subarray(6)).toEqual(b1);
+        expect(sendBuf1.slice(6)).toEqual(b1);
 
         const sendBuf2: Uint8Array = getBufferFromSend(pipe.write, 2);
-        expect(sendBuf2.subarray(6)).toEqual(b2);
+        expect(sendBuf2.slice(6)).toEqual(b2);
     });
 
     it("should parse the two frames from a single payload", function() {
@@ -146,16 +179,17 @@ describe("WS", function() {
         let bufPtr = constructFrameHeader(
             buf, true, Opcodes.BinaryFrame, countLen, maskBuf);
         buf.set(bufPtr, countBuf);
+        maskFn(buf, bufPtr, countLen, maskBuf);
         bufPtr += countLen;
-        maskFn(buf, bufPtr - countLen, countLen, maskBuf);
 
         // Create the second frame, binary.
         bufPtr += constructFrameHeader(
             // TODO: subarray should not be needed.
             buf.subarray(bufPtr), true, Opcodes.BinaryFrame, countLen2, maskBuf);
+
         buf.set(bufPtr, countBuf2);
+        maskFn(buf, bufPtr, countLen2, maskBuf);
         bufPtr += countLen2;
-        maskFn(buf, bufPtr - countLen2, countLen2, maskBuf);
 
         // Create the framer and process the two frames.
         const ws = new WSFramer(pipe);
@@ -166,6 +200,7 @@ describe("WS", function() {
             if (i === 1) {
                 obj = countObj2;
             }
+
             expect(JSON.parse(Platform.utf8toa(contents))).toEqual(obj);
 
             i++;

@@ -27,61 +27,18 @@ export function _load(data: RequestData, callback: Function): number {
     return req.id;
 }
 
-export function _wsUpgrade(data: RequestData): Promise<NetworkPipe> {
-    return new Promise((resolve, reject) => {
-        Platform.trace("GOT SHIT", data);
-        if (!data.headers) {
-            data.headers = {};
-        }
-
-        // TODO: Ask Jordan, WHY TYPESCRIPT WHY...
-        // @ts-ignore
-        const arrayBufferKey = new DataBuffer(16);
-
-        arrayBufferKey.randomize();
-        const key = arrayBufferKey.toString("base64");
-
-
-        Platform.trace("key is", key, arrayBufferKey);
-        data.headers["Upgrade"] = "websocket";
-        data.headers["Connection"] = "Upgrade";
-        data.headers["Sec-WebSocket-Key"] = key;
-        data.headers["Sec-WebSocket-Version"] = "13";
-        const req = new Request(data);
-        req.send().then(response => {
-            Platform.trace("Got response", response);
-            if (response.statusCode !== 101)
-                throw new Error("status code");
-
-            const upgradeKeyResponse = headerValue(response.headers, "sec-websocket-accept");
-            if (!upgradeKeyResponse)
-                throw new Error("no Sec-WebSocket-Accept key");
-
-            const WS_KEY = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-            const shadkey = Platform.btoa(Platform.sha1(key + WS_KEY));
-            if (shadkey !== upgradeKeyResponse)
-                throw new Error(`Key mismatch expected: ${shadkey} got: ${upgradeKeyResponse}`);
-
-            Platform.trace("successfully upgraded");
-            resolve(req.networkPipe);
-        }).catch(error => {
-            Platform.trace("Got error", error);
-            reject(error);
-        });
-    });
-}
-
 let idx = 0;
 export function ws(url: string, milo: boolean): Promise<WS> {
     if (milo) {
-        // @ts-ignore
-        return _wsUpgrade({ url }).then((pipe: NetworkPipe) => {
+        return new Promise((res, rej) => {
+            // @ts-ignore
+            const ws = new WS(url);
             const id = ++idx;
-            const ws = new WS(pipe);
             const ret = {
                 send: ws.send.bind(ws),
                 onmessage: (event: any) => { }
             };
+
             ws.onmessage = (buffer: IDataBuffer) => {
                 if (ret.onmessage) {
                     ret.onmessage({
@@ -94,7 +51,12 @@ export function ws(url: string, milo: boolean): Promise<WS> {
                     });
                 };
             };
-            return ret;
+
+            ws.onopen = () => {
+                // who did this?
+                // @ts-ignore
+                res(ret);
+            };
         });
     } else {
         return new Promise((resolve, reject) => {

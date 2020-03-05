@@ -353,12 +353,35 @@ export default class WSFramer {
      +---------------------------------------------------------------+
      */
 
-    // TODO: Endianness????
-    //
-    // Send 126 bytes to find out how they order their bytes.
+    private isHeaderParsable(packet: IDataBuffer, offset: number, endIdx: number): boolean {
+        const len = endIdx - offset;
+        if (len < 2) {
+            return false;
+        }
+
+        const byte1 = packet.getUInt8(offset);
+        const byte2 = packet.getUInt8(offset + 1);
+        const isMasked = (byte2 & 0x80) >>> 7 === 1;
+        const payloadLength =  (byte2 & 0x7F);
+
+        let size = 2;
+        if (payloadLength === 126) {
+            size += 2;
+        }
+        else if (payloadLength === 127) {
+            size += 8;
+        }
+
+        if (isMasked) {
+            size += 4;
+        }
+
+        return len >= size;
+    }
+
     private parseHeader(state: WSState, packet: IDataBuffer, offset: number, endIdx: number): number | boolean {
 
-        if (endIdx - offset < MAX_HEADER_SIZE) {
+        if (!this.isHeaderParsable(packet, offset, endIdx)) {
             return false;
         }
 
