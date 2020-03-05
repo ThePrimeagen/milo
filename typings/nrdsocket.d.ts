@@ -98,7 +98,6 @@ declare namespace nrdsocket {
     type ConstBuffer = string | ArrayBuffer | Uint8Array | ConstDataPointer | IDataBuffer | DataPointer;
 
     type ForEachCallback = (key: any, value: any) => boolean;
-    type SelectCallback = (fds: UnorderedMap) => void;
     type FDCallback = (fd: number, mode: number) => void;
 
     // functions
@@ -113,7 +112,6 @@ declare namespace nrdsocket {
 
     let errno: number;
     function strerror(err?: number): string;
-    let selectCallback: SelectCallback;
     const sockets: [number];
     const files: [number];
 
