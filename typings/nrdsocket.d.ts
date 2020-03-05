@@ -437,8 +437,6 @@ declare namespace nrdsocket {
         callback: Function;
         functionPointer: DataPointer;
     }
-    namespace sslCallbacks {
-        function set(name: string, callback?: Function): DataPointer;
-        function all(): { [key: string]: SSLCallbackData | undefined };
-    }
+    function setSSLCallback(name: string, callback?: Function): DataPointer;
+    function allSSLCallbacks(): { [key: string]: SSLCallbackData | undefined };
 }
