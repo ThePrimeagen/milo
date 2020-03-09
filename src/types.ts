@@ -84,12 +84,6 @@ export interface IDataBuffer {
     join(separator?: string): string;
     lastIndexOf(needle: string | ArrayBuffer | IDataBuffer | number | Uint8Array | number[],
                 offset?: number, length?: number, caseInsensitive?: boolean): number;
-    /**
-     * Takes the left most bytes, equivalent to subarray(0, length).
-     *
-     * Shallow Copy
-     */
-    leftSubarray(length: number): IDataBuffer;
 
     map(func: (val: number, i: number, buffer: IDataBuffer) => number, thisValue?: any): IDataBuffer;
     randomize(offset?: number, length?: number): void;
@@ -97,14 +91,6 @@ export interface IDataBuffer {
     reduceRight(func: (previousValue: any, val: number, i: number, buffer: IDataBuffer) => any, previousValue?: any): any;
 
     reverse(offset?: number, length?: number): void;
-
-    /**
-     * Takes the right most bytes, equivalent to subarray(this.byteLength -
-     * length, this.byteLength).
-     *
-     * Shallow Copy
-     */
-    rightSubarray(length: number): IDataBuffer;
 
     set(offset: number, src: string | ArrayBuffer | IDataBuffer | number | Uint8Array | number[],
         srcOffset?: number, srcLength?: number): void;
