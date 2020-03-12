@@ -2,13 +2,14 @@ import Url from "url-parse";
 import { HTTP1 } from "./HTTP1/HTTP1";
 import Platform from "./#{target}/Platform";
 import DataBuffer from "./#{target}/DataBuffer";
+import connectionPool, { ConnectionOptions, PendingConnection } from "./ConnectionPool";
 
 import {
-    CreateTCPNetworkPipeOptions, DnsResult, IpConnectivityMode,
+    CreateTCPNetworkPipeOptions, IpConnectivityMode,
     NetworkPipe, RequestTimeouts, HTTP, HTTPMethod, HTTPHeadersEvent,
     HTTPTransferEncoding, ErrorCode, IDataBuffer
 } from "./types";
-import { assert, escapeData } from "./utils";
+import { assert } from "./utils";
 
 let nextId = 0;
 
@@ -89,10 +90,11 @@ export class RequestResponse {
     serverIp?: string;
     sslSessionResumed?: boolean;
     sslHandshakeTime?: number;
-    sslVersion?: string | undefined;
+    sslVersion?: string;
     dns?: string;
     dnsChannel?: string;
     socket?: number;
+    socketReused?: boolean;
     data?: string | ArrayBuffer | Uint8Array | IDataBuffer;
     size?: number;
     urls?: string[];
@@ -185,8 +187,7 @@ export class Request {
         let parsedUrl: Url;
         if (typeof url === 'string') {
             parsedUrl = new Url(url);
-        }
-        else {
+        } else {
             parsedUrl = new Url(url.url);
         }
 
@@ -206,15 +207,17 @@ export class Request {
             }
             break;
         default:
-            if (!port)
+            if (!port) {
                 port = 80;
+            }
             break;
         }
+
 
         // Platform.trace("Request#send creating TCP pipe");
         const timeouts = opts.timeouts;
         const tcpOpts = {
-            host: parsedUrl.hostname,
+            hostname: parsedUrl.hostname,
             port: port,
             dnsTimeout: timeouts && timeouts.dnsTimeout,
             connectTimeout: timeouts && timeouts.connectTimeout,
@@ -249,48 +252,30 @@ export class Request {
             port = parseInt(this.url.port);
         }
 
-        // Platform.trace("Request#send port", port);
-        let ssl = false;
-        switch (this.url.protocol) {
-        case "https:":
-        case "wss:":
-            ssl = true;
-            if (!port) {
-                port = 443;
-            }
-            break;
-        default:
-            if (!port)
-                port = 80;
-            break;
-        }
         // Platform.trace("Request#send creating TCP pipe");
         assert(this.requestData.timeouts);
         const timeouts = this.requestData.timeouts;
-        const tcpOpts = {
-            host: this.url.hostname,
-            port: port,
+
+        const connectionOpts = {
+            url: this.url,
             dnsTimeout: timeouts && timeouts.dnsTimeout,
             connectTimeout: timeouts && timeouts.connectTimeout,
-            ipVersion: 4 // gotta do happy eyeballs and send off multiple tcp network pipe things
-        } as CreateTCPNetworkPipeOptions;
-        Platform.createTCPNetworkPipe(tcpOpts).then((pipe: NetworkPipe) => {
+            freshConnect: this.requestData.freshConnect,
+            forbidReuse: this.requestData.forbidReuse
+        } as ConnectionOptions;
+
+        connectionPool.requestConnection(connectionOpts).then((conn: PendingConnection) => {
+            // conn is abortable
+            return conn.onNetworkPipe();
+        }).then((pipe: NetworkPipe) => {
+            Platform.trace("GOT OUR PIPE NOW");
+            this.networkPipe = pipe;
             if (pipe.dnsTime) {
                 this.requestResponse.dnsTime = pipe.dnsTime;
             }
             if (pipe.connectTime) {
                 this.requestResponse.connectTime = pipe.connectTime;
             }
-
-            // Platform.trace("Request#send#createTCPNetworkPipe pipe");
-            if (ssl) {
-                return Platform.createSSLNetworkPipe({ pipe: pipe });
-            } else {
-                return pipe;
-            }
-        }).then((pipe: NetworkPipe) => {
-            // Platform.trace("GOT OUR PIPE NOW");
-            this.networkPipe = pipe;
 
             this._transition(RequestState.Connected);
         }).catch((err: Error) => {
@@ -436,6 +421,13 @@ export class Request {
             }
             assert(this.resolve, "Must have resolve");
             this.resolve(this.requestResponse);
+            assert(this.networkPipe);
+            Platform.trace("got to finished, pipe is closed?", this.networkPipe.closed);
+            if (!this.networkPipe.closed) {
+                this.networkPipe.removeEventHandlers();
+                connectionPool.finish(this.networkPipe);
+                this.networkPipe = undefined;
+            }
             break;
         }
     }

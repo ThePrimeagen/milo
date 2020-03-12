@@ -10,6 +10,22 @@ export enum ErrorCode {
     None = 0
 };
 
+export interface IUnorderedMap {
+    clear(): void;
+    clone(): IUnorderedMap;
+    delete(key: any): boolean;
+    entries(): [][];
+    forEach(func: (key: any, value: any, that: IUnorderedMap) => boolean): void;
+    get(key: any): any;
+    has(key: any): boolean;
+    keys(): [];
+    readonly length: number;
+    readonly size: number;
+    set(key: any, value: any): IUnorderedMap; // returns itself for some reason
+    take(key: any): any;
+    values(): [];
+}
+
 export interface IDataBuffer {
     // properties
     bufferLength: number;
@@ -163,8 +179,13 @@ type DataBufferConstructor = {
     random(size: number): IDataBuffer;
 };
 
+type UnorderedMapConstructor = {
+    new(): IUnorderedMap;
+};
+
 declare global {
     const DataBuffer: DataBufferConstructor;
+    const UnorderedMap: UnorderedMapConstructor;
 }
 
 export interface DnsResult {
@@ -198,7 +219,7 @@ export interface RequestTimeouts {
 };
 
 export interface CreateTCPNetworkPipeOptions {
-    host: string; // could be an ip literal
+    hostname: string; // could be an ip literal
     port: number;
     connectTimeout: number;
     dnsTimeout: number;
@@ -231,6 +252,13 @@ export interface NetworkPipe {
 
     close(): void;
 
+    idle: boolean; // these probably should just live in ConnectionPool
+    forbidReuse: boolean;
+    hostname: string;
+    port: number;
+    fd: number; // socket
+
+    readonly ssl: boolean;
     readonly closed: boolean;
 
     readonly firstByteWritten?: number;
@@ -245,6 +273,8 @@ export interface NetworkPipe {
     ondata?: OnData;
     onclose?: OnClose;
     onerror?: OnError;
+
+    removeEventHandlers(): void;
 };
 
 export enum HTTPTransferEncoding {

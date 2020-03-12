@@ -8,6 +8,7 @@
         "allowJs": false,
         "strictNullChecks": true,
         "strictPropertyInitialization": true,
+        "downlevelIteration": true,
         "strict": true,
         "target": "es5",
         "baseUrl": ".",

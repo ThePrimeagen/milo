@@ -38,6 +38,12 @@ class NodeTCPNetworkPipe implements NetworkPipe {
     public ondata?: OnData;
     public onclose?: OnClose;
     public onerror?: OnError;
+    public idle: boolean;
+    public forbidReuse: boolean;
+    public hostname: string;
+    public port: number;
+
+    get ssl() { return false; }
 
     // FIXME
     public readonly closed: boolean = false;
@@ -45,9 +51,13 @@ class NodeTCPNetworkPipe implements NetworkPipe {
     public connection: Promise<NodeTCPNetworkPipe>;
 
     constructor(host: string, port: number, onConnect?: () => void) {
+        this.idle = false;
+        this.forbidReuse = false;
         this.bufferIdx = 0;
         this.state = State.Connecting;
         this.bufferPool = [];
+        this.hostname = host;
+        this.port = port;
 
         this.connection = new Promise((res, rej) => {
             // it defaults to tcp socket
@@ -94,7 +104,13 @@ class NodeTCPNetworkPipe implements NetworkPipe {
 
     // @ts-ignore
     get fd() {
-        throw new Error("Not supported in Node.");
+        return -1; // called for logging reasons throw new Error("Not supported in Node.");
+    }
+
+    removeEventHandlers() {
+        this.ondata = undefined;
+        this.onclose = undefined;
+        this.onerror = undefined;
     }
 
     // @ts-ignore

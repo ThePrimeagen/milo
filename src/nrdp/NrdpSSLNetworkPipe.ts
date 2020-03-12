@@ -17,9 +17,8 @@ function set_mem_eof_return(platform: NrdpPlatform, bio: N.Struct) {
 }
 
 class NrdpSSLNetworkPipe implements NetworkPipe {
-    private ssl: N.Struct;
+    private sslInstance: N.Struct;
     private ssl_ctx: N.Struct;
-    // private bio: N.BIO;
     private inputBio: N.Struct;
     private outputBio: N.Struct;
     private pipe: NetworkPipe;
@@ -33,9 +32,13 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
 
     public firstByteRead?: number;
     public firstByteWritten?: number;
+    public idle: boolean;
+    public forbidReuse: boolean;
 
     constructor(options: CreateSSLNetworkPipeOptions, p: NrdpPlatform, callback: (error?: Error) => void) {
         platform = p;
+        this.idle = false;
+        this.forbidReuse = false;
         this.platform = p;
         this.connectedCallback = callback;
         this.connected = false;
@@ -75,10 +78,10 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
         this.platform.SSL_CTX_set1_param(this.ssl_ctx, param);
         this.platform.X509_VERIFY_PARAM_free(param);
 
-        this.ssl = this.platform.SSL_new(this.ssl_ctx);
-        this.platform.SSL_set_default_read_buffer_len(this.ssl, 16384);
-        this.platform.SSL_set_read_ahead(this.ssl, 1);
-        this.ssl.free = "SSL_free";
+        this.sslInstance = this.platform.SSL_new(this.ssl_ctx);
+        this.platform.SSL_set_default_read_buffer_len(this.sslInstance, 16384);
+        this.platform.SSL_set_read_ahead(this.sslInstance, 1);
+        this.sslInstance.free = "SSL_free";
 
         const memMethod = this.platform.BIO_s_mem();
         this.inputBio = this.platform.BIO_new(memMethod);
@@ -121,7 +124,7 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
             this._error
         };
 
-        this.platform.SSL_set_bio(this.ssl, this.inputBio, this.outputBio);
+        this.platform.SSL_set_bio(this.sslInstance, this.inputBio, this.outputBio);
         this._connect();
     }
 
@@ -129,6 +132,16 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
     get dns() { return this.pipe.dns; }
     get dnsChannel() { return this.pipe.dnsChannel; }
     get closed() { return this.pipe.closed; }
+    get hostname() { return this.pipe.hostname; }
+    get port() { return this.pipe.port; }
+    get ssl() { return true; }
+    get fd() { return this.pipe.fd; }
+
+    removeEventHandlers() {
+        this.ondata = undefined;
+        this.onclose = undefined;
+        this.onerror = undefined;
+    }
 
     write(buf: IDataBuffer | string, offset?: number, length?: number): void {
         if (typeof buf === 'string') {
@@ -147,7 +160,7 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
             throw new Error("SSLNetworkPipe is not connected");
         }
 
-        const written = this.writeBuffers.length ? -1 : this.platform.SSL_write(this.ssl, buf, offset, length);
+        const written = this.writeBuffers.length ? -1 : this.platform.SSL_write(this.sslInstance, buf, offset, length);
         this.platform.trace("wrote to output bio", length, "=>", written);
 
         if (written === -1) {
@@ -175,10 +188,10 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
             }
         }
 
-        this.platform.trace("someone's calling read", length, this.platform.SSL_pending(this.ssl));
-        const read = this.platform.SSL_read(this.ssl, buf, offset, length);
+        this.platform.trace("someone's calling read on ", this.pipe.fd, length, this.platform.SSL_pending(this.sslInstance));
+        const read = this.platform.SSL_read(this.sslInstance, buf, offset, length);
         if (read <= 0) {
-            const err = this.platform.SSL_get_error(this.ssl, read);
+            const err = this.platform.SSL_get_error(this.sslInstance, read);
             // this.platform.error("got err", err);
             this._flushOutputBio();
             switch (err) {
@@ -262,16 +275,16 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
 
     private _connect() {
         assert(this.connectedCallback);
-        let ret = this.platform.SSL_connect(this.ssl);
+        let ret = this.platform.SSL_connect(this.sslInstance);
         // this.platform.trace("CALLED CONNECT", ret);
         if (ret <= 0) {
-            const err = this.platform.SSL_get_error(this.ssl, ret);
+            const err = this.platform.SSL_get_error(this.sslInstance, ret);
             // this.platform.trace("GOT ERROR FROM SSL_CONNECT", err);
-            if (this.platform.SSL_get_error(this.ssl, ret) == this.platform.SSL_ERROR_WANT_READ) {
+            if (this.platform.SSL_get_error(this.sslInstance, ret) == this.platform.SSL_ERROR_WANT_READ) {
                 this._flushOutputBio();
             } else {
-                this.platform.error("BIG FAILURE", this.platform.SSL_get_error(this.ssl, ret), N.errno);
-                this.connectedCallback(new Error(`SSL_connect failure ${this.platform.SSL_get_error(this.ssl, ret)} ${N.errno}`));
+                this.platform.error("BIG FAILURE", this.platform.SSL_get_error(this.sslInstance, ret), N.errno);
+                this.connectedCallback(new Error(`SSL_connect failure ${this.platform.SSL_get_error(this.sslInstance, ret)} ${N.errno}`));
                 this.connectedCallback = undefined;
             }
         } else {
