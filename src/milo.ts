@@ -1,11 +1,7 @@
 import { Request, RequestData, RequestResponse } from "./Request";
 import Platform from "./#{target}/Platform";
-import DataBuffer from "./#{target}/DataBuffer";
-import { NetworkPipe, IDataBuffer } from "./types";
-import { headerValue } from "./utils";
+import { IDataBuffer } from "./types";
 import WS, { WSState } from './ws';
-
-const requests = new Map();
 
 export {
     WS,
