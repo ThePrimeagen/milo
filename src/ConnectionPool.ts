@@ -1,6 +1,7 @@
 import Url from "url-parse";
 import { NetworkPipe, CreateTCPNetworkPipeOptions, IUnorderedMap } from "./types";
 import Platform from "./#{target}/Platform";
+import UnorderedMap from "./#{target}/UnorderedMap";
 import { assert } from "./utils";
 
 export interface ConnectionOptions {
@@ -50,6 +51,7 @@ class PendingConnectionImpl implements PendingConnection {
         this.pool.abort(this.id);
     }
     onNetworkPipe(): Promise<NetworkPipe> {
+        Platform.log("onNetworkPipe called", typeof this.pipe, typeof this.error);
         assert(!this.resolveFunction, "must not have resolve");
         assert(!this.rejectFunction, "must not have reject");
         return new Promise((resolve, reject) => {
@@ -73,6 +75,7 @@ class PendingConnectionImpl implements PendingConnection {
         assert(!this.error, "must not have error");
 
         this.pipe = pipe;
+        Platform.trace(`resolving with a pipe ${pipe.hostname}:${pipe.port} ${typeof this.resolveFunction}`);
         if (this.resolveFunction) {
             this.resolveFunction(pipe);
         }
@@ -217,11 +220,34 @@ export class ConnectionPool {
 
             const pending = new PendingConnectionImpl(this, ++this._id, hostname, port,
                                                       options.dnsTimeout, options.connectTimeout);
+            resolve(pending);
             if (this._id == Number.MAX_SAFE_INTEGER) {
                 this._id = 0;
             }
 
             if (options.freshConnect) {
+                const tcpOpts = {
+                    hostname: pending.hostname,
+                    port: pending.port,
+                    dnsTimeout: pending.dnsTimeout,
+                    connectTimeout: pending.connectTimeout,
+                    ipVersion: 4 // gotta do happy eyeballs and send off multiple tcp network pipe things
+                } as CreateTCPNetworkPipeOptions;
+                Platform.createTCPNetworkPipe(tcpOpts).then((pipe: NetworkPipe) => {
+                    Platform.trace(`Got tcp connection for ${hostPort} with fd ${pipe.fd}`);
+                    if (ssl) {
+                        Platform.trace(`Requesting ssl pipe for ${hostPort} with fd ${pipe.fd}`);
+                        return Platform.createSSLNetworkPipe({ pipe: pipe });
+                    } else {
+                        return pipe;
+                    }
+                }).then((pipe: NetworkPipe) => {
+                    pending.resolve(pipe);
+                }).catch((error: Error) => {
+                    pending.reject(error);
+                });
+                return;
+
                 // if (this._maxPoolSize > 0 && this._connectionCount >= this._maxPoolSize) {
                 //     const pending = new PendingConnectionImpl(++this._id);
                 //     if (this._id == Number.MAX_SAFE_INTEGER) {
@@ -244,7 +270,6 @@ export class ConnectionPool {
                 this._hosts.set(hostPort, data);
             }
 
-            resolve(pending);
             data.pending.push(pending);
             this.processHost(data);
         });

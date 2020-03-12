@@ -7,20 +7,22 @@ import { ChunkyParser } from "./ChunkyParser";
 import { assert } from "../utils";
 
 export class HTTP1 implements HTTP {
-    public httpVersion: string;
-    networkPipe?: NetworkPipe;
-    request?: HTTPRequest;
-    public timeToFirstByteRead?: number;
-    public timeToFirstByteWritten?: number;
     private headerBuffer?: IDataBuffer;
     private connection?: string;
     private headersFinished: boolean;
     private chunkyParser?: ChunkyParser;
     private requestSize?: number;
 
+    public httpVersion: string;
+    public networkPipe?: NetworkPipe;
+    public request?: HTTPRequest;
+    public timeToFirstByteRead?: number;
+    public timeToFirstByteWritten?: number;
+    public upgrade: boolean;
     constructor() {
         this.headersFinished = false;
         this.httpVersion = "";
+        this.upgrade = false;
     }
 
     send(networkPipe: NetworkPipe, request: HTTPRequest): boolean {
@@ -80,6 +82,7 @@ Host: ${request.url.hostname}\r
                         }
                         this.headerBuffer = undefined;
                         if (this.connection == "Upgrade") {
+                            this.upgrade = true;
                             this._finish();
                         }
                     }

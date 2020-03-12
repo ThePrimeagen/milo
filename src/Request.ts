@@ -265,6 +265,7 @@ export class Request {
         } as ConnectionOptions;
 
         connectionPool.requestConnection(connectionOpts).then((conn: PendingConnection) => {
+            Platform.trace(`got a pending connection ${conn.id}`);
             // conn is abortable
             return conn.onNetworkPipe();
         }).then((pipe: NetworkPipe) => {
@@ -279,6 +280,7 @@ export class Request {
 
             this._transition(RequestState.Connected);
         }).catch((err: Error) => {
+            Platform.error("got an error", err);
             // Platform.trace("Request#send#createTCPNetworkPipe error", err);
             this._onError(-1, err.toString());
         });
@@ -425,8 +427,10 @@ export class Request {
             Platform.trace("got to finished, pipe is closed?", this.networkPipe.closed);
             if (!this.networkPipe.closed) {
                 this.networkPipe.removeEventHandlers();
-                connectionPool.finish(this.networkPipe);
-                this.networkPipe = undefined;
+                if (!this.http.upgrade) {
+                    connectionPool.finish(this.networkPipe);
+                    this.networkPipe = undefined;
+                }
             }
             break;
         }

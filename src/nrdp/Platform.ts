@@ -2,6 +2,7 @@ import {
     CreateSSLNetworkPipeOptions, CreateTCPNetworkPipeOptions, IpConnectivityMode,
     NetworkPipe, Platform, RequestTimeouts, SHA256Context, IDataBuffer
 } from "../types";
+import DataBuffer from "./DataBuffer";
 import createNrdpSSLNetworkPipe from "./NrdpSSLNetworkPipe";
 import createNrdpTCPNetworkPipe from "./NrdpTCPNetworkPipe";
 import N = nrdsocket;

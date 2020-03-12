@@ -20,7 +20,7 @@ import btoa from "btoa";
 import atob from "atob";
 import { IDataBuffer } from "../types";
 import DataBuffer from "./DataBuffer";
-import {SHA256Context as SC} from "./SHA256Context";
+import { SHA256Context as SC } from "./SHA256Context";
 
 function toBuffer(buf: Uint8Array | ArrayBuffer | string) {
     // @ts-ignore
@@ -202,7 +202,7 @@ class NodePlatform implements Platform {
     }
 
     trace(...args: any) {
-        console.trace(...args);
+        console.log(...args);
     }
 
     error(...args: any): void {

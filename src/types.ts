@@ -166,28 +166,6 @@ export interface IDataBuffer {
     uncompress(method: compressionMethod, offset?: number, length?: number): string;
 }
 
-type ConcatTypes = ArrayBuffer | Uint8Array | IDataBuffer | string | number[] | number;
-type DataBufferConstructor = {
-    new(bytes: number): IDataBuffer;
-    new(): IDataBuffer;
-    new(data: string, encoding?: string): IDataBuffer;
-    new(data: ArrayBuffer | IDataBuffer | Uint8Array, offset?: number, length?: number): IDataBuffer;
-    compare(lhs: string | ArrayBuffer | IDataBuffer | Uint8Array | number | number[],
-            rhs: string | ArrayBuffer | IDataBuffer | Uint8Array | number | number[]): -1 | 0 | 1;
-    concat(...args: ConcatTypes[]): IDataBuffer
-    of(...args: ConcatTypes[]): IDataBuffer;
-    random(size: number): IDataBuffer;
-};
-
-type UnorderedMapConstructor = {
-    new <Key, Value>(): IUnorderedMap<Key, Value>;
-};
-
-declare global {
-    const DataBuffer: DataBufferConstructor;
-    const UnorderedMap: UnorderedMapConstructor;
-}
-
 export interface DnsResult {
     errorCode: number;
     host: string;
@@ -313,6 +291,8 @@ export interface HTTP {
 
     onheaders?: (headers: HTTPHeadersEvent) => void;
     ondata?: (data: IDataBuffer, offset: number, length: number) => void;
+
+    upgrade: boolean;
     onfinished?: () => void;
     onerror?: OnError;
 };

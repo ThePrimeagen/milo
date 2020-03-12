@@ -60,5 +60,4 @@ export default class UnorderedMap<Key, Value> implements IUnorderedMap<Key, Valu
     values(): Value[] {
         return Array.from(this.map.values());
     }
-
 }

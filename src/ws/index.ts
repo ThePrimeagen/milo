@@ -1,7 +1,7 @@
-import WSFramer, {WSState} from './framer';
+import WSFramer, { WSState } from './framer';
 import Platform from "../#{target}/Platform";
 import DataBuffer from "../#{target}/DataBuffer";
-import {Request, RequestData} from "../Request";
+import { Request, RequestData } from "../Request";
 import { headerValue } from "../utils";
 
 import {
@@ -66,7 +66,6 @@ function _wsUpgrade(u: string | UrlObject): Promise<NetworkPipe> {
         }
 
         // TODO: Ask Jordan, WHY TYPESCRIPT WHY...
-        // @ts-ignore
         const arrayBufferKey = new DataBuffer(16);
 
         arrayBufferKey.randomize();
@@ -78,6 +77,8 @@ function _wsUpgrade(u: string | UrlObject): Promise<NetworkPipe> {
         data.headers["Connection"] = "Upgrade";
         data.headers["Sec-WebSocket-Key"] = key;
         data.headers["Sec-WebSocket-Version"] = "13";
+        data.forbidReuse = true;
+        data.freshConnect = true;
         const req = new Request(data);
         req.send().then(response => {
             Platform.trace("Got response", response);
@@ -168,7 +169,7 @@ export default class WS {
             while (1) {
 
                 bytesRead = pipe.read(readView, 0, readView.byteLength);
-                if (bytesRead <=  0) {
+                if (bytesRead <= 0) {
                     break;
                 }
 
@@ -178,32 +179,32 @@ export default class WS {
 
         this.frame.onFrame((buffer: IDataBuffer, state: WSState) => {
             switch (state.opcode) {
-                case Opcodes.CloseConnection:
-                    this.state = ConnectionState.Closed;
-                    const code = buffer.getUInt16BE(0);
-                    const restOfData = buffer.subarray(2);
+            case Opcodes.CloseConnection:
+                this.state = ConnectionState.Closed;
+                const code = buffer.getUInt16BE(0);
+                const restOfData = buffer.subarray(2);
 
-                    this.callCallback(close, this.onclose, code, restOfData);
+                this.callCallback(close, this.onclose, code, restOfData);
 
-                    // attempt to close the sockfd.
-                    this.pipe.close();
+                // attempt to close the sockfd.
+                this.pipe.close();
 
-                    break;
+                break;
 
-                case Opcodes.Ping:
-                    this.frame.send(buffer, 0, buffer.byteLength, Opcodes.Pong);
-                    break;
+            case Opcodes.Ping:
+                this.frame.send(buffer, 0, buffer.byteLength, Opcodes.Pong);
+                break;
 
-                case Opcodes.BinaryFrame:
-                case Opcodes.TextFrame:
-                    if (this.onmessage) {
-                        this.onmessage(buffer);
-                    }
-                    this.callCallback(message, this.onmessage, buffer);
-                    break;
+            case Opcodes.BinaryFrame:
+            case Opcodes.TextFrame:
+                if (this.onmessage) {
+                    this.onmessage(buffer);
+                }
+                this.callCallback(message, this.onmessage, buffer);
+                break;
 
-                default:
-                    throw new Error("Can you handle this?");
+            default:
+                throw new Error("Can you handle this?");
             }
         });
 
@@ -214,7 +215,7 @@ export default class WS {
     }
 
     private callCallback(callbacks: AnyCallback[],
-        secondCallback: AnyCallback | undefined, arg1?: any, arg2?: any) {
+                         secondCallback: AnyCallback | undefined, arg1?: any, arg2?: any) {
 
         try {
             if (secondCallback) {

@@ -3,6 +3,7 @@ import {
     OnClose, OnData, OnError, IDataBuffer
 } from "../types";
 import { NrdpPlatform } from "./Platform";
+import DataBuffer from "./DataBuffer";
 import N = nrdsocket;
 
 let platform: NrdpPlatform | undefined;
