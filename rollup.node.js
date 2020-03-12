@@ -18,5 +18,5 @@ export default {
         }),
         commonjs()
     ],
-    external: [ 'fs', 'net', 'dns' ] 
+    external: [ 'fs', 'net', 'dns' ]
 };

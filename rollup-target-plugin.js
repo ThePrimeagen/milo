@@ -7,7 +7,7 @@ export default function target({ target }) {
             if (source.includes('#{target}')) {
                 const targetPath = source.replace('#{target}', target) + '.js';
                 return path.resolve(path.dirname(importer), targetPath);
-            }        
+            }
         },
     }
 }
