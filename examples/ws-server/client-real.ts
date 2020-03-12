@@ -1,4 +1,4 @@
-import WebSocket from 'ws';
+import WebSocket from "ws";
 
 const ws = new WebSocket("ws://mpaulson.netflix.com:8080");
 

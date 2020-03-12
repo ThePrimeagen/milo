@@ -1,7 +1,7 @@
 import fs from "fs";
 import dns from "dns";
 
-import { toUint8Array } from './utils';
+import { toUint8Array } from "./utils";
 import {
     DnsResult,
     IpVersion,

@@ -1,5 +1,5 @@
-import HeaderTable from '../header-table';
-import createStaticList from '../static-header-list';
+import HeaderTable from "../header-table";
+import createStaticList from "../static-header-list";
 
 const staticList = createStaticList();
 

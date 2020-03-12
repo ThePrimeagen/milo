@@ -14,7 +14,7 @@ import {
     assert
 } from '../utils';
 
-import maskFn from './mask';
+import maskFn from "./mask";
 
 import {
     Opcodes

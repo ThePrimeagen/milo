@@ -93,7 +93,7 @@ declare namespace nrdsocket {
     }
 
     // types
-    type IDataBuffer = import('../src/types').IDataBuffer;
+    type IDataBuffer = import("../src/types").IDataBuffer;
     type Buffer = ArrayBuffer | Uint8Array | IDataBuffer;
     type ConstBuffer = string | ArrayBuffer | Uint8Array | ConstDataPointer | IDataBuffer | DataPointer;
 

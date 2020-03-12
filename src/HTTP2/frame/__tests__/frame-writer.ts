@@ -3,8 +3,8 @@ import {
     Flag,
 } from '../types';
 
-import FrameWriter from '../frame-writer';
-import { FRAME_HEADER_FLAGS_OFFSET, FRAME_HEADER_SIZE } from '../utils';
+import FrameWriter from "../frame-writer";
+import { FRAME_HEADER_FLAGS_OFFSET, FRAME_HEADER_SIZE } from "../utils";
 
 function toArray(...args: number[]) {
     return args;

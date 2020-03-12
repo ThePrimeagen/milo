@@ -1,15 +1,15 @@
-import crypto from 'crypto';
+import crypto from "crypto";
 
-import {IDataBuffer, SHA256Context as ISC} from '../types';
-import DB from './DataBuffer';
-import {bufferToArrayBufferCopy} from './utils';
+import { IDataBuffer, SHA256Context as ISC } from "../types";
+import DB from "./DataBuffer";
+import { bufferToArrayBufferCopy } from "./utils";
 
 /*
-const salt = 'abcdefghijklmnop!';
-const hash = crypto.createHmac('sha256', salt)
-                   .update('I love cupcakes')
-                   .digest('hex');
- */
+  const salt = 'abcdefghijklmnop!';
+  const hash = crypto.createHmac('sha256', salt)
+  .update('I love cupcakes')
+  .digest('hex');
+*/
 
 export class SHA256Context implements ISC {
     private salt: string;

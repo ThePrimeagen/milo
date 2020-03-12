@@ -3,9 +3,9 @@ import {
     NetworkPipe,
     IDataBuffer,
 } from '../../types';
-import FrameConstructor from '../frame/frame-constructor';
-import * as FrameUtils from '../frame/utils';
-import SettingsFrame from '../frame/settings-frame';
+import FrameConstructor from "../frame/frame-constructor";
+import * as FrameUtils from "../frame/utils";
+import SettingsFrame from "../frame/settings-frame";
 
 // 1.  Everytime a new connection request is made to  the same server, we need
 // to start a http2 stream with server and hand back a common

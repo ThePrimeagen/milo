@@ -1,6 +1,6 @@
-import maskFn from '../mask';
-import {IDataBuffer} from '../../types';
-import DataBuffer from '../../#{target}/DataBuffer';
+import maskFn from "../mask";
+import { IDataBuffer } from "../../types";
+import DataBuffer from "../../#{target}/DataBuffer";
 
 // FOR YOU JELMEGA
 // LittleEndian is going to be BBAABBAA
@@ -17,7 +17,7 @@ maskView.setUint32(0, mask);
 //   == 4
 const unmaskedArr = [0xFF, 0x00, 0x00, 0xFF, 0x0F, 0xF0, 0x0F, 0xF0];
 //                   0xAA  0xBB  0xAA  0xBB  0xAA  0xBB  0xAA  0xBB
-const maskedArr =   [0x55, 0xBB, 0xAA, 0x44, 0xA5, 0x4B, 0xA5, 0x4B];
+const maskedArr = [0x55, 0xBB, 0xAA, 0x44, 0xA5, 0x4B, 0xA5, 0x4B];
 
 const arr = Uint8Array.from(unmaskedArr);
 

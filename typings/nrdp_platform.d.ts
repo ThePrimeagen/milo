@@ -1,5 +1,5 @@
 declare namespace nrdp_platform {
-    type IDataBuffer = import('../src/types').IDataBuffer;
+    type IDataBuffer = import("../src/types").IDataBuffer;
 
     function bufferIndexOf(haystack: Uint8Array | ArrayBuffer | IDataBuffer | string,
                            haystackOffset: number,

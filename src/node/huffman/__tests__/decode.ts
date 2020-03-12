@@ -1,5 +1,5 @@
-import DataBuffer from '../../DataBuffer';
-import decode from '../decode';
+import DataBuffer from "../../DataBuffer";
+import decode from "../decode";
 
 describe("decode", function() {
     it("decode simple 1", function() {
@@ -14,10 +14,10 @@ describe("decode", function() {
 
     it("decode 1337", function() {
         /*
-        '1' ( 49)  |00001                                         1  [ 5]
-        '3' ( 51)  |011001                                       19  [ 6]
-        '7' ( 55)  |011101                                       1d  [ 6]
-         */
+          '1' ( 49)  |00001                                         1  [ 5]
+          '3' ( 51)  |011001                                       19  [ 6]
+          '7' ( 55)  |011101                                       1d  [ 6]
+        */
         const one337 = new DataBuffer(3);
         one337.setUInt8(0, 0b0000_1011);
         one337.setUInt8(1, 0b0010_1100);

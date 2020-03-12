@@ -1,5 +1,5 @@
-import DB from './DataBuffer';
-import {IDataBuffer} from '../types';
+import DB from "./DataBuffer";
+import { IDataBuffer } from "../types";
 
 export function bufferToUint8Array(buf: Buffer) {
     return new Uint8Array(
@@ -20,18 +20,18 @@ export function bufferToArrayBufferCopy(buf: Buffer, offset: number, length: num
 
 export function normalizeBuffer(buf: string | Uint8Array | ArrayBuffer, offset: number, endIdx?: number): Buffer {
     /*
-    let outBuf;
-    if (typeof buf === 'string') {
-        outBuf = Buffer.from(buf);
-    }
-    else if (buf instanceof Uint8Array) {
-        outBuf = Buffer.from(buf);
-    }
-    else {
-        outBuf = Buffer.from(buf);
-    }
-     * This works, why wont this one below work.
-     */
+      let outBuf;
+      if (typeof buf === 'string') {
+      outBuf = Buffer.from(buf);
+      }
+      else if (buf instanceof Uint8Array) {
+      outBuf = Buffer.from(buf);
+      }
+      else {
+      outBuf = Buffer.from(buf);
+      }
+      * This works, why wont this one below work.
+      */
 
     // @ts-ignore
     return Buffer.from(buf).slice(offset, isNaN(endIdx) ? undefined : endIdx);

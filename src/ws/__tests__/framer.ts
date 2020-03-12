@@ -1,9 +1,9 @@
 import { Platform, DataBuffer } from "../../Platform";
 import { NetworkPipe } from "../../types";
-import WSFramer, { constructFrameHeader } from '../framer';
-import { Opcodes } from '../types';
-import { IDataBuffer } from '../../types';
-import maskFn from '../mask';
+import WSFramer, { constructFrameHeader } from "../framer";
+import { Opcodes } from "../types";
+import { IDataBuffer } from "../../types";
+import maskFn from "../mask";
 
 // @ts-ignore
 const pipe = {

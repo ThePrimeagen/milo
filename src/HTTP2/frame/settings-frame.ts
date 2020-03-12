@@ -5,16 +5,16 @@ import {
     SettingsDefault,
 } from './types';
 
-import * as FrameUtils from './utils';
-import FrameWriter from './frame-writer';
+import * as FrameUtils from "./utils";
+import FrameWriter from "./frame-writer";
 
 /*
- +-------------------------------+
- |       Identifier (16)         |
- +-------------------------------+-------------------------------+
- |                        Value (32)                             |
- +---------------------------------------------------------------+
- */
+  +-------------------------------+
+  |       Identifier (16)         |
+  +-------------------------------+-------------------------------+
+  |                        Value (32)                             |
+  +---------------------------------------------------------------+
+*/
 type DefinedSettings = [number, number];
 
 export default class SettingsCreator {

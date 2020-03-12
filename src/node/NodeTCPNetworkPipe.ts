@@ -1,4 +1,4 @@
-import net from 'net';
+import net from "net";
 import {
     normalizeBuffer,
     normalizeBufferLen,

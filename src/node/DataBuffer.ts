@@ -1,5 +1,5 @@
-import { toUint8Array, bufferToArrayBufferCopy } from './utils';
-import { IDataBuffer, encodingType, hashType, compressionMethod } from '../types';
+import { toUint8Array, bufferToArrayBufferCopy } from "./utils";
+import { IDataBuffer, encodingType, hashType, compressionMethod } from "../types";
 
 const tempAllocation = Buffer.alloc(1);
 
@@ -224,7 +224,7 @@ string value for the second parameter, offset.`);
         // TODO: Fix getOffsetAndLength.  Should normalize offset for ease of
         // use
         return this.buffer.toString(enc || "utf8",
-            this.byteOffset + offset, length);
+                                    this.byteOffset + offset, length);
     }
 
     encode(enc: encodingType, offset?: number, length?: number): IDataBuffer {

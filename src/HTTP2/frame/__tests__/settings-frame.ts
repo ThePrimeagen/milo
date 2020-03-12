@@ -3,8 +3,8 @@ import {
     Settings,
 } from '../types';
 
-import SettingsWriter from '../settings-frame';
-import { FRAME_HEADER_SIZE } from '../utils';
+import SettingsWriter from "../settings-frame";
+import { FRAME_HEADER_SIZE } from "../utils";
 
 function toArray(...args: number[]) {
     return args;

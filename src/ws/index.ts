@@ -1,4 +1,4 @@
-import WSFramer, { WSState } from './framer';
+import WSFramer, { WSState } from "./framer";
 import { Platform, DataBuffer } from "../Platform";
 import { Request, RequestData } from "../Request";
 import { headerValue } from "../utils";

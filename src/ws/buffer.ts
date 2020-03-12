@@ -1,4 +1,4 @@
-import { IDataBuffer, } from '../types'
+import { IDataBuffer, } from "../types"
 import { DataBuffer } from "../Platform";
 
 const r = "\r".charCodeAt(0);

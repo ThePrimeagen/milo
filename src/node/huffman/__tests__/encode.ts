@@ -1,5 +1,5 @@
-import DataBuffer from '../../DataBuffer';
-import encode from '../encode';
+import DataBuffer from "../../DataBuffer";
+import encode from "../encode";
 
 describe.only("encode", function() {
     it("encode simple 1", function() {

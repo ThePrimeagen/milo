@@ -1,4 +1,4 @@
-import getStaticList from './static-header-list';
+import getStaticList from "./static-header-list";
 import { Platform, UnorderedMap } from "../../../Platform";
 import { IUnorderedMap } from "../../../types";
 

@@ -1,4 +1,4 @@
-import ws from 'ws';
+import ws from "ws";
 
 console.log("We are about to server.", 1337);
 const wss = new ws.Server({

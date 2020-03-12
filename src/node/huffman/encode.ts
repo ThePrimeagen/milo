@@ -1,4 +1,4 @@
-import staticList from './static';
+import staticList from "./static";
 
 const scratchBuffer = Buffer.alloc(50000);
 const bitMasks = new Uint8Array(8).map((x, i) => 2 ** i - 1);

@@ -1,7 +1,7 @@
 // rollup.config.js
-import resolve from '@rollup/plugin-node-resolve';
-import commonjs from '@rollup/plugin-commonjs';
-import target from './rollup-target-plugin';
+import resolve from "@rollup/plugin-node-resolve";
+import commonjs from "@rollup/plugin-commonjs";
+import target from "./rollup-target-plugin";
 
 export default {
     input: 'build/node/milo.js',
