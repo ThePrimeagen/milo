@@ -17,7 +17,8 @@
   "scripts": {
     "build:nrdp": "tsc -p tsconfig.nrdp.json && rollup -c rollup.nrdp.js",
     "build:node": "tsc -p tsconfig.node.json && rollup -c rollup.node.js",
-    "build:all": "npm run build:nrdp && npm run build:node",
+    "lint": "node bin/lint.js",
+    "build:all": "npm run build:nrdp && npm run build:node && npm run lint",
     "build": "npm run build:all",
     "nrdp": "npm run build",
     "node": "npm run build:node",
@@ -30,6 +31,7 @@
     "btoa": "^1.2.1",
     "network-byte-order": "^0.2.0",
     "sha1": "^1.1.1",
+    "tslint": "^6.1.0",
     "url-parse": "^1.4.7",
     "ws": "^7.2.1"
   },
