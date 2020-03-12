@@ -89,12 +89,16 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
         set_mem_eof_return(this.platform, this.outputBio);
         this.pipe.ondata = () => {
             const read = this.pipe.read(this.platform.scratch, 0, this.platform.scratch.byteLength);
-            if (!read) {
+            if (read === -1) {
+                assert(N.errno === N.EWOULDBLOCK || N.errno === N.EAGAIN || this.pipe.closed, "Should be closed already");
+                return;
+            }
+
+            if (read === 0) {
                 assert(this.pipe.closed, "Should be closed already");
                 return;
             }
             this.platform.trace("got data", read);
-            assert(read > 0, "This should be > 0");
             // throw new Error("fiskball");
             const written = this.platform.BIO_write(this.inputBio, this.platform.scratch, 0, read);
             this.platform.trace("wrote", read, "bytes to inputBio =>", written);
