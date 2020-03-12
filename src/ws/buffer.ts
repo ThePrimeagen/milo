@@ -1,5 +1,5 @@
 import { IDataBuffer, } from '../types'
-import DataBuffer from '../#{target}/DataBuffer'
+import { DataBuffer } from "../Platform";
 
 const r = "\r".charCodeAt(0);
 const n = "\n".charCodeAt(0);

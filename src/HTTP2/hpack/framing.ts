@@ -1,8 +1,8 @@
 import assert from "assert";
 
-import Platform from "../../#{target}/Platform";
-import {IDataBuffer} from "../../types";
-import {HeaderTable} from "./internals/header-table";
+import { Platform } from "../../Platform";
+import { IDataBuffer } from "../../types";
+import { HeaderTable } from "./internals/header-table";
 
 // NOTE: The state of the header parser is not reentrant (I believe) therefore
 // we can have a single state object, this may be a bad idea, but for now I am
@@ -33,17 +33,17 @@ function readVarInt(n: number, data: IDataBuffer): number {
     /**
      * Implementation from : https://tools.ietf.org/html/rfc7541#section-5.1
      *
-   // decode I from the next N bits
-   if I < 2^N - 1, return I
-   else
-       M = 0
-       repeat
-           B = next octet
-           I = I + (B & 127) * 2^M
-           M = M + 7
-       while B & 128 == 128
-       return I
-     */
+     // decode I from the next N bits
+     if I < 2^N - 1, return I
+     else
+     M = 0
+     repeat
+     B = next octet
+     I = I + (B & 127) * 2^M
+     M = M + 7
+     while B & 128 == 128
+     return I
+    */
     const twoNMinus1 = (2 ** n) - 1;
 
     let I = data.getUInt8(state.ptr++) & ((1 << n) - 1);
@@ -72,17 +72,17 @@ function writeVarInt(n: number, value: number, data: IDataBuffer, offset: number
     /**
      * Implementation from : https://tools.ietf.org/html/rfc7541#section-5.1
      *
-        // Encodes the bitties
-    if I < 2^N - 1, encode I on N bits
-   else
-       encode (2^N - 1) on N bits
-       I = I - (2^N - 1)
-       while I >= 128
-            encode (I % 128 + 128) on 8 bits
-            I = I / 128
-       encode I on 8 bits
+     // Encodes the bitties
+     if I < 2^N - 1, encode I on N bits
+     else
+     encode (2^N - 1) on N bits
+     I = I - (2^N - 1)
+     while I >= 128
+     encode (I % 128 + 128) on 8 bits
+     I = I / 128
+     encode I on 8 bits
 
-     */
+    */
     const twoNMinus1 = (2 ** n) - 1;
 
     let ptr = offset;
@@ -102,13 +102,13 @@ function writeVarInt(n: number, value: number, data: IDataBuffer, offset: number
     data.setUInt8(state.ptr++, I);
 }
 
-export default function parseHeaders(dynTable: HeaderTable, data: IDataBuffer, offset: number = 0, length?: number): {[key: string]: string} {
+export default function parseHeaders(dynTable: HeaderTable, data: IDataBuffer, offset: number = 0, length?: number): { [key: string]: string } {
     length = length === undefined ? data.byteLength - offset : length;
 
     // TODO: do we need more things?
     reset(offset);
 
-    const headers: {[key: string]: string} = {};
+    const headers: { [key: string]: string } = {};
     do {
         const type = data.getUInt8(state.ptr);
 
@@ -119,12 +119,12 @@ export default function parseHeaders(dynTable: HeaderTable, data: IDataBuffer, o
         //
         // https://tools.ietf.org/html/rfc7541#section-6.1
         // 6.1.  Indexed Header Field Representation
-/*
-  0   1   2   3   4   5   6   7
-+---+---+---+---+---+---+---+---+
-| 1 |        Index (7+)         |
-+---+---------------------------+
- */
+        /*
+          0   1   2   3   4   5   6   7
+          +---+---+---+---+---+---+---+---+
+          | 1 |        Index (7+)         |
+          +---+---------------------------+
+        */
         if ((type & 128) === 128) {
             // read it out.
             const {
@@ -138,29 +138,29 @@ export default function parseHeaders(dynTable: HeaderTable, data: IDataBuffer, o
             // https://tools.ietf.org/html/rfc7541#section-6.2.1
             // 6.2.1.  Literal Header Field with Incremental Indexing
             // indexed name, new value.
-/*
-  0   1   2   3   4   5   6   7
-+---+---+---+---+---+---+---+---+
-| 0 | 1 |      Index (6+)       |
-+---+---+-----------------------+
-| H |     Value Length (7+)     |
-+---+---------------------------+
-| Value String (Length octets)  |
-+-------------------------------+
- */
+            /*
+              0   1   2   3   4   5   6   7
+              +---+---+---+---+---+---+---+---+
+              | 0 | 1 |      Index (6+)       |
+              +---+---+-----------------------+
+              | H |     Value Length (7+)     |
+              +---+---------------------------+
+              | Value String (Length octets)  |
+              +-------------------------------+
+            */
             // (type & 0xFF) < 16)
             // 6.2.2.  Literal Header Field without Indexing
             // https://tools.ietf.org/html/rfc7541#section-6.2.2
-/*
-  0   1   2   3   4   5   6   7
-+---+---+---+---+---+---+---+---+
-| 0 | 0 | 0 | 0 |  Index (4+)   |
-+---+---+-----------------------+
-| H |     Value Length (7+)     |
-+---+---------------------------+
-| Value String (Length octets)  |
-+-------------------------------+
-*/
+            /*
+              0   1   2   3   4   5   6   7
+              +---+---+---+---+---+---+---+---+
+              | 0 | 0 | 0 | 0 |  Index (4+)   |
+              +---+---+-----------------------+
+              | H |     Value Length (7+)     |
+              +---+---------------------------+
+              | Value String (Length octets)  |
+              +-------------------------------+
+            */
             const name = dynTable.getName(readVarInt(6, data));
             const huffed = (data.getUInt8(state.ptr) & 128) === 128;
 
@@ -177,34 +177,34 @@ export default function parseHeaders(dynTable: HeaderTable, data: IDataBuffer, o
             // 6.2.1.  Literal Header Field with Incremental Indexing
             // but with new name and new value
             /*
-  0   1   2   3   4   5   6   7
-+---+---+---+---+---+---+---+---+
-| 0 | 1 |           0           |
-+---+---+-----------------------+
-| H |     Name Length (7+)      |
-+---+---------------------------+
-|  Name String (Length octets)  |
-+---+---------------------------+
-| H |     Value Length (7+)     |
-+---+---------------------------+
-| Value String (Length octets)  |
-+-------------------------------+
+              0   1   2   3   4   5   6   7
+              +---+---+---+---+---+---+---+---+
+              | 0 | 1 |           0           |
+              +---+---+-----------------------+
+              | H |     Name Length (7+)      |
+              +---+---------------------------+
+              |  Name String (Length octets)  |
+              +---+---------------------------+
+              | H |     Value Length (7+)     |
+              +---+---------------------------+
+              | Value String (Length octets)  |
+              +-------------------------------+
 
-/*
- * if type === 0
-  0   1   2   3   4   5   6   7
-+---+---+---+---+---+---+---+---+
-| 0 | 0 | 0 | 0 |       0       |
-+---+---+-----------------------+
-| H |     Name Length (7+)      |
-+---+---------------------------+
-|  Name String (Length octets)  |
-+---+---------------------------+
-| H |     Value Length (7+)     |
-+---+---------------------------+
-| Value String (Length octets)  |
-+-------------------------------+
-*/
+              /*
+              * if type === 0
+              0   1   2   3   4   5   6   7
+              +---+---+---+---+---+---+---+---+
+              | 0 | 0 | 0 | 0 |       0       |
+              +---+---+-----------------------+
+              | H |     Name Length (7+)      |
+              +---+---------------------------+
+              |  Name String (Length octets)  |
+              +---+---------------------------+
+              | H |     Value Length (7+)     |
+              +---+---------------------------+
+              | Value String (Length octets)  |
+              +-------------------------------+
+            */
             state.ptr++;
             let huffed = (data.getUInt8(state.ptr) & 128) === 128;
 

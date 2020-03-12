@@ -1,10 +1,8 @@
-import DataBuffer from "../../#{target}/DataBuffer";
-import Platform from "../../#{target}/Platform";
-
+import { Platform, DataBuffer } from "../../Platform";
 import { NetworkPipe } from "../../types";
-import WSFramer, {constructFrameHeader} from '../framer';
-import {Opcodes} from '../types';
-import {IDataBuffer} from '../../types';
+import WSFramer, { constructFrameHeader } from '../framer';
+import { Opcodes } from '../types';
+import { IDataBuffer } from '../../types';
 import maskFn from '../mask';
 
 // @ts-ignore
@@ -13,25 +11,25 @@ const pipe = {
 } as NetworkPipe;
 
 /*
-      0                   1                   2                   3
-      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-     +-+-+-+-+-------+-+-------------+-------------------------------+
-     |F|R|R|R| opcode|M| Payload len |    Extended payload length    |
-     |I|S|S|S|  (4)  |A|     (7)     |             (16/64)           |
-     |N|V|V|V|       |S|             |   (if payload len==126/127)   |
-     | |1|2|3|       |K|             |                               |
-     +-+-+-+-+-------+-+-------------+ - - - - - - - - - - - - - - - +
-     |     Extended payload length continued, if payload len == 127  |
-     + - - - - - - - - - - - - - - - +-------------------------------+
-     |                               |Masking-key, if MASK set to 1  |
-     +-------------------------------+-------------------------------+
-     | Masking-key (continued)       |          Payload Data         |
-     +-------------------------------- - - - - - - - - - - - - - - - +
-     :                     Payload Data continued ...                :
-     + - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
-     |                     Payload Data continued ...                |
-     +---------------------------------------------------------------+
- */
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+  +-+-+-+-+-------+-+-------------+-------------------------------+
+  |F|R|R|R| opcode|M| Payload len |    Extended payload length    |
+  |I|S|S|S|  (4)  |A|     (7)     |             (16/64)           |
+  |N|V|V|V|       |S|             |   (if payload len==126/127)   |
+  | |1|2|3|       |K|             |                               |
+  +-+-+-+-+-------+-+-------------+ - - - - - - - - - - - - - - - +
+  |     Extended payload length continued, if payload len == 127  |
+  + - - - - - - - - - - - - - - - +-------------------------------+
+  |                               |Masking-key, if MASK set to 1  |
+  +-------------------------------+-------------------------------+
+  | Masking-key (continued)       |          Payload Data         |
+  +-------------------------------- - - - - - - - - - - - - - - - +
+  :                     Payload Data continued ...                :
+  + - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+  |                     Payload Data continued ...                |
+  +---------------------------------------------------------------+
+*/
 
 // FOR YOU JELMEGA
 const mask = 0xAABBAABB;
@@ -39,8 +37,8 @@ const maskBuf = new Uint8Array(4);
 const maskView = new DataView(maskBuf.buffer);
 maskView.setUint32(0, mask, true);
 
-const countObj = {"count": 0};
-const countObj2 = {"count": 2};
+const countObj = { "count": 0 };
+const countObj2 = { "count": 2 };
 
 const countBuf = new DataBuffer(JSON.stringify(countObj));
 const countBuf2 = new DataBuffer(JSON.stringify(countObj2));

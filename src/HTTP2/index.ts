@@ -1,11 +1,7 @@
-import Url from "url-parse";
-import Platform from "../#{target}/Platform";
-import SettingsFrame from "./frame/settings-frame";
-import FrameConstructor from "./frame/frame-constructor";
+import { Platform } from "../Platform";
 import { VersionIdentification } from "./consts";
 import { RequestData, Request } from "../Request";
-import { NetworkPipe, DnsResult } from "../types";
-import { assert } from "../utils"
+import { NetworkPipe } from "../types";
 
 // RFC: 3.4 Starting a request with prior knowledge.
 // This requires a special connection frame with a octet string of

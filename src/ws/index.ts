@@ -1,6 +1,5 @@
 import WSFramer, { WSState } from './framer';
-import Platform from "../#{target}/Platform";
-import DataBuffer from "../#{target}/DataBuffer";
+import { Platform, DataBuffer } from "../Platform";
 import { Request, RequestData } from "../Request";
 import { headerValue } from "../utils";
 

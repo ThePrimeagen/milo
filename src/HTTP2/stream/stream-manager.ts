@@ -1,6 +1,4 @@
-import Platform from "../../#{target}/Platform";
-import DataBuffer from "../../#{target}/DataBuffer";
-
+import { Platform, DataBuffer } from "../../Platform";
 import {
     NetworkPipe,
     IDataBuffer,
@@ -131,20 +129,20 @@ export default class StreamManager {
 
     private read() {
         /*
-        const bytesRead = this.pipe.read(this.readBuffer, 0, BUFFER_SIZE);
-        let ptr = 0;
+          const bytesRead = this.pipe.read(this.readBuffer, 0, BUFFER_SIZE);
+          let ptr = 0;
 
-        do {
-            const bytesProcessed =
-                this.currentFrame.parse(this.readBuffer, 0, bytesRead);
+          do {
+          const bytesProcessed =
+          this.currentFrame.parse(this.readBuffer, 0, bytesRead);
 
-            ptr += bytesProcessed;
-            if (this.currentFrame.isFinished()) {
-                this.processFrame();
-                this.currentFrame.reset();
-            }
-        } while (ptr < bytesRead);
-         */
+          ptr += bytesProcessed;
+          if (this.currentFrame.isFinished()) {
+          this.processFrame();
+          this.currentFrame.reset();
+          }
+          } while (ptr < bytesRead);
+        */
     }
 };
 

@@ -1,7 +1,6 @@
-import Platform from "../#{target}/Platform";
+import { Platform, DataBuffer } from "../Platform";
 import { assert, escapeData } from "../utils";
 import { OnError, IDataBuffer } from "../types";
-import DataBuffer from "../#{target}/DataBuffer";
 
 export class ChunkyParser {
     private buffers: IDataBuffer[] = [];

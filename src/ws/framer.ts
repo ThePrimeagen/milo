@@ -1,5 +1,4 @@
-import Platform from '../#{target}/Platform';
-import DataBuffer from '../#{target}/DataBuffer'
+import { Platform, DataBuffer } from "../Platform";
 
 import {
     BufferPool,
@@ -26,7 +25,7 @@ import {
 import {
     htons,
     ntohs,
-// @ts-ignore
+    // @ts-ignore
 } from 'network-byte-order';
 
 type WSCallback = (buffer: IDataBuffer, state: WSState) => void;
@@ -171,7 +170,7 @@ export default class WSFramer {
 
     // TODO: Contiuation frames, spelt wrong
     send(buf: IDataBuffer, offset: number,
-        length: number, frameType: Opcodes = Opcodes.BinaryFrame) {
+         length: number, frameType: Opcodes = Opcodes.BinaryFrame) {
 
         if (length > 2 ** 32) {
             throw new Error("You are dumb");
@@ -272,9 +271,9 @@ export default class WSFramer {
                     assert(headerBuf, "Gotta have headerBuf");
 
                     headerBuf.set(0, state.payload, 0, payloadByteLength);
-                        packet.subarray(ptr, headerBuf.byteLength - payloadByteLength),
-                        headerBuf.set(payloadByteLength, packet, ptr,
-                            headerBuf.byteLength - payloadByteLength);
+                    packet.subarray(ptr, headerBuf.byteLength - payloadByteLength),
+                    headerBuf.set(payloadByteLength, packet, ptr,
+                                  headerBuf.byteLength - payloadByteLength);
 
                     nextPtrOffset =
                         this.parseHeader(state, headerBuf, 0, MAX_HEADER_SIZE);
@@ -333,8 +332,8 @@ export default class WSFramer {
      * straight out of rfc:
      * https://tools.ietf.org/html/rfc6455
      *
-      0                   1                   2                   3
-      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+     0                   1                   2                   3
+     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
      +-+-+-+-+-------+-+-------------+-------------------------------+
      |F|R|R|R| opcode|M| Payload len |    Extended payload length    |
      |I|S|S|S|  (4)  |A|     (7)     |             (16/64)           |
@@ -351,7 +350,7 @@ export default class WSFramer {
      + - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
      |                     Payload Data continued ...                |
      +---------------------------------------------------------------+
-     */
+    */
 
     private isHeaderParsable(packet: IDataBuffer, offset: number, endIdx: number): boolean {
         const len = endIdx - offset;
@@ -362,7 +361,7 @@ export default class WSFramer {
         const byte1 = packet.getUInt8(offset);
         const byte2 = packet.getUInt8(offset + 1);
         const isMasked = (byte2 & 0x80) >>> 7 === 1;
-        const payloadLength =  (byte2 & 0x7F);
+        const payloadLength = (byte2 & 0x7F);
 
         let size = 2;
         if (payloadLength === 126) {
@@ -407,7 +406,7 @@ export default class WSFramer {
 
         state.isMasked = (byte2 & 0x80) >>> 7 === 1;
 
-        state.payloadLength =  (byte2 & 0x7F);
+        state.payloadLength = (byte2 & 0x7F);
 
         if (state.payloadLength === 126) {
             state.payloadLength = packet.getUInt16BE(ptr);

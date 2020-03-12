@@ -2,7 +2,7 @@ import {
     HTTP, HTTPMethod, HTTPTransferEncoding, HTTPRequest, NetworkPipe,
     HTTPHeadersEvent, OnError, ErrorCode, IDataBuffer
 } from "../types";
-import Platform from "../#{target}/Platform";
+import { Platform } from "../Platform";
 import { ChunkyParser } from "./ChunkyParser";
 import { assert } from "../utils";
 
