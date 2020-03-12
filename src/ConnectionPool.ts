@@ -101,7 +101,7 @@ export class ConnectionPool {
     private _id: number;
     private _maxPoolSize: number;
     private _maxConnectionsPerHost: number;
-    private _hosts: IUnorderedMap;
+    private _hosts: IUnorderedMap<string, HostData>;
     private _pendingFreshConnects?: PendingConnection[];
 
     constructor() {

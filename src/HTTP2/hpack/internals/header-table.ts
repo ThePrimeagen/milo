@@ -1,5 +1,6 @@
 import getStaticList from './static-header-list';
 import Platform from "../../../#{target}/Platform";
+import { IUnorderedMap } from "../../../types";
 
 export type Name = string;
 export type NameValue = { name: string, value: string };
@@ -24,9 +25,9 @@ const STATIC_TABLE_SIZE = 62;
 export default class DynamicTable implements HeaderTable {
 
     // TODO: I assume that this definitely has a type, just what are they.
-    private byName: Map<string, number>;
-    private byNameAndValue: Map<string, Map<string, number>>;
-    private byIdx: Map<number, Name | NameValue>;
+    private byName: IUnorderedMap<string, number>;
+    private byNameAndValue: IUnorderedMap<string, IUnorderedMap<string, number>>;
+    private byIdx: IUnorderedMap<number, Name | NameValue>;
 
     private initializing: boolean;
     private maxSize: number;
@@ -35,9 +36,9 @@ export default class DynamicTable implements HeaderTable {
     private insertCount: number;
 
     constructor(maxSize: number) {
-        this.byName = new Map();
-        this.byNameAndValue = new Map();
-        this.byIdx = new Map();
+        this.byName = new UnorderedMap();
+        this.byNameAndValue = new UnorderedMap();
+        this.byIdx = new UnorderedMap();
         this.initializing = true
         this.maxSize = maxSize;
         this.insertCount = 0;
@@ -111,7 +112,7 @@ export default class DynamicTable implements HeaderTable {
             // case?
             let valueMap = this.byNameAndValue.get(key);
             if (!valueMap) {
-                valueMap = new Map();
+                valueMap = new UnorderedMap();
                 this.byNameAndValue.set(key, valueMap);
             }
 

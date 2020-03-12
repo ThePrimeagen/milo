@@ -1,6 +1,5 @@
 declare namespace nrdp {
     type IDataBuffer = import('../src/types').IDataBuffer;
-    type IUnorderedMap = import('../src/types').IUnorderedMap;
     type IpVersion = import('../src/types').IpVersion;
     type DnsResult = import('../src/types').DnsResult;
 

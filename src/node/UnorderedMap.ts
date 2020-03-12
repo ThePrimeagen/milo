@@ -1,8 +1,8 @@
 import { IUnorderedMap } from '../types';
 
-export default class UnorderedMap implements IUnorderedMap {
-    private map: Map<any, any>;
-    constructor(map?: Map<any, any>) {
+export default class UnorderedMap<Key, Value> implements IUnorderedMap<Key, Value> {
+    private map: Map<Key, Value>;
+    constructor(map?: Map<Key, Value>) {
         if (map) {
             this.map = new Map(map);
         } else {
@@ -12,34 +12,34 @@ export default class UnorderedMap implements IUnorderedMap {
     clear(): void {
         this.map.clear();
     }
-    clone(): IUnorderedMap {
-        return new UnorderedMap(this.map);
+    clone(): IUnorderedMap<Key, Value> {
+        return new UnorderedMap<Key, Value>(this.map);
     }
-    delete(key: any): boolean {
+    delete(key: Key): boolean {
         if (this.map.has(key)) {
             this.map.delete(key);
             return true;
         }
         return false;
     }
-    entries(): [any, any][] {
+    entries(): [Key, Value][] {
         return Array.from(this.map.entries());
     }
-    forEach(func: (key: any, value: any, that: IUnorderedMap) => boolean): void {
+    forEach(func: (key: Key, value: Value, that: UnorderedMap<Key, Value>) => boolean): void {
         for (let [key, value] of this.map) {
-            let ret = func(key, value, this as IUnorderedMap);
+            let ret = func(key, value, this);
             if (typeof ret == "boolean" && !ret) {
                 break;
             }
         }
     }
-    get(key: any): any {
+    get(key: Key): Value | undefined {
         return this.map.get(key);
     }
-    has(key: any): boolean {
+    has(key: Key): boolean {
         return this.map.has(key);
     }
-    keys(): any[] {
+    keys(): Key[] {
         return Array.from(this.map.keys());
     }
     get length() {
@@ -48,16 +48,16 @@ export default class UnorderedMap implements IUnorderedMap {
     get size() {
         return this.map.size;
     }
-    set(key: any, value: any): IUnorderedMap {
+    set(key: Key, value: Value): UnorderedMap<Key, Value> {
         this.map.set(key, value);
         return this;
     }
-    take(key: any): any {
+    take(key: Key): Value | undefined {
         let ret = this.map.get(key);
         this.map.delete(key);
         return ret;
     }
-    values(): any[] {
+    values(): Value[] {
         return Array.from(this.map.values());
     }
 

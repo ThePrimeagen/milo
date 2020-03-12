@@ -10,20 +10,20 @@ export enum ErrorCode {
     None = 0
 };
 
-export interface IUnorderedMap {
+export interface IUnorderedMap<Key, Value> {
     clear(): void;
-    clone(): IUnorderedMap;
-    delete(key: any): boolean;
-    entries(): any[][];
-    forEach(func: (key: any, value: any, that: IUnorderedMap) => boolean): void;
-    get(key: any): any;
-    has(key: any): boolean;
-    keys(): any[];
+    clone(): IUnorderedMap<Key, Value>;
+    delete(key: Key): boolean;
+    entries(): [Key, Value][];
+    forEach(func: (key: Key, value: Value, that: IUnorderedMap<Key, Value>) => boolean): void;
+    get(key: Key): Value | undefined;
+    has(key: Key): boolean;
+    keys(): Key[];
     readonly length: number;
     readonly size: number;
-    set(key: any, value: any): IUnorderedMap; // returns itself for some reason
-    take(key: any): any;
-    values(): any[];
+    set(key: Key, value: Value): IUnorderedMap<Key, Value>;
+    take(key: Key): Value | undefined;
+    values(): Value[];
 }
 
 export interface IDataBuffer {
@@ -180,7 +180,7 @@ type DataBufferConstructor = {
 };
 
 type UnorderedMapConstructor = {
-    new(): IUnorderedMap;
+    new <Key, Value>(): IUnorderedMap<Key, Value>;
 };
 
 declare global {
