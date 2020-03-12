@@ -6,7 +6,7 @@ export default class UnorderedMap<Key, Value> implements IUnorderedMap<Key, Valu
         if (map) {
             this.map = new Map(map);
         } else {
-            this.map = new Map;
+            this.map = new Map();
         }
     }
     clear(): void {
@@ -26,9 +26,9 @@ export default class UnorderedMap<Key, Value> implements IUnorderedMap<Key, Valu
         return Array.from(this.map.entries());
     }
     forEach(func: (key: Key, value: Value, that: UnorderedMap<Key, Value>) => boolean): void {
-        for (let [key, value] of this.map) {
-            let ret = func(key, value, this);
-            if (typeof ret == "boolean" && !ret) {
+        for (const [key, value] of this.map) {
+            const ret = func(key, value, this);
+            if (typeof ret === "boolean" && !ret) {
                 break;
             }
         }
@@ -53,7 +53,7 @@ export default class UnorderedMap<Key, Value> implements IUnorderedMap<Key, Valu
         return this;
     }
     take(key: Key): Value | undefined {
-        let ret = this.map.get(key);
+        const ret = this.map.get(key);
         this.map.delete(key);
         return ret;
     }

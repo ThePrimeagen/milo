@@ -3,8 +3,8 @@ import createStaticList from "../static-header-list";
 
 const staticList = createStaticList();
 
-describe("HeaderTable", function() {
-    it("should be able to look up or resolve static value.", function() {
+describe("HeaderTable", () => {
+    it("should be able to look up or resolve static value.", () => {
         const table = new HeaderTable(1024 * 16);
 
         for (let i = 0; i < staticList.length; ++i) {
@@ -13,7 +13,8 @@ describe("HeaderTable", function() {
                 name, value
             ] = staticList[i];
 
-            let expName, expValue;
+            let expName;
+            let expValue;
             if (value === null) {
                 expName = table.getName(i + 1);
                 expValue = null;
@@ -29,40 +30,40 @@ describe("HeaderTable", function() {
         }
     });
 
-    it("should throw an error when name or name-pair are not found.", function() {
+    it("should throw an error when name or name-pair are not found.", () => {
         const table = new HeaderTable(1024 * 16);
 
-        //[":authority",null],
-        //[":method","GET"],
+        // [":authority",null],
+        // [":method","GET"],
         let errCount = 0;
         try {
             // authorize only
             table.getNameAndValue(1);
-        } catch(e) {
+        } catch (e) {
             errCount++
         }
 
         try {
             // method : get
             table.getName(2);
-        } catch(e) {
+        } catch (e) {
             errCount++
         }
 
         expect(errCount).toEqual(2);
     });
 
-    it("should insert into the dynamic table.", function() {
+    it("should insert into the dynamic table.", () => {
         const table = new HeaderTable(1024 * 16);
 
         const fooId = table.insert("foo", null);
         const barId = table.insert("foo", "bar");
 
         expect(table.getName(fooId)).toEqual("foo");
-        expect(table.getNameAndValue(barId)).toEqual({name: "foo", value: "bar"});
+        expect(table.getNameAndValue(barId)).toEqual({ name: "foo", value: "bar" });
     });
 
-    it("should dynamic size the header table.", function() {
+    it("should dynamic size the header table.", () => {
         const table = new HeaderTable(200);
     });
 });

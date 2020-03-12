@@ -26,7 +26,7 @@ export function writeHeaderData(
     if (streamDependency !== undefined) {
         frame.addFlag(Flag.PRIORITY);
 
-        let sD = streamDependency | (isExclusive ? 1 << 32 : 0);
+        const sD = streamDependency | (isExclusive ? 1 << 32 : 0);
         frame.write32(sD);
         frame.write8(weight || 0);
     }

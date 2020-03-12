@@ -47,8 +47,6 @@ const maskBuf = new Uint8Array(4);
 const maskView = new DataView(maskBuf.buffer);
 maskView.setUint32(0, maskNumber, true);
 
-let payloadHeadersReceived = 0;
-
 // TODO: Fulfill the RFCs requirement for masks.
 // TODO: ws module may not allow us to use as simple one like this.
 function generateMask(): Uint8Array {
@@ -180,7 +178,6 @@ export default class WSFramer {
         let ptr = offset;
         let ptrLength = 0;
         let ft = frameType;
-        let count = 0;
 
         const header = headerPool.malloc();
         assert(header, "Gotta have header");
@@ -224,7 +221,6 @@ export default class WSFramer {
      * Does some basic logic to check if the header is completed.
      */
     isHeaderComplete(packet: IDataBuffer, offset: number, length: number): boolean {
-        let ptr = offset;
         throw new Error("Not Implemented");
     }
 
@@ -394,11 +390,11 @@ export default class WSFramer {
 
         const opcode = byte1 & 0xF;
 
-        if (opcode != Opcodes.ContinuationFrame &&
-            opcode != Opcodes.BinaryFrame) {
-        }
+        // if (opcode !== Opcodes.ContinuationFrame &&
+        //     opcode !== Opcodes.BinaryFrame) {
+        // }
 
-        if (opcode != Opcodes.ContinuationFrame) {
+        if (opcode !== Opcodes.ContinuationFrame) {
             state.opcode = opcode;
         }
 
@@ -422,11 +418,11 @@ export default class WSFramer {
 
         if (state.isMasked) {
             state.mask = new Uint8Array(4);
-            const maskBuf = packet.subarray(ptr, 4);
-            state.mask[0] = maskBuf.getUInt8(0);
-            state.mask[1] = maskBuf.getUInt8(1);
-            state.mask[2] = maskBuf.getUInt8(2);
-            state.mask[3] = maskBuf.getUInt8(3);
+            const maskBuffer = packet.subarray(ptr, 4);
+            state.mask[0] = maskBuffer.getUInt8(0);
+            state.mask[1] = maskBuffer.getUInt8(1);
+            state.mask[2] = maskBuffer.getUInt8(2);
+            state.mask[3] = maskBuffer.getUInt8(3);
 
             ptr += 4;
         }
@@ -451,7 +447,7 @@ export default class WSFramer {
         state.payload.set(state.payloadPtr, sub);
         const copyAmount = sub.byteLength;
 
-        debugger;
+        // debugger;
         if (state.isMasked) {
             maskFn(state.payload, state.payloadPtr, copyAmount, state.mask);
         }

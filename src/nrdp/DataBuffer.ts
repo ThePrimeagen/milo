@@ -1,8 +1,7 @@
 import { IDataBuffer } from "../types";
 type ConcatTypes = ArrayBuffer | Uint8Array | IDataBuffer | string | number[] | number;
 type DataBufferConstructor = {
-    new(bytes: number): IDataBuffer;
-    new(): IDataBuffer;
+    new(bytes?: number): IDataBuffer;
     new(data: string, encoding?: string): IDataBuffer;
     new(data: ArrayBuffer | IDataBuffer | Uint8Array, offset?: number, length?: number): IDataBuffer;
     compare(lhs: string | ArrayBuffer | IDataBuffer | Uint8Array | number | number[],

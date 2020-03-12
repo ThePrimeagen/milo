@@ -55,13 +55,13 @@ function getBufferFromSend(sendMock: any, i: number): Uint8Array {
     return sendMock.mock.calls[i][0];
 }
 
-describe("WS", function() {
-    beforeEach(function() {
+describe("WS", () => {
+    beforeEach(() => {
         // @ts-ignore
         pipe.write.mockClear();
     });
 
-    it("small payload masked", function(done) {
+    it("small payload masked", (done) => {
         const buf = new DataBuffer(7);
         const ptr = constructFrameHeader(
             buf, true, Opcodes.BinaryFrame, 1, maskBuf);
@@ -78,7 +78,7 @@ describe("WS", function() {
         ws.processStreamData(buf, 0, 7);
     });
 
-    it("small payload", function(done) {
+    it("small payload", (done) => {
         const buf = new DataBuffer(3);
         const ptr = constructFrameHeader(
             buf, true, Opcodes.BinaryFrame, 1);
@@ -95,7 +95,7 @@ describe("WS", function() {
         ws.processStreamData(buf, 0, 3);
     });
 
-    it("can parse a single frame", function() {
+    it("can parse a single frame", () => {
         const buf = new DataBuffer(1000);
 
         const ptr = constructFrameHeader(
@@ -113,7 +113,7 @@ describe("WS", function() {
         ws.processStreamData(buf, 0, ptr + countLen);
     });
 
-    it("should send a packet through the packet send utils.", function() {
+    it("should send a packet through the packet send utils.", () => {
         // TODO: I think buf gets mutated with the mask... I think that is ok... maybe?
         const buf = new DataBuffer(1000);
 
@@ -126,7 +126,7 @@ describe("WS", function() {
         expect(pipe.write).toBeCalledTimes(1);
     });
 
-    it("should send a large packet through send.", function() {
+    it("should send a large packet through send.", () => {
         const bufLength = 8;
         const buf = new DataBuffer(bufLength);
         for (let i = 0; i < buf.byteLength; ++i) {
@@ -168,11 +168,11 @@ describe("WS", function() {
         expect(sendBuf2.slice(6)).toEqual(b2);
     });
 
-    it("should parse the two frames from a single payload", function() {
+    it("should parse the two frames from a single payload", () => {
         // TODO: I think buf gets mutated with the mask... I think that is ok... maybe?
         const buf = new DataBuffer(1000);
 
-        debugger;
+        // debugger;
         // Create the first frame, binary, and mask it.
         let bufPtr = constructFrameHeader(
             buf, true, Opcodes.BinaryFrame, countLen, maskBuf);
@@ -208,7 +208,7 @@ describe("WS", function() {
         expect(i).toEqual(2);
     });
 
-    it("should parse one frames from two ws frames, one contiuation.", function(done) {
+    it("should parse one frames from two ws frames, one contiuation.", (done) => {
         // TODO: I think buf gets mutated with the mask... I think that is ok... maybe?
         const bufHello = new DataBuffer(20);
         const bufWorld = new DataBuffer(20);
@@ -231,7 +231,6 @@ describe("WS", function() {
 
         const ws = new WSFramer(pipe);
 
-        let i = 0;
         ws.onFrame((contents) => {
             expect(Platform.utf8toa(contents)).toEqual("Hello World");
             done();
@@ -242,7 +241,7 @@ describe("WS", function() {
     });
 
 
-    it("should parse the one frame from 2 payload", function(done) {
+    it("should parse the one frame from 2 payload", (done) => {
         // TODO: I think buf gets mutated with the mask... I think that is ok... maybe?
         const buf = new DataBuffer(1000);
         let bufPtr = constructFrameHeader(
@@ -264,7 +263,7 @@ describe("WS", function() {
         ws.processStreamData(buf, breakPoint, bufPtr);
     });
 
-    it("should parse the one frame from 2 payload, header broken", function(done) {
+    it("should parse the one frame from 2 payload, header broken", (done) => {
         // TODO: I think buf gets mutated with the mask... I think that is ok... maybe?
         const buf = new DataBuffer(1000);
         let bufPtr = constructFrameHeader(
@@ -286,7 +285,7 @@ describe("WS", function() {
         ws.processStreamData(buf, breakPoint, bufPtr);
     });
 
-    it("should allow for interleaved control frames, close", function() {
+    it("should allow for interleaved control frames, close", () => {
         // TODO: I think buf gets mutated with the mask... I think that is ok... maybe?
         const bufHello = new DataBuffer(20);
         const helloWorldLen = 11;
@@ -311,7 +310,6 @@ describe("WS", function() {
 
         const ws = new WSFramer(pipe);
 
-        let i = 0;
         ws.onFrame(buffer => {
             expect(buffer.getUInt16BE(0)).toEqual(42);
         });

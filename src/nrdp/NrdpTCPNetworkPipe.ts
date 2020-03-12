@@ -81,14 +81,14 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
         if (!length)
             throw new Error("0 length write");
 
-        assert(this.writeBuffers.length == this.writeBufferLengths.length, "These should be the same length");
+        assert(this.writeBuffers.length === this.writeBufferLengths.length, "These should be the same length");
         this.writeBuffers.push(buf);
         this.writeBufferOffsets.push(offset);
         this.writeBufferLengths.push(length);
-        if (this.writeBuffers.length == 1) { // don't really need these arrays when writebuffers is empty
+        if (this.writeBuffers.length === 1) { // don't really need these arrays when writebuffers is empty
             this._write();
         } else {
-            assert(this.selectMode == N.READWRITE);
+            assert(this.selectMode === N.READWRITE);
         }
     }
 
@@ -120,7 +120,7 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
             break;
         case -1:
             if (N.errno !== N.EWOULDBLOCK)
-                this._error(N.errno, N.strerror());
+                this._error(new Error(`read error, errno: ${N.errno} ${N.strerror()}`));
             return -1; //
         default:
             if (!this.firstByteRead)
@@ -154,11 +154,12 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
 
     private _write(): void {
         assert(this.writeBuffers.length);
-        assert(this.writeBuffers.length == this.writeBufferOffsets.length);
-        assert(this.writeBuffers.length == this.writeBufferLengths.length);
+        assert(this.writeBuffers.length === this.writeBufferOffsets.length);
+        assert(this.writeBuffers.length === this.writeBufferLengths.length);
         while (this.writeBuffers.length) {
             assert(this.writeBufferOffsets[0] < this.writeBufferLengths[0], "Nothing to write");
-            const written = N.write(this.sock, this.writeBuffers[0], this.writeBufferOffsets[0], this.writeBufferLengths[0]);
+            const written = N.write(this.sock, this.writeBuffers[0],
+                                    this.writeBufferOffsets[0], this.writeBufferLengths[0]);
             this.platform.trace("wrote", written, "of", this.writeBufferLengths[0]);
             if (written > 0) {
                 if (!this.firstByteWritten)
@@ -173,16 +174,17 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
             } else if (N.errno === N.EWOULDBLOCK) {
                 break;
             } else {
-                this._error(N.errno, "Write failure " + N.strerror());
+                this._error(new Error(`write error, errno: ${N.errno} ${N.strerror()}`));
                 return;
             }
         }
         const mode = this.writeBuffers.length ? N.READWRITE : N.READ;
-        if (mode != this.selectMode) {
+        if (mode !== this.selectMode) {
             this.selectMode = mode;
             N.setFD(this.sock, mode, this._onSelect.bind(this));
         }
     }
+    /* tslint:disable:no-shadowed-variable */
     private _onSelect(sock: number, mode: number): void {
         if (mode & N.READ && this.ondata) {
             this.ondata();
@@ -191,17 +193,19 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
         if (mode & N.WRITE) {
             this._write();
         }
+
     }
 
-    private _error(code: number, reason: string): void {
+    private _error(error: Error): void {
         N.close(this.sock);
         this.sock = -1;
         if (this.onerror)
-            this.onerror(code, reason);
+            this.onerror(error);
     }
 };
 
-export default function createTCPNetworkPipe(options: CreateTCPNetworkPipeOptions, platform: NrdpPlatform): Promise<NetworkPipe> {
+export default function createTCPNetworkPipe(options: CreateTCPNetworkPipeOptions,
+                                             p: NrdpPlatform): Promise<NetworkPipe> {
     let dnsStartTime = 0;
     let dns: string | undefined;
     let dnsChannel: string | undefined;
@@ -218,13 +222,13 @@ export default function createTCPNetworkPipe(options: CreateTCPNetworkPipeOption
             let sockAddr: N.Sockaddr;
             try {
                 sockAddr = new N.Sockaddr(ipAddress);
-                if (sockAddr.ipVersion != options.ipVersion) {
+                if (sockAddr.ipVersion !== options.ipVersion) {
                     reject(new Error("Invalid ip version in ip address"));
                 }
                 dns = "literal";
                 innerResolve(sockAddr);
             } catch (err) {
-                dnsStartTime = platform.mono();
+                dnsStartTime = p.mono();
                 nrdp.dns.lookupHost(options.hostname, options.ipVersion, options.dnsTimeout, (dnsResult: DnsResult) => {
                     // console.log("got dns result");
                     if (!dnsResult.addresses.length) {
@@ -242,19 +246,20 @@ export default function createTCPNetworkPipe(options: CreateTCPNetworkPipeOption
                 });
             }
         }).then((sockAddr: N.Sockaddr) => {
-            const now = platform.mono();
+            const now = p.mono();
             const dnsTime = dnsStartTime ? now - dnsStartTime : 0;
             let sock = -1;
             try {
                 sock = N.socket(N.AF_INET, N.SOCK_STREAM, 0);
                 const cur = N.fcntl(sock, N.F_GETFL);
                 N.fcntl(sock, N.F_SETFL, cur | N.O_NONBLOCK);
-                let ret = N.connect(sock, sockAddr);
+                const ret = N.connect(sock, sockAddr);
                 if (!ret) {
                     assert(sockAddr.ipAddress, "Gotta have an ip address at this point");
                     assert(dns, "Must have dns here");
-                    resolve(new NrdpTCPNetworkPipe(platform, sock, options.hostname, options.port, sockAddr.ipAddress, platform.mono() - now, dnsTime, dns, dnsChannel));
-                } else if (N.errno != N.EINPROGRESS) {
+                    resolve(new NrdpTCPNetworkPipe(p, sock, options.hostname, options.port,
+                                                   sockAddr.ipAddress, p.mono() - now, dnsTime, dns, dnsChannel));
+                } else if (N.errno !== N.EINPROGRESS) {
                     throw new Error("Failed to connect " + N.errno + " " + N.strerror());
                 } else {
                     const connectTimeoutId = setTimeout(() => {
@@ -263,10 +268,11 @@ export default function createTCPNetworkPipe(options: CreateTCPNetworkPipeOption
                         sock = -1;
                         reject(new Error("Timed out connecting to host"));
                     }, options.connectTimeout);
+                    /* tslint:disable:no-shadowed-variable */
                     N.setFD(sock, N.WRITE, (sock: number, mode: number) => {
                         const buf = new Int32Array(2);
                         const ret = N.getsockopt(sock, N.SOL_SOCKET, N.SO_ERROR, buf);
-                        if (ret == -1) {
+                        if (ret === -1) {
                             reject(new Error(`Failed to connect to host ${N.errno}`));
                             return;
                         }
@@ -281,7 +287,9 @@ export default function createTCPNetworkPipe(options: CreateTCPNetworkPipeOption
                             N.clearFD(sock);
                             assert(sockAddr.ipAddress, "Gotta have an ip address at this point");
                             assert(dns, "Must have dns here");
-                            resolve(new NrdpTCPNetworkPipe(platform, sock, options.hostname, options.port, sockAddr.ipAddress, platform.mono() - now, dnsTime, dns, dnsChannel));
+                            resolve(new NrdpTCPNetworkPipe(p, sock, options.hostname, options.port,
+                                                           sockAddr.ipAddress, p.mono() - now,
+                                                           dnsTime, dns, dnsChannel));
                             break;
                         default:
                             reject(new Error(`Failed to connect to host ${options.hostname}:${options.port} ${errno}`));
@@ -290,7 +298,7 @@ export default function createTCPNetworkPipe(options: CreateTCPNetworkPipeOption
                     });
                 }
             } catch (err) {
-                if (sock != -1)
+                if (sock !== -1)
                     N.close(sock);
                 reject(err);
             }

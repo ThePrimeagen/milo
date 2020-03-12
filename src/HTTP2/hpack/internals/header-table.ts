@@ -45,8 +45,7 @@ export default class DynamicTable implements HeaderTable {
         this.currentSize = 0;
 
         const staticList = getStaticList();
-        for (let i = 0; i < staticList.length; ++i) {
-            const items = staticList[i];
+        for (const items of staticList) {
             this.insert(items[0], items[1]);
         }
 
@@ -134,7 +133,7 @@ export default class DynamicTable implements HeaderTable {
         const keys = new Array(this.byIdx.keys()).reverse();
         const max = keys.length - 1;
 
-        for (let i = max; i >= 0 && this.currentSize > this.maxSize; ++i) {
-        }
+        // for (let i = max; i >= 0 && this.currentSize > this.maxSize; ++i) {
+        // }
     }
 }

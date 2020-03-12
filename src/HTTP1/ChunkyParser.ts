@@ -7,8 +7,6 @@ export class ChunkyParser {
     private offset: number = 0;
     private dataNeeded: number = -1;
     private available: number = 0;
-    constructor() {
-    }
 
     feed(data: IDataBuffer, offset: number, length: number): void {
         Platform.assert(this.onchunk, "Gotta have an onchunk");
@@ -28,14 +26,14 @@ export class ChunkyParser {
 
     private _process(): void {
         while (true) {
-            if (this.dataNeeded == -1) {
+            if (this.dataNeeded === -1) {
                 if (this.available > 2) {
                     let lastWasBackslashR = false;
                     let consumed = 0;
                     let str = "";
                     for (let bi = 0; bi < this.buffers.length && this.dataNeeded === -1; ++bi) {
                         // Platform.trace("shit", bi, this.buffers.length);
-                        let buf = this.buffers[bi];
+                        const buf = this.buffers[bi];
                         // Platform.trace("this is", buf, Platform.utf8toa(buf));
                         for (let i = bi ? 0 : this.offset; i < buf.byteLength; ++i) {
                             // Platform.trace("looking at", i, bi, buf[i], String.fromCharCode(buf[i]), str);
@@ -45,7 +43,7 @@ export class ChunkyParser {
                                     const len = parseInt(str, 16);
                                     if (isNaN(len)) {
                                         if (this.onerror)
-                                            this.onerror(-1, "Failed to chunky parse [" + str + "] " + len);
+                                            this.onerror(new Error("Failed to chunky parse [" + str + "] " + len));
                                         return;
                                     }
                                     this.dataNeeded = len;
@@ -106,7 +104,8 @@ export class ChunkyParser {
                 break;
             }
         }
-        Platform.assert(consumed === bytes, "Bytes should be nothing by now " + bytes + " " + consumed + " " + this.available);
+        Platform.assert(consumed === bytes,
+                        `Bytes should be nothing by now bytes: ${bytes} consumed: ${consumed} available: ${this.available}`);
         this.available -= consumed;
     }
 
@@ -115,9 +114,9 @@ export class ChunkyParser {
         // grab the whole first chunk
         if (!this.offset && this.buffers[0].byteLength === size) {
             this.available -= size;
-            const ret = this.buffers.shift();
-            assert(ret !== undefined, "Must have buffers");
-            return ret;
+            const buf = this.buffers.shift();
+            assert(buf !== undefined, "Must have buffers");
+            return buf;
         }
 
         const ret = new DataBuffer(size);

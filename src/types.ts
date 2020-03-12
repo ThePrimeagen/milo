@@ -103,8 +103,10 @@ export interface IDataBuffer {
 
     map(func: (val: number, i: number, buffer: IDataBuffer) => number, thisValue?: any): IDataBuffer;
     randomize(offset?: number, length?: number): void;
-    reduce(func: (previousValue: any, val: number, i: number, buffer: IDataBuffer) => any, previousValue?: any): any;
-    reduceRight(func: (previousValue: any, val: number, i: number, buffer: IDataBuffer) => any, previousValue?: any): any;
+    reduce(func: (previousValue: any, val: number, i: number,
+                  buffer: IDataBuffer) => any, previousValue?: any): any;
+    reduceRight(func: (previousValue: any, val: number, i: number,
+                       buffer: IDataBuffer) => any, previousValue?: any): any;
 
     reverse(offset?: number, length?: number): void;
 
@@ -210,7 +212,7 @@ export interface CreateSSLNetworkPipeOptions {
 
 export type OnData = () => void;
 export type OnClose = () => void;
-export type OnError = (code: number, message: string) => void;
+export type OnError = (error: Error) => void;
 
 export interface SHA256Context {
     add(buf: Uint8Array | ArrayBuffer | IDataBuffer | string): void;
@@ -307,13 +309,11 @@ export interface Platform {
     sha1(input: string): Uint8Array;
     // base64 encode
     btoa(buffer: Uint8Array | ArrayBuffer | string, returnUint8Array: true): Uint8Array;
-    btoa(buffer: Uint8Array | ArrayBuffer | string, returnUint8Array: false | undefined): string;
-    btoa(buffer: Uint8Array | ArrayBuffer | string): string;
+    btoa(buffer: Uint8Array | ArrayBuffer | string, returnUint8Array?: false): string;
 
     // base64 decode
     atob(buffer: Uint8Array | ArrayBuffer | string, returnUint8Array: true): Uint8Array;
-    atob(buffer: Uint8Array | ArrayBuffer | string, returnUint8Array: false | undefined): string;
-    atob(buffer: Uint8Array | ArrayBuffer | string): string;
+    atob(buffer: Uint8Array | ArrayBuffer | string, returnUint8Array?: false): string;
 
     // string to uint8array
     atoutf8(input: Uint8Array | ArrayBuffer | string): Uint8Array;

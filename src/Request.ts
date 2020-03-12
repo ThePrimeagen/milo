@@ -128,8 +128,8 @@ export class Request {
     id: number;
     networkPipe?: NetworkPipe;
 
-    private resolve?: Function;
-    private reject?: Function;
+    private resolve?: (response: RequestResponse) => void;
+    private reject?: (error: Error) => void;
     private requestResponse: RequestResponse;
     private responseData?: IDataBuffer;
     private responseDataOffset?: number;
@@ -144,7 +144,7 @@ export class Request {
         this.id = ++nextId;
         this.requestResponse = new RequestResponse(this.id);
 
-        this.http = new HTTP1;
+        this.http = new HTTP1();
         this.http.onheaders = this._onHeaders.bind(this);
         this.http.ondata = this._onData.bind(this);
         this.http.onerror = this._onError.bind(this);
@@ -192,7 +192,7 @@ export class Request {
 
         let port: number = 0;
         if (parsedUrl.port) {
-            port = parseInt(parsedUrl.port);
+            port = parseInt(parsedUrl.port, 10);
         }
 
         // Platform.trace("Request#send port", port);
@@ -217,7 +217,7 @@ export class Request {
         const timeouts = opts.timeouts;
         const tcpOpts = {
             hostname: parsedUrl.hostname,
-            port: port,
+            port,
             dnsTimeout: timeouts && timeouts.dnsTimeout,
             connectTimeout: timeouts && timeouts.connectTimeout,
             ipVersion: 4 // gotta do happy eyeballs and send off multiple tcp network pipe things
@@ -225,7 +225,7 @@ export class Request {
 
         return Platform.createTCPNetworkPipe(tcpOpts).then((pipe: NetworkPipe) => {
             if (ssl) {
-                return Platform.createSSLNetworkPipe({ pipe: pipe });
+                return Platform.createSSLNetworkPipe({ pipe });
             } else {
                 return pipe;
             }
@@ -235,7 +235,7 @@ export class Request {
     send(): Promise<RequestResponse> {
         this.requestResponse.networkStartTime = Platform.mono();
         // Platform.trace("send called", this.state, this.url);
-        if (this.state != RequestState.Initial) {
+        if (this.state !== RequestState.Initial) {
             throw new Error("Bad state transition");
         }
 
@@ -245,11 +245,6 @@ export class Request {
             this.resolve = resolve;
             this.reject = reject;
         });
-
-        let port: number = 0;
-        if (this.url.port) {
-            port = parseInt(this.url.port);
-        }
 
         // Platform.trace("Request#send creating TCP pipe");
         assert(this.requestData.timeouts);
@@ -281,7 +276,7 @@ export class Request {
         }).catch((err: Error) => {
             Platform.error("got an error", err);
             // Platform.trace("Request#send#createTCPNetworkPipe error", err);
-            this._onError(-1, err.toString());
+            this._onError(err);
         });
 
         return ret;
@@ -316,8 +311,7 @@ export class Request {
                 const cacheControl = this.requestData.headers["X-Gibbon-Cache-Control"];
                 if (cacheControl) {
                     const split = cacheControl.split(',');
-                    for (let i = 0; i < split.length; ++i) {
-                        const val = split[i].trim();
+                    for (const val of split) {
                         if (val.lastIndexOf("key=", 0)) {
                             cacheKey = Platform.atoutf8(val.substr(4));
                         } else {
@@ -333,7 +327,7 @@ export class Request {
                 if (hash) {
                     hash = hash.trim();
                     const eq = hash.indexOf("=");
-                    if (eq != -1) {
+                    if (eq !== -1) {
                         cacheKey = Platform.atoutf8(hash.substr(eq + 1));
                     }
                 }
@@ -344,17 +338,20 @@ export class Request {
                     hasher.add(this.requestData.url);
                     if (this.requestData.body)
                         hasher.add(this.requestData.body);
-                    for (let header in this.requestData.headers) {
-                        switch (header) {
-                        case "If-None-Match":
-                        case "If-Modified-Since":
-                        case "Referer":
-                        case "X-Gibbon-Cache-Control":
-                            Platform.trace("Skipped header", header);
-                            continue;
+
+                    for (const header in this.requestData.headers) {
+                        if (this.requestData.headers.hasOwnProperty(header)) {
+                            switch (header) {
+                            case "If-None-Match":
+                            case "If-Modified-Since":
+                            case "Referer":
+                            case "X-Gibbon-Cache-Control":
+                                Platform.trace("Skipped header", header);
+                                continue;
+                            }
+                            hasher.add(header);
+                            hasher.add(this.requestData.headers[header]);
                         }
-                        hasher.add(header);
-                        hasher.add(this.requestData.headers[header]);
                     }
                     cacheKey = hasher.final();
                 }
@@ -450,7 +447,7 @@ export class Request {
                 this.responseDataArray = [];
             } else if (event.contentLength && event.contentLength > 0) {
                 if (event.contentLength > 1024 * 1024 * 16) {
-                    this._onError(-1, "Content length too long");
+                    this._onError(new Error("Content length too long"));
                     return;
                 }
                 this.responseDataOffset = 0;
@@ -459,27 +456,28 @@ export class Request {
         }
     }
 
-    private _onData(data: IDataBuffer, offset: number, length: number): void { // have to copy data, the buffer will be reused
+    private _onData(data: IDataBuffer, offset: number, length: number): void {
+        // have to copy data, the buffer will be reused
         this.responseDataLength += length;
         Platform.trace("got some data here", length);
         if (this.requestData.onData) {
             this.requestData.onData(data.toArrayBuffer(offset, length));
         } else if (this.requestData.onChunk) { // this arrayBuffer is created by ChunkyParser
             assert(!offset, "No offsets for chunks");
-            assert(length == data.byteLength, "No offsets for chunks");
+            assert(length === data.byteLength, "No offsets for chunks");
             this.requestData.onChunk(data.toArrayBuffer());
         } else if (this.responseData) {
             assert(typeof this.responseDataOffset !== "undefined", "Must have responseDataOffset");
             this.responseData.set(this.responseDataOffset, data, offset, length);
             this.responseDataOffset += length;
             // Platform.log("GOT DATA", this.responseDataOffset, "of", this.responseData.byteLength);
-            if (this.responseDataOffset == this.responseData.byteLength) {
+            if (this.responseDataOffset === this.responseData.byteLength) {
                 this._transition(RequestState.Finished);
             }
         } else if (this.responseDataArray) {
             if (this.transferEncoding & HTTPTransferEncoding.Chunked) {
                 assert(!offset, "No offsets for chunks");
-                assert(length == data.byteLength, "No offsets for chunks");
+                assert(length === data.byteLength, "No offsets for chunks");
                 this.responseDataArray.push(data); // whole chunks, created by the chunky parser
             } else {
                 this.responseDataArray.push(data.slice(offset, offset + length));
@@ -487,11 +485,11 @@ export class Request {
         }
     }
 
-    private _onError(code: number, message: string) {
-        Platform.error("got error", code, message);
+    private _onError(error: Error) {
+        Platform.error("got error", error);
         assert(this.reject, "Must have reject");
         if (this.networkPipe)
             this.networkPipe.close();
-        this.reject({ code: code, message: message });
+        this.reject(error);
     }
 }

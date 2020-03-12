@@ -28,7 +28,7 @@ export {
 type AnyCallback = ((...args: any[]) => void);
 export type CallbackNames = "message" | "close" | "open" | "error";
 export type CloseCallback = ((code: number, buf: IDataBuffer) => void);
-export type ErrorCallback = ((code: number, message: string) => void);
+export type ErrorCallback = ((error: Error) => void);
 export type OpenCallback = (() => void);
 export type MessageCallback = ((buf: IDataBuffer) => void);
 
@@ -72,8 +72,8 @@ function _wsUpgrade(u: string | UrlObject): Promise<NetworkPipe> {
 
 
         Platform.trace("key is", key, arrayBufferKey);
-        data.headers["Upgrade"] = "websocket";
-        data.headers["Connection"] = "Upgrade";
+        data.headers.Upgrade = "websocket";
+        data.headers.Connection = "Upgrade";
         data.headers["Sec-WebSocket-Key"] = key;
         data.headers["Sec-WebSocket-Version"] = "13";
         data.forbidReuse = true;
@@ -85,6 +85,7 @@ function _wsUpgrade(u: string | UrlObject): Promise<NetworkPipe> {
                 throw new Error("status code");
 
             const upgradeKeyResponse = headerValue(response.headers, "sec-websocket-accept");
+            console.log("balls", JSON.stringify(response, null, 4));
             if (!upgradeKeyResponse)
                 throw new Error("no Sec-WebSocket-Accept key");
 
@@ -145,12 +146,12 @@ export default class WS {
         this.frame = new WSFramer(pipe, this.opts.maxFrameSize);
         this.pipe = pipe;
 
-        pipe.onerror = (code: number, message: string): void => {
+        pipe.onerror = (err: Error): void => {
             if (this.onerror) {
-                this.onerror(code, message);
+                this.onerror(err);
             }
 
-            this.callCallback(error, this.onerror, code, message);
+            this.callCallback(error, this.onerror, err);
         };
 
         pipe.onclose = () => {
@@ -211,6 +212,7 @@ export default class WS {
     }
 
     ping() {
+        /**/
     }
 
     private callCallback(callbacks: AnyCallback[],
@@ -221,8 +223,8 @@ export default class WS {
                 secondCallback(arg1, arg2);
             }
 
-            for (let i = 0; i < callbacks.length; ++i) {
-                callbacks[i](arg1, arg2);
+            for (const cb of callbacks) {
+                cb(arg1, arg2);
             }
         } catch (e) {
             Platform.trace("Error on callbacks", e);
@@ -249,7 +251,6 @@ export default class WS {
     send(obj: IDataBuffer | Uint8Array | string) {
 
         let bufOut: IDataBuffer;
-        let len;
         let opcode = Opcodes.BinaryFrame;
 
         if (obj instanceof Uint8Array) {

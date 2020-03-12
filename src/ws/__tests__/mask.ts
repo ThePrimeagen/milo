@@ -32,14 +32,14 @@ function isLittleEndian() {
     return uint16array[0] === 0xBBAA;
 }
 
-function checkBuf(buf: IDataBuffer, arr: number[], offset: number = 0) {
-    for (let i = 0; i < arr.length; ++i) {
-        expect(buf.getUInt8(offset + i)).toEqual(arr[i]);
+function checkBuf(buf: IDataBuffer, a: number[], offset: number = 0) {
+    for (let i = 0; i < a.length; ++i) {
+        expect(buf.getUInt8(offset + i)).toEqual(a[i]);
     }
 }
 
-describe("WS", function() {
-    it("should mask properly", function() {
+describe("WS", () => {
+    it("should mask properly", () => {
         const b = new DataBuffer(1000);
         b.set(0, arr);
 

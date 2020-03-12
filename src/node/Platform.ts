@@ -234,7 +234,10 @@ class NodePlatform implements Platform {
     }
 
     // "heremybigHHTTP string\r\n"
-    bufferIndexOf(haystack: Uint8Array | ArrayBuffer | string, haystackOffset: number, haystackLength: number | undefined, needle: Uint8Array | ArrayBuffer | string, needleOffset?: number, needleLength?: number | undefined): number {
+    bufferIndexOf(haystack: Uint8Array | ArrayBuffer | string,
+                  haystackOffset: number, haystackLength: number | undefined,
+                  needle: Uint8Array | ArrayBuffer | string,
+                  needleOffset?: number, needleLength?: number | undefined): number {
         haystackLength = haystackLength !== undefined ? haystackLength : normalizeLength(haystack);
         needleLength = needleLength !== undefined ? needleLength : normalizeLength(needle);
         needleOffset = needleOffset || 0;
@@ -262,7 +265,10 @@ class NodePlatform implements Platform {
         return buffer.indexOf(needleBuf);
     }
 
-    bufferLastIndexOf(haystack: Uint8Array | ArrayBuffer | string, haystackOffset: number, haystackLength: number | undefined, needle: Uint8Array | ArrayBuffer | string, needleOffset?: number, needleLength?: number | undefined): number {
+    bufferLastIndexOf(haystack: Uint8Array | ArrayBuffer | string,
+                      haystackOffset: number, haystackLength: number | undefined,
+                      needle: Uint8Array | ArrayBuffer | string,
+                      needleOffset?: number, needleLength?: number | undefined): number {
         haystackLength = haystackLength !== undefined ? haystackLength : normalizeLength(haystack);
         needleLength = needleLength !== undefined ? needleLength : normalizeLength(needle);
         needleOffset = needleOffset || 0;

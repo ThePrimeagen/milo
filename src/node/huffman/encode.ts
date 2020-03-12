@@ -27,7 +27,7 @@ export default function encode(buffer: string | Buffer, offset: number = 0, leng
 
         bitLen += bitsRemaining;
 
-        //console.log("do { ", staticData);
+        // console.log("do { ", staticData);
         do {
             const idx = Math.floor(ptr / 8);
             const bitIdx = ptr % 8;
@@ -40,7 +40,7 @@ export default function encode(buffer: string | Buffer, offset: number = 0, leng
             bitsRemaining -= bitsToEncode;
             ptr += bitsToEncode;
 
-            //console.log("Bits Remaining", bitsRemaining);
+            // console.log("Bits Remaining", bitsRemaining);
         } while (bitsRemaining > 0);
     }
 

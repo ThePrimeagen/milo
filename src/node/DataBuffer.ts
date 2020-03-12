@@ -46,7 +46,8 @@ export default class DataBuffer implements IDataBuffer {
         return db;
     }
 
-    constructor(byteCountOrBuf: number | IDataBuffer | Uint8Array | ArrayBuffer | string, offsetOrEnc?: number | encodingType, length?: number) {
+    constructor(byteCountOrBuf: number | IDataBuffer | Uint8Array | ArrayBuffer | string,
+                offsetOrEnc?: number | encodingType, length?: number) {
 
         // Node does not have this notion nor can we reproduce it easily.
         // Since node is meant to be a testing platform and not a performance
@@ -143,6 +144,7 @@ string value for the second parameter, offset.`);
         // TODO: Fill it in
     }
 
+    /* tslint:disable:no-empty */
     clear(): void { }
 
     fill(data: string | ArrayBuffer | IDataBuffer | number | Uint8Array,
@@ -235,10 +237,18 @@ string value for the second parameter, offset.`);
         throw new Error("Not Implement");
     }
 
-    hash(hash: hashType, offset?: number, length?: number): IDataBuffer { throw new Error("Not Implemented"); }
-    hashToString(hash: hashType, offset?: number, length?: number): string { throw new Error("Not Implemented"); }
-    compress(method: compressionMethod, offset?: number, length?: number): IDataBuffer { throw new Error("Not Implemented"); }
-    uncompress(method: compressionMethod, offset?: number, length?: number): string { throw new Error("Not Implemented"); }
+    hash(hash: hashType, offset?: number, length?: number): IDataBuffer {
+        throw new Error("Not Implemented");
+    }
+    hashToString(hash: hashType, offset?: number, length?: number): string {
+        throw new Error("Not Implemented");
+    }
+    compress(method: compressionMethod, offset?: number, length?: number): IDataBuffer {
+        throw new Error("Not Implemented");
+    }
+    uncompress(method: compressionMethod, offset?: number, length?: number): string {
+        throw new Error("Not Implemented");
+    }
 
     randomize(o?: number, l?: number): void {
         const [
@@ -279,17 +289,38 @@ string value for the second parameter, offset.`);
     reverse(offset?: number, length?: number): void { throw new Error("Not Implemented"); }
 
     sort(func?: (l: number, r: number) => number): void { throw new Error("Not Implemented"); }
-    every(func: (val: number, i: number, buffer: IDataBuffer) => boolean, thisValue?: any): boolean { throw new Error("Not Implemented"); }
-    filter(func: (val: number, i: number, buffer: IDataBuffer) => boolean, thisValue?: any): IDataBuffer { throw new Error("Not Implemented"); }
-    forEach(func: (val: number, i: number, buffer: IDataBuffer) => void, thisValue?: any): void { throw new Error("Not Implemented"); }
-    join(separator?: string): string { throw new Error("Not Implemented"); }
-    map(func: (val: number, i: number, buffer: IDataBuffer) => number, thisValue?: any): IDataBuffer { throw new Error("Not Implemented"); }
-    reduce(func: (previousValue: any, val: number, i: number, buffer: IDataBuffer) => any, previousValue?: any): any { throw new Error("Not Implemented"); }
-    reduceRight(func: (previousValue: any, val: number, i: number, buffer: IDataBuffer) => any, previousValue?: any): any { throw new Error("Not Implemented"); }
+    every(func: (val: number, i: number, buffer: IDataBuffer) => boolean, thisValue?: any): boolean {
+        throw new Error("Not Implemented");
+    }
+    filter(func: (val: number, i: number, buffer: IDataBuffer) => boolean, thisValue?: any): IDataBuffer {
+        throw new Error("Not Implemented");
+    }
+    forEach(func: (val: number, i: number, buffer: IDataBuffer) => void, thisValue?: any): void {
+        throw new Error("Not Implemented");
+    }
+    join(separator?: string): string {
+        throw new Error("Not Implemented");
+    }
+    map(func: (val: number, i: number, buffer: IDataBuffer) => number, thisValue?: any): IDataBuffer {
+        throw new Error("Not Implemented");
+    }
+    reduce(func: (previousValue: any, val: number, i: number, buffer: IDataBuffer) => any,
+           previousValue?: any): any {
+        throw new Error("Not Implemented");
+    }
+    reduceRight(func: (previousValue: any, val: number, i: number, buffer: IDataBuffer) => any,
+                previousValue?: any): any {
+        throw new Error("Not Implemented");
+    }
 
-    find(func: (val: number, i: number, buffer: IDataBuffer) => boolean, thisValue?: any): number | undefined { throw new Error("Not Implemented"); }
-    findIndex(func: (val: number, i: number, buffer: IDataBuffer) => boolean, thisValue?: any): number | undefined { throw new Error("Not Implemented"); }
-
+    find(func: (val: number, i: number, buffer: IDataBuffer) => boolean,
+         thisValue?: any): number | undefined {
+        throw new Error("Not Implemented");
+    }
+    findIndex(func: (val: number, i: number, buffer: IDataBuffer) => boolean,
+              thisValue?: any): number | undefined {
+        throw new Error("Not Implemented");
+    }
     get(offset: number): number { throw new Error("Not Implemented"); }
 
     //
@@ -417,8 +448,7 @@ string value for the second parameter, offset.`);
 
     static concat(...args: ArrayBuffer[] | Uint8Array[] | IDataBuffer[]): IDataBuffer {
         const normalizedArr: Uint8Array[] = [];
-        for (let i = 0; i < args.length; ++i) {
-            const arg = args[i];
+        for (const arg of args) {
             if (arg instanceof ArrayBuffer) {
                 normalizedArr.push(new Uint8Array(arg));
             }

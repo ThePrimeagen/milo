@@ -1,8 +1,8 @@
 import DataBuffer from "../../DataBuffer";
 import encode from "../encode";
 
-describe.only("encode", function() {
-    it("encode simple 1", function() {
+describe.only("encode", () => {
+    it("encode simple 1", () => {
         const one = "1";
         const expected = Buffer.from([
             0b0000_1111,
@@ -11,12 +11,12 @@ describe.only("encode", function() {
         expect(encode(one)).toEqual(expected);
     });
 
-    it("encode 1337", function() {
+    it("encode 1337", () => {
         /*
-        '1' ( 49)  |00001                                         1  [ 5]
-        '3' ( 51)  |011001                                       19  [ 6]
-        '7' ( 55)  |011101                                       1d  [ 6]
-         */
+          '1' ( 49)  |00001                                         1  [ 5]
+          '3' ( 51)  |011001                                       19  [ 6]
+          '7' ( 55)  |011101                                       1d  [ 6]
+        */
         const one337 = "1337";
         const expected = Buffer.from([
             0b0000_1011,
@@ -27,7 +27,7 @@ describe.only("encode", function() {
         expect(encode(one337)).toEqual(expected);
     });
 
-    it("encode https://www.example.com, rfc ", function() {
+    it("encode https://www.example.com, rfc ", () => {
         // https://www.example.com
         // 9d29 ad17 1863 c78f 0b97 c8e9 ae82 ae43 d3
         const d = Buffer.from([

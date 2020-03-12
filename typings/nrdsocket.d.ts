@@ -410,7 +410,7 @@ declare namespace nrdsocket {
 
 
     // functions
-    function bindFunction(signature: string, options?: BindFunctionOptions): Function;
+    function bindFunction<T>(signature: string, options?: BindFunctionOptions): T;
     function unbindFunction(signature: string): boolean;
 
     function accept(sockfd: number, addr: Sockaddr | undefined): number;

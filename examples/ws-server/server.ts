@@ -23,34 +23,33 @@ function getBigAssBufferSlice() {
     return reallyLargeBuffer.slice(low, high);
 }
 
-let payloadHeadersReceived = 0;
 console.log("We are about to connection.");
-wss.on('connection', function(ws) {
+wss.on('connection', (websocket: WebSocket) => {
     console.log("OHHHH MY WE ARE CONNECTED.");
 
-    let timerId: number = 0;
+    // let timerId: number = 0;
     function sendData() {
         // @ts-ignore
         const buffer = getBigAssBufferSlice();
-        ws.send(buffer);//smallBuf);
+        websocket.send(buffer); // smallBuf);
     }
 
     function stopData() {
         // @ts-ignore
-        clearTimeout(timerId);
+        // clearTimeout(timerId);
     }
 
 
     // 50 Mbps
-    ws.on('message', function(data) {
+    websocket.on('message', (data) => {
         const str = data.toString();
         switch (str) {
-            case "send":
-                sendData();
-                break;
-            case "stop":
-                stopData();
-                break;
+        case "send":
+            sendData();
+            break;
+        case "stop":
+            stopData();
+            break;
         }
     });
 });

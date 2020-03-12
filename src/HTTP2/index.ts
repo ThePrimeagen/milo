@@ -18,10 +18,10 @@ export async function http2Upgrade(data: RequestData): Promise<NetworkPipe> {
         data.headers = {};
     }
 
-    data.headers["Upgrade"] = data.secure ? VersionIdentification.Secure :
+    data.headers.Upgrade = data.secure ? VersionIdentification.Secure :
         VersionIdentification.NonSecure;
 
-    data.headers["Connection"] = "Upgrade, HTTP2-Settings";
+    data.headers.Connection = "Upgrade, HTTP2-Settings";
     // Note: https://tools.ietf.org/html/rfc7540#section-3.2
     // This is a bit complicated and seems oddly worded when I don't really
     // try to read the rfc but instead talk to the twitch chat about RHCP.

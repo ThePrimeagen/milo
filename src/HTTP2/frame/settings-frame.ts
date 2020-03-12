@@ -36,9 +36,9 @@ export default class SettingsCreator {
      * Gets the setting's value or its default value.
      */
     get(setting: Settings): number {
-        for (let i = 0; i < this.settings.length; ++i) {
-            if (this.settings[i][0] === setting) {
-                return this.settings[i][1];
+        for (const s of this.settings) {
+            if (s[0] === setting) {
+                return s[1];
             }
         }
 

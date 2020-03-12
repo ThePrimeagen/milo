@@ -32,13 +32,16 @@ export class HTTP1 implements HTTP {
             `${request.method} ${request.url.pathname || "/"} HTTP/1.1\r
 Host: ${request.url.hostname}\r
 `;
-        for (let key in Platform.standardHeaders) {
-            if (!(key in request.requestHeaders)) {
-                str += `${key}: ${Platform.standardHeaders[key]}\r\n`;
+        const standardHeaders = Platform.standardHeaders;
+        for (const key in standardHeaders) {
+            if (Platform.standardHeaders.hasOwnProperty(key) && !(key in request.requestHeaders)) {
+                str += `${key}: ${standardHeaders[key]}\r\n`;
             }
         }
-        for (let key in request.requestHeaders) {
-            str += `${key}: ${request.requestHeaders[key]}\r\n`;
+        for (const key in request.requestHeaders) {
+            if (request.requestHeaders.hasOwnProperty(key)) {
+                str += `${key}: ${request.requestHeaders[key]}\r\n`;
+            }
         }
         str += "\r\n";
         this.networkPipe.write(str);
@@ -56,7 +59,7 @@ Host: ${request.url.hostname}\r
         }
 
         // BRB, Upping my bits above 3000...
-        let scratch = Platform.scratch;
+        const scratch = Platform.scratch;
         this.networkPipe.ondata = () => {
             while (true) {
                 assert(this.networkPipe, "Must have network pipe");
@@ -73,15 +76,17 @@ Host: ${request.url.hostname}\r
                         this.headerBuffer = scratch.slice(0, read);
                     }
                     const rnrn = this.headerBuffer.indexOf("\r\n\r\n");
-                    if (rnrn != -1) {
+                    if (rnrn !== -1) {
                         this._parseHeaders(rnrn);
                         this.headersFinished = true;
                         const remaining = this.headerBuffer.byteLength - (rnrn + 4);
                         if (remaining) {
-                            this._processResponseData(this.headerBuffer, this.headerBuffer.byteLength - remaining, remaining);
+                            this._processResponseData(this.headerBuffer,
+                                                      this.headerBuffer.byteLength - remaining,
+                                                      remaining);
                         }
                         this.headerBuffer = undefined;
-                        if (this.connection == "Upgrade") {
+                        if (this.connection === "Upgrade") {
                             this.upgrade = true;
                             this._finish();
                         }
@@ -114,16 +119,16 @@ Host: ${request.url.hostname}\r
         // Platform.trace("got string\n", split);
         const statusLine = split[0];
         // Platform.trace("got status", statusLine);
-        if (statusLine.lastIndexOf("HTTP/1.", 0) != 0) {
-            this._error(-1, "Bad status line " + statusLine);
+        if (statusLine.lastIndexOf("HTTP/1.", 0) !== 0) {
+            this._error(new Error("Bad status line " + statusLine));
             return false;
         }
-        if (statusLine[7] == "1") {
+        if (statusLine[7] === "1") {
             this.httpVersion = "1.1";
-        } else if (statusLine[7] == "0") {
+        } else if (statusLine[7] === "0") {
             this.httpVersion = "1.0";
         } else {
-            this._error(-1, "Bad status line " + statusLine);
+            this._error(new Error("Bad status line " + statusLine));
             return false;
         }
 
@@ -140,16 +145,16 @@ Host: ${request.url.hostname}\r
 
         const space = statusLine.indexOf(' ', 9);
         // Platform.trace("got status", space, statusLine.substring(9, space))
-        event.statusCode = parseInt(statusLine.substring(9, space));
+        event.statusCode = parseInt(statusLine.substring(9, space), 10);
         if (isNaN(event.statusCode) || event.statusCode < 0) {
-            this._error(-1, "Bad status line " + statusLine);
+            this._error(new Error("Bad status line " + statusLine));
             return false;
         }
         // this.requestResponse.headers = new ResponseHeaders;
         let contentLength: string | undefined;
         let transferEncoding: string | undefined;
 
-        for (var i = 1; i < split.length; ++i) {
+        for (let i = 1; i < split.length; ++i) {
             // split \r\n\r\n by \r\n causes 2 empty lines.
             if (split.length === 0) {
                 // Platform.trace("IGNORING LINE....");
@@ -157,7 +162,7 @@ Host: ${request.url.hostname}\r
             }
             let idx = split[i].indexOf(":");
             if (idx <= 0) {
-                this._error(-1, "Bad header " + split[i]);
+                this._error(new Error("Bad header " + split[i]));
                 return false;
             }
             const key = split[i].substr(0, idx);
@@ -175,7 +180,7 @@ Host: ${request.url.hostname}\r
                 contentLength = value;
             } else if (lower === "transfer-encoding") {
                 transferEncoding = value;
-            } else if (lower == "connection") {
+            } else if (lower === "connection") {
                 this.connection = value;
             }
             event.headers.push(key + ": " + value);
@@ -184,10 +189,10 @@ Host: ${request.url.hostname}\r
         if (transferEncoding) {
             const transferEncodings = transferEncoding.split(",");
             Platform.trace("got some encodings", transferEncodings);
-            for (let idx = 0; idx < transferEncodings.length; ++idx) {
-                switch (transferEncodings[idx].trim()) {
+            for (const encoding of transferEncodings) {
+                switch (encoding.trim()) {
                 case "chunked":
-                    this.chunkyParser = new ChunkyParser;
+                    this.chunkyParser = new ChunkyParser();
                     this.chunkyParser.onchunk = (chunk: IDataBuffer) => {
                         Platform.trace("got a chunk right here", chunk.byteLength, typeof this.ondata);
                         if (this.ondata)
@@ -222,9 +227,9 @@ Host: ${request.url.hostname}\r
         }
 
         if (contentLength) {
-            const len = parseInt(contentLength);
+            const len = parseInt(contentLength, 10);
             if (len < 0 || isNaN(len)) {
-                this._error(-1, "Bad content length " + contentLength);
+                this._error(new Error("Bad content length " + contentLength));
                 return false;
             }
             event.contentLength = len;
@@ -236,7 +241,8 @@ Host: ${request.url.hostname}\r
         return true;
     }
 
-    private _processResponseData(data: IDataBuffer, offset: number, length: number): void { // have to copy data, the buffer will be reused
+    // have to copy data, the buffer will be reused
+    private _processResponseData(data: IDataBuffer, offset: number, length: number): void {
         Platform.trace("processing data", typeof this.chunkyParser, length);
         if (this.chunkyParser) {
             this.chunkyParser.feed(data, offset, length);
@@ -250,9 +256,9 @@ Host: ${request.url.hostname}\r
             this.onfinished();
     }
 
-    private _error(code: number, message: string) {
+    private _error(error: Error) {
         if (this.onerror)
-            this.onerror(code, message);
+            this.onerror(error);
     }
 
     onheaders?: (headers: HTTPHeadersEvent) => void;

@@ -10,28 +10,28 @@ function toArray(...args: number[]) {
     return args;
 }
 
-    /* FRAME HEADER
- +-----------------------------------------------+
- |                 Length (24)                   |
- +---------------+---------------+---------------+
- |   Type (8)    |   Flags (8)   |
- +-+-------------+---------------+-------------------------------+
- |R|                 Stream Identifier (31)                      |
- +=+=============================================================+
- |                   Frame Payload (0...)                      ...
- +---------------------------------------------------------------+
-     */
+/* FRAME HEADER
+   +-----------------------------------------------+
+   |                 Length (24)                   |
+   +---------------+---------------+---------------+
+   |   Type (8)    |   Flags (8)   |
+   +-+-------------+---------------+-------------------------------+
+   |R|                 Stream Identifier (31)                      |
+   +=+=============================================================+
+   |                   Frame Payload (0...)                      ...
+   +---------------------------------------------------------------+
+*/
 /* DATA FRAME PAYLOAD PADDING PADDED
- +---------------+
- |Pad Length? (8)|
- +---------------+-----------------------------------------------+
- |                            Data (*)                         ...
- +---------------------------------------------------------------+
- |                           Padding (*)                       ...
- +---------------------------------------------------------------+
- */
-describe('FrameWriter', function() {
-    it('should initialize and correctly setup the frame.', function() {
+   +---------------+
+   |Pad Length? (8)|
+   +---------------+-----------------------------------------------+
+   |                            Data (*)                         ...
+   +---------------------------------------------------------------+
+   |                           Padding (*)                       ...
+   +---------------------------------------------------------------+
+*/
+describe('FrameWriter', () => {
+    it('should initialize and correctly setup the frame.', () => {
         const frame = new FrameWriter(70000, 3, FrameType.HEADERS);
         const header = frame.buffer.slice(0, FRAME_HEADER_SIZE);
         const headerView = new DataView(header.buffer);
@@ -50,7 +50,7 @@ describe('FrameWriter', function() {
         expect(headerView.getUint32(5)).toEqual(3);
     });
 
-    it('should be able to set flags', function() {
+    it('should be able to set flags', () => {
         const frame = new FrameWriter(70000, 3, FrameType.HEADERS);
         const header = frame.buffer.subarray(0, FRAME_HEADER_SIZE);
         const headerView = new DataView(header.buffer);

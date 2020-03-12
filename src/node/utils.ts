@@ -37,11 +37,13 @@ export function normalizeBuffer(buf: string | Uint8Array | ArrayBuffer, offset: 
     return Buffer.from(buf).slice(offset, isNaN(endIdx) ? undefined : endIdx);
 };
 
-export function normalizeUint8Array(buf: string | Uint8Array | ArrayBuffer, offset: number, endIdx?: number): Uint8Array {
+export function normalizeUint8Array(buf: string | Uint8Array | ArrayBuffer,
+                                    offset: number, endIdx?: number): Uint8Array {
     return bufferToUint8Array(normalizeBuffer(buf, offset, endIdx));
 };
 
-export function normalizeUint8ArrayLen(buf: string | Uint8Array | ArrayBuffer, offset: number, length?: number): Uint8Array {
+export function normalizeUint8ArrayLen(buf: string | Uint8Array | ArrayBuffer,
+                                       offset: number, length?: number): Uint8Array {
     // @ts-ignore
     return bufferToUint8Array(normalizeBufferLen(buf, offset, length));
 };

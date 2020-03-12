@@ -2,11 +2,11 @@ import http2 from "http2";
 
 import { Request } from "../../Request";
 import { createRawConnection } from "../index";
-import StreamManager, {SMState} from "../stream/stream-manager";
+import StreamManager, { SMState } from "../stream/stream-manager";
 
-describe("HTTP2 integration test", function() {
+describe("HTTP2 integration test", () => {
 
-    it('should setup a http2 server and create a connection to it.', async function(done) {
+    it('should setup a http2 server and create a connection to it.', async (done) => {
         const server = http2.createServer();
 
         server.on('error', (err) => console.error(err));

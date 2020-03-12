@@ -11,9 +11,8 @@ import {
 
 async function run() {
     let dataCount = 0;
-    let then = Date.now();
+    const then = Date.now();
     let bytesReceived = 0;
-    let packetBytesReceived = 0;
 
     const byteLength = 4096 * 16;
     const dataFetchCount = 10000;

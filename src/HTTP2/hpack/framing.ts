@@ -14,9 +14,9 @@ const state = {
 
 function readString(len: number, huffed: boolean, data: IDataBuffer): string {
     // I have to do something with this...
-    let buf = data;
-    let strLen = len;
-    let ptr = state.ptr;
+    const buf = data;
+    const strLen = len;
+    const ptr = state.ptr;
 
     if (huffed) {
         // reset buf to something else.
@@ -33,17 +33,17 @@ function readVarInt(n: number, data: IDataBuffer): number {
     /**
      * Implementation from : https://tools.ietf.org/html/rfc7541#section-5.1
      *
-     // decode I from the next N bits
-     if I < 2^N - 1, return I
-     else
-     M = 0
-     repeat
-     B = next octet
-     I = I + (B & 127) * 2^M
-     M = M + 7
-     while B & 128 == 128
-     return I
-    */
+     * decode I from the next N bits
+     * if I < 2^N - 1, return I
+     * else
+     * M = 0
+     * repeat
+     * B = next octet
+     * I = I + (B & 127) * 2^M
+     * M = M + 7
+     * while B & 128 == 128
+     * return I
+     */
     const twoNMinus1 = (2 ** n) - 1;
 
     let I = data.getUInt8(state.ptr++) & ((1 << n) - 1);
@@ -53,7 +53,8 @@ function readVarInt(n: number, data: IDataBuffer): number {
         return I;
     }
 
-    let M = 0, B = 0;
+    let M = 0;
+    let B = 0;
     do {
         B = data.getUInt8(state.ptr++) & 0x7F;
         I = I + (B & 127) * (2 ** M)
@@ -72,20 +73,19 @@ function writeVarInt(n: number, value: number, data: IDataBuffer, offset: number
     /**
      * Implementation from : https://tools.ietf.org/html/rfc7541#section-5.1
      *
-     // Encodes the bitties
-     if I < 2^N - 1, encode I on N bits
-     else
-     encode (2^N - 1) on N bits
-     I = I - (2^N - 1)
-     while I >= 128
-     encode (I % 128 + 128) on 8 bits
-     I = I / 128
-     encode I on 8 bits
-
-    */
+     * Encodes the bitties
+     * if I < 2^N - 1, encode I on N bits
+     * else
+     * encode (2^N - 1) on N bits
+     * I = I - (2^N - 1)
+     * while I >= 128
+     * encode (I % 128 + 128) on 8 bits
+     * I = I / 128
+     * encode I on 8 bits
+     */
     const twoNMinus1 = (2 ** n) - 1;
 
-    let ptr = offset;
+    const ptr = offset;
     let I = n;
 
     // 5 = 0x1F;
@@ -102,7 +102,8 @@ function writeVarInt(n: number, value: number, data: IDataBuffer, offset: number
     data.setUInt8(state.ptr++, I);
 }
 
-export default function parseHeaders(dynTable: HeaderTable, data: IDataBuffer, offset: number = 0, length?: number): { [key: string]: string } {
+export default function parseHeaders(dynTable: HeaderTable, data: IDataBuffer,
+                                     offset: number = 0, length?: number): { [key: string]: string } {
     length = length === undefined ? data.byteLength - offset : length;
 
     // TODO: do we need more things?

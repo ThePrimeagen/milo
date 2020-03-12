@@ -11,14 +11,14 @@ function toArray(...args: number[]) {
 }
 
 /*
- +-------------------------------+
- |       Identifier (16)         |
- +-------------------------------+-------------------------------+
- |                        Value (32)                             |
- +---------------------------------------------------------------+
- */
-describe('Settings', function() {
-    it('should set all the settings.', function() {
+  +-------------------------------+
+  |       Identifier (16)         |
+  +-------------------------------+-------------------------------+
+  |                        Value (32)                             |
+  +---------------------------------------------------------------+
+*/
+describe('Settings', () => {
+    it('should set all the settings.', () => {
         const settings = new SettingsWriter();
 
         settings.addSetting(Settings.MAX_CONCURRENT_STREAMS, 4);

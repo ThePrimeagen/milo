@@ -1,8 +1,8 @@
 import DataBuffer from "../../DataBuffer";
 import decode from "../decode";
 
-describe("decode", function() {
-    it("decode simple 1", function() {
+describe("decode", () => {
+    it("decode simple 1", () => {
         const one = new DataBuffer(1);
         one.setUInt8(0, 0b0000_1111);
 
@@ -12,7 +12,7 @@ describe("decode", function() {
         expect(decode(one).getUInt8(0)).toEqual(expected.getUInt8(0));
     });
 
-    it("decode 1337", function() {
+    it("decode 1337", () => {
         /*
           '1' ( 49)  |00001                                         1  [ 5]
           '3' ( 51)  |011001                                       19  [ 6]
@@ -32,7 +32,7 @@ describe("decode", function() {
         expect(decode(one337)).toEqual(expected);
     });
 
-    it("decode https://www.example.com, rfc ", function() {
+    it("decode https://www.example.com, rfc ", () => {
         // https://www.example.com
         // 9d29 ad17 1863 c78f 0b97 c8e9 ae82 ae43 d3
         const d = [
@@ -61,7 +61,7 @@ describe("decode", function() {
         expect(decode(www).toString()).toEqual("https://www.example.com");
     });
 
-    it("decode 307, from rfc C.6.2", function() {
+    it("decode 307, from rfc C.6.2", () => {
         // 640e ff
         const three07 = new DataBuffer(3);
 

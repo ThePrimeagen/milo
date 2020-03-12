@@ -8,7 +8,7 @@ export {
     WSState,
 };
 
-export function _load(data: RequestData, callback: Function): number {
+export function _load(data: RequestData, callback: (response: RequestResponse) => void): number {
     const req = new Request(data);
     req.send().then(response => {
         // if (response.data) {
@@ -23,32 +23,32 @@ export function _load(data: RequestData, callback: Function): number {
     return req.id;
 }
 
-let idx = 0;
+let wsIdx = 0;
 export function ws(url: string, milo: boolean): Promise<WS> {
     if (milo) {
         return new Promise((res, rej) => {
             // @ts-ignore
-            const ws = new WS(url);
-            const id = ++idx;
+            const websocket = new WS(url);
+            const id = ++wsIdx;
             const ret = {
-                send: ws.send.bind(ws),
-                onmessage: (event: any) => { }
+                send: websocket.send.bind(ws),
+                onmessage: (event: any) => { Platform.trace("got event", event); }
             };
 
-            ws.onmessage = (buffer: IDataBuffer) => {
+            websocket.onmessage = (buffer: IDataBuffer) => {
                 if (ret.onmessage) {
                     ret.onmessage({
                         type: "message",
                         websocket: id,
                         opcode: 2,
                         statusCode: 1000,
-                        buffer: buffer,
+                        buffer,
                         binary: true
                     });
                 };
             };
 
-            ws.onopen = () => {
+            websocket.onopen = () => {
                 // who did this?
                 // @ts-ignore
                 res(ret);
@@ -57,25 +57,25 @@ export function ws(url: string, milo: boolean): Promise<WS> {
     } else {
         return new Promise((resolve, reject) => {
             // @ts-ignore
-            let ws = new nrdp.WebSocket(url);
-            ws.onopen = () => {
-                resolve(ws);
+            const websocket = new nrdp.WebSocket(url);
+            websocket.onopen = () => {
+                resolve(websocket);
             };
-            ws.onerror = (err: any) => {
+            websocket.onerror = (err: any) => {
                 reject(err);
             };
         });
     }
 }
 
-let f_ck = 0;
-export function wsTest(url: string, milo: boolean, dataFetchCount: number = 1024, big: boolean = false, nth: number = 1000) {
-    ws(url, milo).then(ws => {
+export function wsTest(url: string, milo: boolean, dataFetchCount: number = 1024,
+                       big: boolean = false, nth: number = 1000) {
+    ws(url, milo).then(websocket => {
         let dataCount = 0;
-        let then = Date.now();
+        const then = Date.now();
         let bytesReceived = 0;
 
-        ws.onmessage = (event: any) => {
+        websocket.onmessage = (event: any) => {
             const bytesRead = event.buffer.byteLength;
 
             bytesReceived += bytesRead;
@@ -88,23 +88,23 @@ export function wsTest(url: string, milo: boolean, dataFetchCount: number = 1024
                 Platform.log("Mbps:", (bytesReceived / (now - then)) * 1000);
                 return;
             } else if (dataCount < dataFetchCount) {
-                if (dataCount % nth == 0) {
+                if (dataCount % nth === 0) {
                     Platform.log(`${dataCount}/${dataFetchCount}`);
                 }
-                ws.send(big ? "sendBig" : "send");
+                websocket.send(big ? "sendBig" : "send");
             }
         };
 
-        // ws.onclose = () => {
+        // websocket.onclose = () => {
         //     Platform.log("close");
         // }
 
-        ws.send(big ? "sendBig" : "send");
+        websocket.send(big ? "sendBig" : "send");
     });
 }
 
 export function loadTest(url: string, milo: boolean, dataFetchCount: number = 1024, nth: number = 0) {
-    let then = Date.now();
+    const then = Date.now();
     let idx = 0;
     let bytes = 0;
     if (!nth)
@@ -116,13 +116,13 @@ export function loadTest(url: string, milo: boolean, dataFetchCount: number = 10
             if (!result)
                 throw new Error("BAD!");
 
-            if (result.statusCode != 200) {
+            if (result.statusCode !== 200) {
                 throw new Error("Couldn't load " + JSON.stringify(result));
             }
 
             ++idx;
             bytes += result.size || 0;
-            if (idx % nth == 0) {
+            if (idx % nth === 0) {
                 Platform.log(`${idx}/${dataFetchCount}`);
             }
             if (idx === dataFetchCount) {
@@ -136,10 +136,10 @@ export function loadTest(url: string, milo: boolean, dataFetchCount: number = 10
         }
 
         if (milo) {
-            _load({ url: url }, onData);
+            _load({ url }, onData);
         } else {
             // @ts-ignore
-            nrdp.gibbon.load({ url: url, cache: "no-cache", freshConnect: true }, onData);
+            nrdp.gibbon.load({ url, cache: "no-cache", freshConnect: true }, onData);
         }
     }
     load();

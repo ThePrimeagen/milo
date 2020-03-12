@@ -123,17 +123,17 @@ export class ConnectionPool {
 
     abort(id: number): void {
         const values = this._hosts.values() as HostData[];
-        for (let idx = 0; idx < values.length; ++idx) {
-            const value = values[idx];
+        this._hosts.forEach((key, value) => {
             if (value.pending) {
                 for (let i = 0; i < value.pending.length; ++i) {
                     if (value.pending[i].id === id) {
                         value.pending.splice(i, 1);
-                        return;
+                        return false;
                     }
                 }
             }
-        }
+            return true;
+        });
 
         if (this._pendingFreshConnects) {
             for (let i = 0; i < this._pendingFreshConnects.length; ++i) {
@@ -161,13 +161,13 @@ export class ConnectionPool {
         const hostPort = `${pipe.hostname}:${pipe.port}`;
         let data = this._hosts.get(hostPort);
         if (!data) { // can this happen?
-            data = { pipes: [], initializing: 0, pending: [], ssl: pipe.ssl, hostPort: hostPort };
+            data = { pipes: [], initializing: 0, pending: [], ssl: pipe.ssl, hostPort };
             this._hosts.set(hostPort, data);
         }
 
         if (pipe.closed) {
             const idx = data.pipes.indexOf(pipe);
-            assert(idx != -1);
+            assert(idx !== -1);
             data.pipes.splice(idx, 1);
         } else {
             pipe.idle = true;
@@ -181,7 +181,7 @@ export class ConnectionPool {
         return new Promise((resolve, reject) => {
             let port: number = 0;
             if (options.url.port) {
-                port = parseInt(options.url.port);
+                port = parseInt(options.url.port, 10);
             }
 
             // Platform.trace("Request#send port", port);
@@ -211,7 +211,7 @@ export class ConnectionPool {
             Platform.trace(`request for connection ${options.url} -> ${hostPort}`);
             let data = this._hosts.get(hostPort);
 
-            if ((port == 80 && ssl) || (port == 443 && !ssl) || (data && data.ssl != ssl)) {
+            if ((port === 80 && ssl) || (port === 443 && !ssl) || (data && data.ssl !== ssl)) {
                 // this is completely asinine but it's simple enough to allow
                 options.freshConnect = true;
                 options.forbidReuse = true;
@@ -220,7 +220,7 @@ export class ConnectionPool {
             const pending = new PendingConnectionImpl(this, ++this._id, hostname, port,
                                                       options.dnsTimeout, options.connectTimeout);
             resolve(pending);
-            if (this._id == Number.MAX_SAFE_INTEGER) {
+            if (this._id === Number.MAX_SAFE_INTEGER) {
                 this._id = 0;
             }
 
@@ -236,7 +236,7 @@ export class ConnectionPool {
                     Platform.trace(`Got tcp connection for ${hostPort} with fd ${pipe.fd}`);
                     if (ssl) {
                         Platform.trace(`Requesting ssl pipe for ${hostPort} with fd ${pipe.fd}`);
-                        return Platform.createSSLNetworkPipe({ pipe: pipe });
+                        return Platform.createSSLNetworkPipe({ pipe });
                     } else {
                         return pipe;
                     }
@@ -265,7 +265,7 @@ export class ConnectionPool {
             }
 
             if (!data) {
-                data = { pipes: [], initializing: 0, pending: [], ssl: ssl, hostPort: hostPort };
+                data = { pipes: [], initializing: 0, pending: [], ssl, hostPort };
                 this._hosts.set(hostPort, data);
             }
 
@@ -280,14 +280,14 @@ export class ConnectionPool {
         if (!data.pending.length)
             return;
 
-        for (let i = 0; i < data.pipes.length; ++i) {
-            assert(!data.pipes[i].closed, "This shouldn't be closed");
-            if (data.pipes[i].idle) {
-                data.pipes[i].idle = false;
+        for (const pipe of data.pipes) {
+            assert(!pipe.closed, "This shouldn't be closed");
+            if (pipe.idle) {
+                pipe.idle = false;
                 const pending = data.pending.shift();
                 assert(pending);
-                Platform.trace(`found idle connection for ${data.hostPort} fd: ${data.pipes[i].fd}`);
-                pending.resolve(data.pipes[i]);
+                Platform.trace(`found idle connection for ${data.hostPort} fd: ${pipe.fd}`);
+                pending.resolve(pipe);
                 return;
             }
         }
@@ -309,7 +309,7 @@ export class ConnectionPool {
                 Platform.trace(`Got tcp connection for ${data.hostPort} with fd ${pipe.fd}`);
                 if (data.ssl) {
                     Platform.trace(`Requesting ssl pipe for ${data.hostPort} with fd ${pipe.fd}`);
-                    return Platform.createSSLNetworkPipe({ pipe: pipe });
+                    return Platform.createSSLNetworkPipe({ pipe });
                 } else {
                     return pipe;
                 }
@@ -328,4 +328,4 @@ export class ConnectionPool {
     }
 }
 
-export default new ConnectionPool;
+export default new ConnectionPool();

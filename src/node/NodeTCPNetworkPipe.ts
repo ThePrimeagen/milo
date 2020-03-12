@@ -96,7 +96,7 @@ class NodeTCPNetworkPipe implements NetworkPipe {
                 this.state = State.Destroyed;
                 rej(e);
                 if (this.onerror) {
-                    this.onerror(-1, e.toString());
+                    this.onerror(e);
                 }
             });
         });
@@ -115,7 +115,7 @@ class NodeTCPNetworkPipe implements NetworkPipe {
 
     // @ts-ignore
     write(buf: Uint8Array | ArrayBuffer | string, offset?: number, length?: number): void {
-        if (this.state != State.Alive) {
+        if (this.state !== State.Alive) {
             throw new Error(`Unable to write sockets in current state, ${this.state}`);
         }
 
@@ -132,7 +132,7 @@ class NodeTCPNetworkPipe implements NetworkPipe {
     }
 
     read(buf: IDataBuffer | ArrayBuffer, offset: number, length: number): number {
-        if (this.state != State.Alive) {
+        if (this.state !== State.Alive) {
             throw new Error(`Unable to read sockets in current state, ${this.state}`);
         }
 
@@ -178,12 +178,12 @@ class NodeTCPNetworkPipe implements NetworkPipe {
 
     unread(buf: ArrayBuffer | Uint8Array | ArrayBuffer): void {
         throw new Error("Must imprement this");
-        //assert(false, "Must implement this");
+        // assert(false, "Must implement this");
     }
 
     close(): void {
         // successfully destroy socket.
-        //assert(this.sock !== undefined, "Must have sock");
+        // assert(this.sock !== undefined, "Must have sock");
         if (!this.sock) {
             throw new Error("Must have sock");
         }

@@ -25,15 +25,14 @@ async function onOpen(ws: WebSocket) {
 }
 
 jest.setTimeout(5000);
-describe("integration", function() {
+describe("integration", () => {
     let wss: _WebSocket.Server;
     let port = 13370;
-    let pipe: NetworkPipe;
-    let connectedWSs: _WebSocket[] = [];
+    const connectedWSs: _WebSocket[] = [];
 
     beforeEach(async () => {
         wss = await newServer(port);
-        wss.on('connection', function(ws) {
+        wss.on('connection', (ws) => {
             connectedWSs.push(ws);
         });
     });
@@ -44,7 +43,7 @@ describe("integration", function() {
         wss.close();
     });
 
-    it("should connect to a websocket server and close.", async function(done) {
+    it("should connect to a websocket server and close.", async (done) => {
         const socket = new WebSocket(`ws://localhost:${port}`);
         await onOpen(socket);
 
