@@ -119,6 +119,7 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
     close(): void {
         assert(this.sock !== -1);
         N.close(this.sock); // ### error checking?
+        this.sock = -1;
         if (this.onclose)
             this.onclose();
     }
