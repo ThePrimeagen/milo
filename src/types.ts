@@ -14,16 +14,16 @@ export interface IUnorderedMap {
     clear(): void;
     clone(): IUnorderedMap;
     delete(key: any): boolean;
-    entries(): [][];
+    entries(): any[][];
     forEach(func: (key: any, value: any, that: IUnorderedMap) => boolean): void;
     get(key: any): any;
     has(key: any): boolean;
-    keys(): [];
+    keys(): any[];
     readonly length: number;
     readonly size: number;
     set(key: any, value: any): IUnorderedMap; // returns itself for some reason
     take(key: any): any;
-    values(): [];
+    values(): any[];
 }
 
 export interface IDataBuffer {
