@@ -57,6 +57,7 @@ export interface RequestData {
     secure?: boolean;
     tcpNoDelay?: boolean;
     timeouts?: RequestTimeouts;
+    tlsv13?: boolean;
     url: string;
     weight?: number;
 };

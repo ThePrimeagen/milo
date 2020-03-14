@@ -158,6 +158,10 @@ export class ConnectionPool {
             }
             return;
         }
+
+        assert(!pipe.ondata, "Shouldn't have a data callback anymore");
+        assert(!pipe.onclose, "Shouldn't have a close callback anymore");
+        assert(!pipe.onerror, "Shouldn't have an error callback anymore");
         const hostPort = `${pipe.hostname}:${pipe.port}`;
         let data = this._hosts.get(hostPort);
         if (!data) { // can this happen?
