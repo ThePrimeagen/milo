@@ -65,16 +65,6 @@ class NodePlatform implements Platform {
         return buf;
     }
 
-    huffmanEncode(input: string | IDataBuffer): IDataBuffer {
-        throw new Error("Not Implemented");
-        return {} as IDataBuffer;
-    }
-
-    huffmanDecode(input: IDataBuffer): IDataBuffer {
-        throw new Error("Not Implemented");
-        return {} as IDataBuffer;
-    }
-
     // @ts-ignore
     bufferSet(dest: Uint8Array | ArrayBuffer, destOffset: number,
               src: Uint8Array | ArrayBuffer | string, srcOffset?: number, srcLength?: number): void {

@@ -303,9 +303,6 @@ export interface Platform {
     // return number of octets
     utf8Length(str: string): number;
 
-    huffmanDecode(input: IDataBuffer): IDataBuffer;
-    huffmanEncode(input: string | IDataBuffer): IDataBuffer;
-
     sha1(input: string): Uint8Array;
     // base64 encode
     btoa(buffer: Uint8Array | ArrayBuffer | string, returnUint8Array: true): Uint8Array;
