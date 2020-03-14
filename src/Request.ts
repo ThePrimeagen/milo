@@ -27,39 +27,38 @@ export interface OnHeadersData {
 };
 
 export interface RequestData {
-    url: string;
+    async?: boolean;
     baseUrl?: string;
-    method?: HTTPMethod;
     body?: string | ArrayBuffer | Uint8Array;
-    timeouts?: RequestTimeouts;
-    ipConnectivityMode?: IpConnectivityMode;
-    freshConnect?: boolean;
+    cache?: string;
+    debugThroughput?: boolean;
+    dependsOn?: string | ArrayBuffer | Uint8Array | number;
+    dnsChannel?: string;
+    dnsTime?: number;
+    dnsType?: DnsType;
+    exclusiveDepends?: boolean;
     forbidReuse?: boolean;
     format?: "xml" | "json" | "jsonstream" | "arraybuffer" | "uint8array" | "databuffer" | "none";
-    async?: boolean;
-    pipeWait?: boolean;
-    debugThroughput?: boolean;
-    noProxy?: boolean;
-    tcpNoDelay?: boolean;
-    secure?: boolean;
-    networkMetricsPrecision?: "us" | "ms" | "none";
-    receiveBufferSize?: number;
+    freshConnect?: boolean;
+    headers?: { [key: string]: string };
+    http2?: boolean;
+    ipAddresses?: string[];
+    ipConnectivityMode?: IpConnectivityMode;
     maxRecvSpeed?: number;
     maxSendSpeed?: number;
-    ipAddresses?: string[];
-    dnsTime?: number;
-    dnsChannel?: string;
-    dnsType?: DnsType;
-    headers?: { [key: string]: string };
-    cache?: string;
-    http2?: boolean;
-    weight?: number;
-    exclusiveDepends?: boolean;
-    dependsOn?: string | ArrayBuffer | Uint8Array | number;
-
+    method?: HTTPMethod;
+    networkMetricsPrecision?: "us" | "ms" | "none";
+    noProxy?: boolean;
     onChunk?: (chunk: ArrayBuffer) => void;
-    onHeaders?: (data: OnHeadersData) => void;
     onData?: (data: ArrayBuffer) => void;
+    onHeaders?: (data: OnHeadersData) => void;
+    pipeWait?: boolean;
+    receiveBufferSize?: number;
+    secure?: boolean;
+    tcpNoDelay?: boolean;
+    timeouts?: RequestTimeouts;
+    url: string;
+    weight?: number;
 };
 
 export class RequestResponse {
