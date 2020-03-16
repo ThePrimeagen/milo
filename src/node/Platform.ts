@@ -3,13 +3,13 @@ import dns from "dns";
 
 import { toUint8Array } from "./utils";
 import {
-    DnsResult,
+    IDnsResult,
     IpVersion,
     IPlatform,
-    NetworkPipe,
-    CreateTCPNetworkPipeOptions,
-    CreateSSLNetworkPipeOptions,
-    SHA256Context,
+    INetworkPipe,
+    ICreateTCPNetworkPipeOptions,
+    ICreateSSLNetworkPipeOptions,
+    ISHA256Context,
     HTTPRequestHeaders
 } from "../types";
 
@@ -20,7 +20,7 @@ import btoa from "btoa";
 import atob from "atob";
 import { IDataBuffer } from "../types";
 import DataBuffer from "./DataBuffer";
-import { SHA256Context as SC } from "./SHA256Context";
+import { ISHA256Context as SC } from "./SHA256Context";
 
 function toBuffer(buf: Uint8Array | ArrayBuffer | string) {
     // @ts-ignore
@@ -75,8 +75,8 @@ class NodePlatform implements IPlatform {
         srcBuf.copy(destBuf, destOffset, srcOffset, srcLength);
     }
 
-    createSHA256Context(): SHA256Context {
-        return new SC() as SHA256Context;
+    createSHA256Context(): ISHA256Context {
+        return new SC() as ISHA256Context;
     }
 
     writeFile(fileName: string, contents: Uint8Array | ArrayBuffer | string): boolean {
@@ -199,11 +199,11 @@ class NodePlatform implements IPlatform {
         console.error.apply(console, args);
     }
 
-    createSSLNetworkPipe(options: CreateSSLNetworkPipeOptions): Promise<NetworkPipe> {
+    createSSLNetworkPipe(options: ICreateSSLNetworkPipeOptions): Promise<INetworkPipe> {
         throw new Error("Really not implementetd...");
     }
 
-    createTCPNetworkPipe(options: CreateTCPNetworkPipeOptions): Promise<NetworkPipe> {
+    createTCPNetworkPipe(options: ICreateTCPNetworkPipeOptions): Promise<INetworkPipe> {
         return createTCPNetworkPipe(options);
     }
 
@@ -286,11 +286,11 @@ class NodePlatform implements IPlatform {
         return buffer.lastIndexOf(needleBuf);
     }
 
-    lookupDnsHost(host: string, ipVersion: IpVersion, timeout: number, callback: (result: DnsResult) => void): void {
+    lookupDnsHost(host: string, ipVersion: IpVersion, timeout: number, callback: (result: IDnsResult) => void): void {
         dns.lookup(host, {
             family: ipVersion
         }, (err, address, family) => {
-            const res = {} as DnsResult;
+            const res = {} as IDnsResult;
             if (err) {
                 // @ts-ignore
                 res.errorCode = err.errno;

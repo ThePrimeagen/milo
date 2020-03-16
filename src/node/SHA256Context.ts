@@ -1,6 +1,6 @@
 import crypto from "crypto";
 
-import { IDataBuffer, SHA256Context as ISC } from "../types";
+import { IDataBuffer, ISHA256Context as ISC } from "../types";
 import DB from "./DataBuffer";
 import { bufferToArrayBufferCopy } from "./utils";
 
@@ -11,7 +11,7 @@ import { bufferToArrayBufferCopy } from "./utils";
   .digest('hex');
 */
 
-export class SHA256Context implements ISC {
+export class ISHA256Context implements ISC {
     private salt: string;
     private hash: crypto.Hmac;
 
@@ -44,8 +44,8 @@ export class SHA256Context implements ISC {
     }
 
 
-    // Property 'final' in type 'SHA256Context' is not assignable to the same
-    // property in base type 'SHA256Context'.   Type '(md?: Uint8Array |
+    // Property 'final' in type 'ISHA256Context' is not assignable to the same
+    // property in base type 'ISHA256Context'.   Type '(md?: Uint8Array |
     // ArrayBuffer | IDataBuffer | undefined, offset?: number | undefined) =>
     // number | ArrayBuffer' is not assignable to type '{ (): ArrayBuffer; (md:
     // Uint8Array | ArrayBuffer | IDataBuffer, offset?: number | undefined):

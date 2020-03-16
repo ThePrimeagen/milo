@@ -1,6 +1,6 @@
 import _WebSocket from "ws";
 import WebSocket from "../index";
-import { NetworkPipe, IDataBuffer } from "../../types";
+import { INetworkPipe, IDataBuffer } from "../../types";
 
 function wait(ms: number): Promise<undefined> {
     return new Promise(res => {

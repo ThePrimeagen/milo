@@ -4,7 +4,7 @@ import { Request, RequestData } from "../Request";
 import { headerValue } from "../utils";
 
 import {
-    NetworkPipe,
+    INetworkPipe,
     IDataBuffer,
 } from '../types';
 
@@ -50,7 +50,7 @@ export type UrlObject = {
     port: string | number
 }
 
-function _wsUpgrade(u: string | UrlObject): Promise<NetworkPipe> {
+function _wsUpgrade(u: string | UrlObject): Promise<INetworkPipe> {
     let url = u;
     if (typeof url === "object") {
         // TODO: Should I do this?
@@ -108,7 +108,7 @@ export default class WS {
     // @ts-ignore
     private frame: WSFramer;
     // @ts-ignore
-    private pipe: NetworkPipe;
+    private pipe: INetworkPipe;
 
     private callbacks: CallbackMap;
     private state: ConnectionState;
@@ -120,7 +120,7 @@ export default class WS {
     public onerror?: ErrorCallback;
 
     constructor(url: string | UrlObject, opts: WSOptions = defaultOptions) {
-        // pipe: NetworkPipe, opts: WSOptions = defaultOptions) {
+        // pipe: INetworkPipe, opts: WSOptions = defaultOptions) {
         this.state = ConnectionState.Connecting;
         this.opts = opts;
 

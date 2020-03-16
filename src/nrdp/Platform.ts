@@ -1,6 +1,6 @@
 import {
-    CreateSSLNetworkPipeOptions, CreateTCPNetworkPipeOptions, IpConnectivityMode,
-    NetworkPipe, IPlatform, RequestTimeouts, SHA256Context, IDataBuffer
+    ICreateSSLNetworkPipeOptions, ICreateTCPNetworkPipeOptions, IpConnectivityMode,
+    INetworkPipe, IPlatform, IRequestTimeouts, ISHA256Context, IDataBuffer
 } from "../types";
 import DataBuffer from "./DataBuffer";
 import createNrdpSSLNetworkPipe from "./NrdpSSLNetworkPipe";
@@ -65,7 +65,7 @@ export class NrdpPlatform implements IPlatform {
     }
 
     // @ts-ignore
-    get defaultRequestTimeouts(): RequestTimeouts {
+    get defaultRequestTimeouts(): IRequestTimeouts {
         const opts = nrdp.options;
         return {
             timeout: opts.default_network_timeout,
@@ -107,14 +107,14 @@ export class NrdpPlatform implements IPlatform {
         return true;
     }
 
-    createSHA256Context(): SHA256Context {
+    createSHA256Context(): ISHA256Context {
         return new nrdp_platform.Hasher("sha256");
     }
 
-    createTCPNetworkPipe(options: CreateTCPNetworkPipeOptions): Promise<NetworkPipe> {
+    createTCPNetworkPipe(options: ICreateTCPNetworkPipeOptions): Promise<INetworkPipe> {
         return createNrdpTCPNetworkPipe(options, this);
     }
-    createSSLNetworkPipe(options: CreateSSLNetworkPipeOptions): Promise<NetworkPipe> {
+    createSSLNetworkPipe(options: ICreateSSLNetworkPipeOptions): Promise<INetworkPipe> {
         return createNrdpSSLNetworkPipe(options, this);
     }
 

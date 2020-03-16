@@ -1,5 +1,5 @@
 import {
-    CreateSSLNetworkPipeOptions, NetworkPipe,
+    ICreateSSLNetworkPipeOptions, INetworkPipe,
     OnClose, OnData, OnError, IDataBuffer
 } from "../types";
 import { EventEmitter } from "../EventEmitter";
@@ -21,11 +21,11 @@ function set_mem_eof_return(p: NrdpPlatform, bio: N.Struct) {
     p.ssl.BIO_ctrl(bio, platform.ssl.BIO_C_SET_BUF_MEM_EOF_RETURN, -1, undefined);
 }
 
-class NrdpSSLNetworkPipe extends EventEmitter implements NetworkPipe {
+class NrdpSSLNetworkPipe extends EventEmitter implements INetworkPipe {
     private sslInstance: N.Struct;
     private inputBio: N.Struct;
     private outputBio: N.Struct;
-    private pipe: NetworkPipe;
+    private pipe: INetworkPipe;
     private connected: boolean;
     private writeBuffers: (Uint8Array | ArrayBuffer | string | IDataBuffer)[];
     private writeBufferOffsets: number[];
@@ -39,7 +39,7 @@ class NrdpSSLNetworkPipe extends EventEmitter implements NetworkPipe {
     public idle: boolean;
     public forbidReuse: boolean;
 
-    constructor(options: CreateSSLNetworkPipeOptions, p: NrdpPlatform, callback: (error?: Error) => void) {
+    constructor(options: ICreateSSLNetworkPipeOptions, p: NrdpPlatform, callback: (error?: Error) => void) {
         super();
         platform = p;
         this.idle = false;
@@ -286,9 +286,9 @@ class NrdpSSLNetworkPipe extends EventEmitter implements NetworkPipe {
 };
 
 
-export default function createSSLNetworkPipe(options: CreateSSLNetworkPipeOptions,
-                                             p: NrdpPlatform): Promise<NetworkPipe> {
-    return new Promise<NetworkPipe>((resolve, reject) => {
+export default function createSSLNetworkPipe(options: ICreateSSLNetworkPipeOptions,
+                                             p: NrdpPlatform): Promise<INetworkPipe> {
+    return new Promise<INetworkPipe>((resolve, reject) => {
         const sslPipe = new NrdpSSLNetworkPipe(options, p, (error?: Error) => {
             // platform.trace("connected or something", error);
             if (error) {

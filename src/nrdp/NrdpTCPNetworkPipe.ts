@@ -1,5 +1,5 @@
 import {
-    CreateTCPNetworkPipeOptions, DnsResult, NetworkPipe,
+    ICreateTCPNetworkPipeOptions, IDnsResult, INetworkPipe,
     OnClose, OnData, OnError, IDataBuffer
 } from "../types";
 import { EventEmitter } from "../EventEmitter";
@@ -14,7 +14,7 @@ function assert(condition: any, msg?: string): asserts condition {
     }
 }
 
-export class NrdpTCPNetworkPipe extends EventEmitter implements NetworkPipe {
+export class NrdpTCPNetworkPipe extends EventEmitter implements INetworkPipe {
     private sock: number;
     private writeBuffers: (Uint8Array | ArrayBuffer | IDataBuffer | string)[];
     private writeBufferOffsets: number[];
@@ -218,12 +218,12 @@ export class NrdpTCPNetworkPipe extends EventEmitter implements NetworkPipe {
     }
 };
 
-export default function createTCPNetworkPipe(options: CreateTCPNetworkPipeOptions,
-                                             p: NrdpPlatform): Promise<NetworkPipe> {
+export default function createTCPNetworkPipe(options: ICreateTCPNetworkPipeOptions,
+                                             p: NrdpPlatform): Promise<INetworkPipe> {
     let dnsStartTime = 0;
     let dns: string | undefined;
     let dnsChannel: string | undefined;
-    return new Promise<NetworkPipe>((resolve, reject) => {
+    return new Promise<INetworkPipe>((resolve, reject) => {
         new Promise<N.Sockaddr>(innerResolve => {
             let ipAddress = options.hostname;
             if (typeof options.port !== "undefined")
@@ -243,21 +243,22 @@ export default function createTCPNetworkPipe(options: CreateTCPNetworkPipeOption
                 innerResolve(sockAddr);
             } catch (err) {
                 dnsStartTime = p.mono();
-                nrdp.dns.lookupHost(options.hostname, options.ipVersion, options.dnsTimeout, (dnsResult: DnsResult) => {
-                    // console.log("got dns result");
-                    if (!dnsResult.addresses.length) {
-                        reject(new Error("Failed to lookup host"));
-                        return;
-                    }
-                    try {
-                        sockAddr = new N.Sockaddr(`${dnsResult.addresses[0]}:${options.port}`);
-                        dns = dnsResult.type;
-                        dnsChannel = dnsResult.channel;
-                        innerResolve(sockAddr);
-                    } catch (err) {
-                        reject(new Error("Failed to parse ip address " + err.toString()));
-                    }
-                });
+                nrdp.dns.lookupHost(options.hostname, options.ipVersion,
+                                    options.dnsTimeout, (dnsResult: IDnsResult) => {
+                                        // console.log("got dns result");
+                                        if (!dnsResult.addresses.length) {
+                                            reject(new Error("Failed to lookup host"));
+                                            return;
+                                        }
+                                        try {
+                                            sockAddr = new N.Sockaddr(`${dnsResult.addresses[0]}:${options.port}`);
+                                            dns = dnsResult.type;
+                                            dnsChannel = dnsResult.channel;
+                                            innerResolve(sockAddr);
+                                        } catch (err) {
+                                            reject(new Error("Failed to parse ip address " + err.toString()));
+                                        }
+                                    });
             }
         }).then((sockAddr: N.Sockaddr) => {
             const now = p.mono();

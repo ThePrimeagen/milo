@@ -1,6 +1,6 @@
 import { Platform, DataBuffer } from "../../Platform";
 import {
-    NetworkPipe,
+    INetworkPipe,
     IDataBuffer,
 } from '../../types';
 import FrameConstructor from "../frame/frame-constructor";
@@ -30,7 +30,7 @@ function zeroBit(value: number, bit: number) {
 }
 
 export default class StreamManager {
-    private pipe: NetworkPipe;
+    private pipe: INetworkPipe;
     // TODO: REMOVE THIS AND USE THE H E DOUBLE HOCKEY STICKS READ BUFF FROM
     // THE PLATFORM
     private readBuffer: IDataBuffer;
@@ -40,7 +40,7 @@ export default class StreamManager {
     private stateChanges: StateChangeCallback[];
 
     // TODO: Settings?
-    constructor(pipe: NetworkPipe, settings = {}) {
+    constructor(pipe: INetworkPipe, settings = {}) {
         this.readBuffer = new DataBuffer(BUFFER_SIZE);
         this.pipe = pipe;
         this.nextId = 1;

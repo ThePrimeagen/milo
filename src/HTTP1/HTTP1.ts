@@ -1,12 +1,12 @@
 import {
-    HTTP, HTTPMethod, HTTPTransferEncoding, HTTPRequest, NetworkPipe,
-    HTTPHeadersEvent, OnError, ErrorCode, IDataBuffer
+    IHTTP, HTTPMethod, HTTPTransferEncoding, IHTTPRequest, INetworkPipe,
+    IHTTPHeadersEvent, OnError, ErrorCode, IDataBuffer
 } from "../types";
 import { Platform } from "../Platform";
 import { ChunkyParser } from "./ChunkyParser";
 import { assert } from "../utils";
 
-export class HTTP1 implements HTTP {
+export class HTTP1 implements IHTTP {
     private headerBuffer?: IDataBuffer;
     private connection?: string;
     private headersFinished: boolean;
@@ -14,8 +14,8 @@ export class HTTP1 implements HTTP {
     private requestSize?: number;
 
     public httpVersion: string;
-    public networkPipe?: NetworkPipe;
-    public request?: HTTPRequest;
+    public networkPipe?: INetworkPipe;
+    public request?: IHTTPRequest;
     public timeToFirstByteRead?: number;
     public timeToFirstByteWritten?: number;
     public upgrade: boolean;
@@ -25,7 +25,7 @@ export class HTTP1 implements HTTP {
         this.upgrade = false;
     }
 
-    send(networkPipe: NetworkPipe, request: HTTPRequest): boolean {
+    send(networkPipe: INetworkPipe, request: IHTTPRequest): boolean {
         this.networkPipe = networkPipe;
         this.request = request;
         let str =
@@ -141,7 +141,7 @@ Host: ${request.url.hostname}\r
             requestSize: this.requestSize,
             statusCode: -1,
             transferEncoding: 0
-        } as HTTPHeadersEvent;
+        } as IHTTPHeadersEvent;
 
         const space = statusLine.indexOf(' ', 9);
         // Platform.trace("got status", space, statusLine.substring(9, space))
@@ -261,7 +261,7 @@ Host: ${request.url.hostname}\r
             this.onerror(error);
     }
 
-    onheaders?: (headers: HTTPHeadersEvent) => void;
+    onheaders?: (headers: IHTTPHeadersEvent) => void;
     ondata?: (data: IDataBuffer, offset: number, length: number) => void;
     onfinished?: () => void;
     onerror?: OnError;

@@ -1,4 +1,4 @@
-import { UnorderedMap } from "./Platform";
+import UnorderedMap from "./#{target}/UnorderedMap";
 import { IUnorderedMap, IEventEmitter, EventListener } from "./types";
 
 interface EventConnection {

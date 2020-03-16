@@ -6,7 +6,7 @@ import {
 } from './buffer';
 
 import {
-    NetworkPipe,
+    INetworkPipe,
     IDataBuffer,
 } from '../types';
 
@@ -145,9 +145,9 @@ export default class WSFramer {
     private msgState: WSState;
     private controlState: WSState;
     private closed: boolean;
-    private pipe: NetworkPipe;
+    private pipe: INetworkPipe;
 
-    constructor(pipe: NetworkPipe, maxFrameSize = 8096, maxPacketSize = 1024 * 1024 * 4) {
+    constructor(pipe: INetworkPipe, maxFrameSize = 8096, maxPacketSize = 1024 * 1024 * 4) {
         this.callbacks = [];
         this.pipe = pipe;
         this.maxFrameSize = maxFrameSize;

@@ -1,5 +1,5 @@
 import {
-    NetworkPipe,
+    INetworkPipe,
 } from '../../src/types';
 
 import {

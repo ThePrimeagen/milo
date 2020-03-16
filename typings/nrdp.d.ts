@@ -1,13 +1,13 @@
 declare namespace nrdp {
     type IDataBuffer = import("../src/types").IDataBuffer;
     type IpVersion = import("../src/types").IpVersion;
-    type DnsResult = import("../src/types").DnsResult;
+    type IDnsResult = import("../src/types").IDnsResult;
 
     namespace dns {
         function lookupHost(host: string,
                             ipVersion: IpVersion,
                             timeout: number,
-                            callback: (result: DnsResult) => void): void;
+                            callback: (result: IDnsResult) => void): void;
     }
 
     namespace device {

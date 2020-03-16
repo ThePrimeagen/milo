@@ -184,7 +184,7 @@ export interface IDataBuffer {
     uncompress(method: compressionMethod, offset?: number, length?: number): string;
 }
 
-export interface DnsResult {
+export interface IDnsResult {
     errorCode: number;
     host: string;
     error?: string;
@@ -202,7 +202,7 @@ export interface DnsResult {
     type: string;
 };
 
-export interface RequestTimeouts {
+export interface IRequestTimeouts {
     timeout?: number;
     connectTimeout?: number;
     dnsTimeout?: number;
@@ -214,7 +214,7 @@ export interface RequestTimeouts {
     delay?: number;
 };
 
-export interface CreateTCPNetworkPipeOptions {
+export interface ICreateTCPNetworkPipeOptions {
     hostname: string; // could be an ip literal
     port: number;
     connectTimeout: number;
@@ -222,15 +222,15 @@ export interface CreateTCPNetworkPipeOptions {
     ipVersion: IpVersion;
 };
 
-export interface CreateSSLNetworkPipeOptions {
-    pipe: NetworkPipe;
+export interface ICreateSSLNetworkPipeOptions {
+    pipe: INetworkPipe;
 };
 
 export type OnData = () => void;
 export type OnClose = () => void;
 export type OnError = (error: Error) => void;
 
-export interface SHA256Context {
+export interface ISHA256Context {
     add(buf: Uint8Array | ArrayBuffer | IDataBuffer | string): void;
 
     final(): ArrayBuffer;
@@ -238,7 +238,7 @@ export interface SHA256Context {
     reset(): void;
 };
 
-export interface NetworkPipe extends IEventEmitter {
+export interface INetworkPipe extends IEventEmitter {
     write(buf: IDataBuffer | Uint8Array | ArrayBuffer | string, offset: number, length: number): void;
     write(buf: string): void;
 
@@ -282,7 +282,7 @@ export enum HTTPTransferEncoding {
     Identity = 0x10
 };
 
-export interface HTTPHeadersEvent {
+export interface IHTTPHeadersEvent {
     contentLength?: number;
     headers: string[];
     headersSize: number;
@@ -292,7 +292,7 @@ export interface HTTPHeadersEvent {
     transferEncoding: HTTPTransferEncoding;
 };
 
-export interface HTTPRequest {
+export interface IHTTPRequest {
     networkStartTime: number,
     url: import("url-parse");
     method: HTTPMethod;
@@ -300,14 +300,14 @@ export interface HTTPRequest {
     body?: string | Uint8Array | ArrayBuffer;
 };
 
-export interface HTTP {
+export interface IHTTP {
     httpVersion: string;
-    send(pipe: NetworkPipe, request: HTTPRequest): boolean;
+    send(pipe: INetworkPipe, request: IHTTPRequest): boolean;
 
     timeToFirstByteRead?: number;
     timeToFirstByteWritten?: number;
 
-    onheaders?: (headers: HTTPHeadersEvent) => void;
+    onheaders?: (headers: IHTTPHeadersEvent) => void;
     ondata?: (data: IDataBuffer, offset: number, length: number) => void;
 
     upgrade: boolean;
@@ -352,9 +352,9 @@ export interface IPlatform {
 
     standardHeaders: { [key: string]: string };
 
-    createTCPNetworkPipe(options: CreateTCPNetworkPipeOptions): Promise<NetworkPipe>;
-    createSSLNetworkPipe(options: CreateSSLNetworkPipeOptions): Promise<NetworkPipe>;
-    createSHA256Context(): SHA256Context;
+    createTCPNetworkPipe(options: ICreateTCPNetworkPipeOptions): Promise<INetworkPipe>;
+    createSSLNetworkPipe(options: ICreateSSLNetworkPipeOptions): Promise<INetworkPipe>;
+    createSHA256Context(): ISHA256Context;
 
     bufferConcat(...args: ArrayBuffer[] | Uint8Array[] | IDataBuffer[]): ArrayBuffer;
 
@@ -385,13 +385,13 @@ export interface IPlatform {
     lookupDnsHost(host: string,
                   ipVersion: IpVersion,
                   timeout: number,
-                  callback: (result: DnsResult) => void): void;
+                  callback: (result: IDnsResult) => void): void;
 
     UILanguages: string[];
     location: string;
     scratch: IDataBuffer;
 
-    defaultRequestTimeouts: RequestTimeouts;
+    defaultRequestTimeouts: IRequestTimeouts;
 
     quit(exitCode?: number): void;
 };

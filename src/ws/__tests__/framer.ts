@@ -1,5 +1,5 @@
 import { Platform, DataBuffer } from "../../Platform";
-import { NetworkPipe } from "../../types";
+import { INetworkPipe } from "../../types";
 import WSFramer, { constructFrameHeader } from "../framer";
 import { Opcodes } from "../types";
 import { IDataBuffer } from "../../types";
@@ -8,7 +8,7 @@ import maskFn from "../mask";
 // @ts-ignore
 const pipe = {
     write: jest.fn()
-} as NetworkPipe;
+} as INetworkPipe;
 
 /*
   0                   1                   2                   3

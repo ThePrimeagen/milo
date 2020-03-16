@@ -4,8 +4,8 @@ import { Platform, DataBuffer } from "./Platform";
 import connectionPool, { ConnectionOptions, PendingConnection } from "./ConnectionPool";
 
 import {
-    CreateTCPNetworkPipeOptions, IpConnectivityMode,
-    NetworkPipe, RequestTimeouts, HTTP, HTTPMethod, HTTPHeadersEvent,
+    ICreateTCPNetworkPipeOptions, IpConnectivityMode,
+    INetworkPipe, IRequestTimeouts, IHTTP, HTTPMethod, IHTTPHeadersEvent,
     HTTPTransferEncoding, ErrorCode, IDataBuffer
 } from "./types";
 import { assert } from "./utils";
@@ -56,7 +56,7 @@ export interface RequestData {
     receiveBufferSize?: number;
     secure?: boolean;
     tcpNoDelay?: boolean;
-    timeouts?: RequestTimeouts;
+    timeouts?: IRequestTimeouts;
     tlsv13?: boolean;
     url: string;
     weight?: number;
@@ -126,7 +126,7 @@ export class Request {
     requestData: RequestData;
     url: Url;
     id: number;
-    networkPipe?: NetworkPipe;
+    networkPipe?: INetworkPipe;
 
     private resolve?: (response: RequestResponse) => void;
     private reject?: (error: Error) => void;
@@ -136,7 +136,7 @@ export class Request {
     private responseDataArray?: IDataBuffer[];
     private responseDataLength: number;
     private transferEncoding: HTTPTransferEncoding;
-    private http: HTTP;
+    private http: IHTTP;
 
     constructor(data: RequestData | string) {
         this.transferEncoding = 0;
@@ -181,7 +181,7 @@ export class Request {
             dnsTimeout: 10000,
             connectTimeout: 10000,
         },
-    }): Promise<NetworkPipe> {
+    }): Promise<INetworkPipe> {
 
         let parsedUrl: Url;
         if (typeof url === 'string') {
@@ -221,9 +221,9 @@ export class Request {
             dnsTimeout: timeouts && timeouts.dnsTimeout,
             connectTimeout: timeouts && timeouts.connectTimeout,
             ipVersion: 4 // gotta do happy eyeballs and send off multiple tcp network pipe things
-        } as CreateTCPNetworkPipeOptions;
+        } as ICreateTCPNetworkPipeOptions;
 
-        return Platform.createTCPNetworkPipe(tcpOpts).then((pipe: NetworkPipe) => {
+        return Platform.createTCPNetworkPipe(tcpOpts).then((pipe: INetworkPipe) => {
             if (ssl) {
                 return Platform.createSSLNetworkPipe({ pipe });
             } else {
@@ -262,7 +262,7 @@ export class Request {
             Platform.trace(`got a pending connection ${conn.id}`);
             // conn is abortable
             return conn.onNetworkPipe();
-        }).then((pipe: NetworkPipe) => {
+        }).then((pipe: INetworkPipe) => {
             Platform.trace("GOT OUR PIPE NOW");
             this.networkPipe = pipe;
             if (pipe.dnsTime) {
@@ -432,7 +432,7 @@ export class Request {
         }
     }
 
-    private _onHeaders(event: HTTPHeadersEvent): void {
+    private _onHeaders(event: IHTTPHeadersEvent): void {
         this.requestResponse.statusCode = event.statusCode;
         this.requestResponse.headers = event.headers;
         this.transferEncoding = event.transferEncoding;

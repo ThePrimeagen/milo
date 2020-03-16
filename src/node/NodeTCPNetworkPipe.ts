@@ -11,13 +11,13 @@ import {
 import { EventEmitter } from "../EventEmitter";
 
 import {
-    NetworkPipe,
+    INetworkPipe,
     OnData,
     OnClose,
     OnError,
-    DnsResult,
+    IDnsResult,
     IDataBuffer,
-    CreateTCPNetworkPipeOptions
+    ICreateTCPNetworkPipeOptions
 } from "../types";
 
 import DataBuffer from "./DataBuffer";
@@ -28,7 +28,7 @@ enum State {
     Destroyed = "Destroyed",
 };
 
-class NodeTCPNetworkPipe extends EventEmitter implements NetworkPipe {
+class NodeTCPNetworkPipe extends EventEmitter implements INetworkPipe {
     private sock?: net.Socket;
     private bufferPool: Buffer[];
     private bufferIdx: number;
@@ -197,7 +197,7 @@ class NodeTCPNetworkPipe extends EventEmitter implements NetworkPipe {
 
 // TODO: We only allow ipv4
 // we should create an opts
-export default function createTCPNetworkPipe(options: CreateTCPNetworkPipeOptions): Promise<NetworkPipe> {
+export default function createTCPNetworkPipe(options: ICreateTCPNetworkPipeOptions): Promise<INetworkPipe> {
     return new Promise((res, rej) => {
         // @ts-ignore
         const pipe = new NodeTCPNetworkPipe(options.host, options.port);
