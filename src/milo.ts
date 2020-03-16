@@ -19,7 +19,7 @@ export function _load(data: RequestData, callback: (response: RequestResponse) =
         // Platform.log("Got resolved", response);
         callback(response);
     }).catch(error => {
-        Platform.trace("Got error", error);
+        Platform.error("Got error", error);
     });
     return req.id;
 }
