@@ -298,7 +298,7 @@ export interface HTTP {
     onerror?: OnError;
 };
 
-export interface Platform {
+export interface IPlatform {
     // return number of octets
     utf8Length(str: string): number;
 

@@ -22,7 +22,6 @@ function set_mem_eof_return(p: NrdpPlatform, bio: N.Struct) {
 
 class NrdpSSLNetworkPipe implements NetworkPipe {
     private sslInstance: N.Struct;
-    private sslCtx: N.Struct;
     private inputBio: N.Struct;
     private outputBio: N.Struct;
     private pipe: NetworkPipe;
@@ -51,40 +50,7 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
         this.writeBufferLengths = [];
 
         this.pipe = options.pipe;
-        const meth = this.platform.ssl.TLS_client_method();
-        this.sslCtx = this.platform.ssl.SSL_CTX_new(meth);
-        this.sslCtx.free = "SSL_CTX_free";
-        this.platform.ssl.SSL_CTX_set_verify_callback(this.sslCtx, (preverifyOk: number) => {
-            return preverifyOk;
-        });
-        this.platform.trace("cipher", nrdp.cipherList);
-        this.platform.ssl.SSL_CTX_set_cipher_list(this.sslCtx, nrdp.cipherList);
-        let ret = this.platform.ssl.SSL_CTX_ctrl(this.sslCtx, this.platform.ssl.SSL_CTRL_MODE,
-                                                 this.platform.ssl.SSL_MODE_RELEASE_BUFFERS,
-                                                 // | this.platform.SSL_MODE_AUTO_RETRY,
-                                                 undefined);
-        const ctxOptions = (this.platform.ssl.SSL_OP_ALL |
-                            this.platform.ssl.SSL_OP_NO_TLSv1 |
-                            this.platform.ssl.SSL_OP_NO_SSLv2 |
-                            this.platform.ssl.SSL_OP_NO_SSLv3 |
-                            this.platform.ssl.SSL_OP_CIPHER_SERVER_PREFERENCE);
-
-        ret = this.platform.ssl.SSL_CTX_set_options(this.sslCtx, ctxOptions);
-        this.platform.trace("BALLS 2", ret);
-
-        const certStore = this.platform.ssl.SSL_CTX_get_cert_store(this.sslCtx);
-        this.platform.ssl.trustStore().forEach((x509: N.Struct) => {
-            this.platform.ssl.X509_STORE_add_cert(certStore, x509);
-        });
-        const param = this.platform.ssl.X509_VERIFY_PARAM_new();
-        this.platform.ssl.X509_VERIFY_PARAM_set_time(param, Math.round(nrdp.now() / 1000));
-        this.platform.ssl.SSL_CTX_set1_param(this.sslCtx, param);
-        this.platform.ssl.X509_VERIFY_PARAM_free(param);
-
-        this.sslInstance = this.platform.ssl.SSL_new(this.sslCtx);
-        this.platform.ssl.SSL_set_default_read_buffer_len(this.sslInstance, 16384);
-        this.platform.ssl.SSL_set_read_ahead(this.sslInstance, 1);
-        this.sslInstance.free = "SSL_free";
+        this.sslInstance = platform.ssl.createSSL();
 
         const memMethod = this.platform.ssl.BIO_s_mem();
         this.inputBio = this.platform.ssl.BIO_new(memMethod);

@@ -1,8 +1,7 @@
-import { IDataBuffer, IUnorderedMap } from "../types";
+import { IDataBuffer, IUnorderedMap, IPlatform } from "../types";
 import DataBuffer from "./DataBuffer";
 import UnorderedMap from "./UnorderedMap";
 import N = nrdsocket;
-import Platform from "./Platform";
 
 type BIO_ctrl_pending_type = (b: N.Struct) => number;
 type BIO_ctrl_type = (bp: N.Struct, cmd: number, larg: number, parg: N.DataPointer | undefined) => number;
@@ -56,8 +55,10 @@ type SSL_CTX_verify_callback_type = (preverifyOk: number) => number;
 
 export class NrdpSSL {
 
+    private platform: IPlatform;
     private trustStoreHash: string;
     private x509s: N.Struct[];
+    private sslCtx?: N.Struct;
     private ERRstringBuf: IDataBuffer;
 
     private verifyCallbackContexts: IUnorderedMap<N.Struct, SSL_CTX_verify_callback_type>;
@@ -254,7 +255,8 @@ export class NrdpSSL {
     public readonly SSL_VERIFY_CLIENT_ONCE = 0x04;
     public readonly SSL_VERIFY_POST_HANDSHAKE = 0x08;
 
-    constructor() {
+    constructor(platform: IPlatform) {
+        this.platform = platform;
         this.ERRstringBuf = new DataBuffer(128);
         this.trustStoreHash = "";
         this.x509s = [];
@@ -306,9 +308,9 @@ export class NrdpSSL {
         this.X509_free = N.bindFunction<X509_free_type>("void X509_free(X509 *a);");
 
         this.sslCtxVerifyCallback = N.setSSLCallback("SSL_verify_cb", (preverifyOk: number, x509Ctx: N.Struct) => {
-            Platform.log("ballsack", typeof x509Ctx,
-                         this.SSL_get_ex_data_X509_STORE_CTX_idx(),
-                         typeof this.SSL_get_ex_data_X509_STORE_CTX_idx());
+            this.platform.log("ballsack", typeof x509Ctx,
+                              this.SSL_get_ex_data_X509_STORE_CTX_idx(),
+                              typeof this.SSL_get_ex_data_X509_STORE_CTX_idx());
             const ssl: N.Struct = this.X509_STORE_CTX_get_ex_data(x509Ctx, this.SSL_get_ex_data_X509_STORE_CTX_idx());
             nrdp.assert(ssl);
             const sslInitialCtx: N.Struct = this.SSL_get_SSL_CTX(ssl);
@@ -328,22 +330,52 @@ export class NrdpSSL {
         this.SSL_CTX_set_verify(ctx, this.SSL_VERIFY_PEER, this.sslCtxVerifyCallback);
     }
 
-    trustStore(): N.Struct[] {
-        if (this.trustStoreHash !== nrdp.trustStoreHash) {
+    public createSSL() {
+        if (!this.sslCtx || this.trustStoreHash !== nrdp.trustStoreHash) {
+            const meth = this.TLS_client_method();
+            this.sslCtx = this.SSL_CTX_new(meth);
+            this.sslCtx.free = "SSL_CTX_free";
+            this.SSL_CTX_set_verify_callback(this.sslCtx, (preverifyOk: number) => {
+                return preverifyOk;
+            });
+            this.platform.trace("cipher", nrdp.cipherList);
+            this.SSL_CTX_set_cipher_list(this.sslCtx, nrdp.cipherList);
+            let retVal = this.SSL_CTX_ctrl(this.sslCtx, this.SSL_CTRL_MODE,
+                                           this.SSL_MODE_RELEASE_BUFFERS,
+                                           // | this.platform.SSL_MODE_AUTO_RETRY,
+                                           undefined);
+            const ctxOptions = (this.SSL_OP_ALL |
+                                this.SSL_OP_NO_TLSv1 |
+                                this.SSL_OP_NO_SSLv2 |
+                                this.SSL_OP_NO_SSLv3 |
+                                this.SSL_OP_CIPHER_SERVER_PREFERENCE);
+
+            retVal = this.SSL_CTX_set_options(this.sslCtx, ctxOptions);
+
+            const certStore = this.SSL_CTX_get_cert_store(this.sslCtx);
             const trustStoreData = nrdp.trustStore;
             const trustBIO = this.BIO_new_mem_buf(trustStoreData, trustStoreData.byteLength);
-            this.x509s = [];
             while (true) {
                 const x509 = this.PEM_read_bio_X509(trustBIO, undefined, undefined, undefined);
                 if (!x509)
                     break;
                 x509.free = "X509_free";
-                this.x509s.push(x509);
+                this.X509_STORE_add_cert(certStore, x509);
             }
             this.BIO_free(trustBIO);
             this.trustStoreHash = nrdp.trustStoreHash;
         }
-        return this.x509s;
+
+        const param = this.X509_VERIFY_PARAM_new();
+        this.X509_VERIFY_PARAM_set_time(param, Math.round(nrdp.now() / 1000));
+        this.SSL_CTX_set1_param(this.sslCtx, param);
+        this.X509_VERIFY_PARAM_free(param);
+
+        const ret = this.SSL_new(this.sslCtx);
+        this.SSL_set_default_read_buffer_len(ret, 16384);
+        this.SSL_set_read_ahead(ret, 1);
+        ret.free = "SSL_free";
+        return ret;
     }
 
     ERR_error_string(error: number): string {

@@ -5,7 +5,7 @@ import { toUint8Array } from "./utils";
 import {
     DnsResult,
     IpVersion,
-    Platform,
+    IPlatform,
     NetworkPipe,
     CreateTCPNetworkPipeOptions,
     CreateSSLNetworkPipeOptions,
@@ -45,7 +45,7 @@ function normalizeLength(buf: string | Uint8Array | ArrayBuffer): number {
     return buf.byteLength;
 }
 
-class NodePlatform implements Platform {
+class NodePlatform implements IPlatform {
     public location: string = "?";
     public defaultRequestTimeouts = {};
     public standardHeaders: HTTPRequestHeaders = {};

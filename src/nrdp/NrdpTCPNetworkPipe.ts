@@ -70,6 +70,12 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
         this.ondata = undefined;
         this.onclose = undefined;
         this.onerror = undefined;
+        if (this.selectMode) {
+            if (this.sock !== -1) {
+                N.clearFD(this.sock);
+            }
+            this.selectMode = 0;
+        }
     }
 
     write(buf: IDataBuffer | string, offset?: number, length?: number): void {
@@ -153,19 +159,22 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
     public onerror?: OnError;
 
     private _write(): void {
-        assert(this.writeBuffers.length);
-        assert(this.writeBuffers.length === this.writeBufferOffsets.length);
-        assert(this.writeBuffers.length === this.writeBufferLengths.length);
+        assert(this.writeBuffers.length, "Should have write buffers " + this.sock);
+        assert(this.writeBuffers.length === this.writeBufferOffsets.length,
+               `writeBuffers and writeBufferOffsets should have the same length ${this.writeBuffers.length} vs ${this.writeBufferOffsets}.length`);
+        assert(this.writeBuffers.length === this.writeBufferLengths.length,
+               `writeBuffers and writeBufferLengths have the same length ${this.writeBuffers.length} vs ${this.writeBufferLengths}.length`);
         while (this.writeBuffers.length) {
             assert(this.writeBufferOffsets[0] < this.writeBufferLengths[0], "Nothing to write");
             const written = N.write(this.sock, this.writeBuffers[0],
                                     this.writeBufferOffsets[0], this.writeBufferLengths[0]);
-            this.platform.trace("wrote", written, "of", this.writeBufferLengths[0]);
+            this.platform.trace("wrote", written, "of", this.writeBufferLengths[0], "for", this.sock);
             if (written > 0) {
                 if (!this.firstByteWritten)
                     this.firstByteWritten = this.platform.mono();
                 this.writeBufferOffsets[0] += written;
                 this.writeBufferLengths[0] -= written;
+                this.platform.log(`WROTE ${this.sock} ${this.writeBuffers.length}`);
                 if (!this.writeBufferLengths[0]) {
                     this.writeBuffers.shift();
                     this.writeBufferOffsets.shift();
@@ -181,7 +190,9 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
         const mode = this.writeBuffers.length ? N.READWRITE : N.READ;
         if (mode !== this.selectMode) {
             this.selectMode = mode;
+            this.platform.log(`SETTING ${mode} for ${this.writeBuffers.length}`);
             N.setFD(this.sock, mode, this._onSelect.bind(this));
+            assert(!(mode & N.WRITE) || this.writeBuffers.length, "Should have write buffers now");
         }
     }
     /* tslint:disable:no-shadowed-variable */
@@ -191,6 +202,7 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
         }
 
         if (mode & N.WRITE) {
+            this.platform.log(`WOKE FOR WRITE ${this.sock} ${this.writeBuffers.length}`);
             this._write();
         }
 

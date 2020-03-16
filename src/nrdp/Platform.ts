@@ -1,18 +1,17 @@
 import {
     CreateSSLNetworkPipeOptions, CreateTCPNetworkPipeOptions, IpConnectivityMode,
-    NetworkPipe, Platform, RequestTimeouts, SHA256Context, IDataBuffer
+    NetworkPipe, IPlatform, RequestTimeouts, SHA256Context, IDataBuffer
 } from "../types";
 import DataBuffer from "./DataBuffer";
-import UnorderedMap from "./UnorderedMap";
 import createNrdpSSLNetworkPipe from "./NrdpSSLNetworkPipe";
 import createNrdpTCPNetworkPipe from "./NrdpTCPNetworkPipe";
 import { NrdpSSL } from "./NrdpSSL";
 import N = nrdsocket;
 
-export class NrdpPlatform implements Platform {
+export class NrdpPlatform implements IPlatform {
     constructor() {
         this.scratch = new DataBuffer(16 * 1024);
-        this.ssl = new NrdpSSL();
+        this.ssl = new NrdpSSL(this);
     }
 
     sha1(input: string): Uint8Array { return nrdp.hash("sha1", input); }
