@@ -1,7 +1,7 @@
 import {
     ICreateSSLNetworkPipeOptions, INetworkPipe, IDataBuffer
 } from "../types";
-import { EventEmitter } from "../EventEmitter";
+import NetworkPipe from "../NetworkPipe";
 import { NrdpPlatform } from "./Platform";
 import DataBuffer from "./DataBuffer";
 import N = nrdsocket;
@@ -20,7 +20,7 @@ function set_mem_eof_return(p: NrdpPlatform, bio: N.Struct) {
     p.ssl.BIO_ctrl(bio, platform.ssl.BIO_C_SET_BUF_MEM_EOF_RETURN, -1, undefined);
 }
 
-class NrdpSSLNetworkPipe extends EventEmitter implements INetworkPipe {
+class NrdpSSLNetworkPipe extends NetworkPipe implements INetworkPipe {
     private sslInstance: N.Struct;
     private inputBio: N.Struct;
     private outputBio: N.Struct;
@@ -33,16 +33,9 @@ class NrdpSSLNetworkPipe extends EventEmitter implements INetworkPipe {
     private platform: NrdpPlatform;
     private buffer?: IDataBuffer;
 
-    public firstByteRead?: number;
-    public firstByteWritten?: number;
-    public idle: boolean;
-    public forbidReuse: boolean;
-
     constructor(options: ICreateSSLNetworkPipeOptions, p: NrdpPlatform, callback: (error?: Error) => void) {
         super();
         platform = p;
-        this.idle = false;
-        this.forbidReuse = false;
         this.platform = p;
         this.connectedCallback = callback;
         this.connected = false;
@@ -106,6 +99,8 @@ class NrdpSSLNetworkPipe extends EventEmitter implements INetworkPipe {
     get port() { return this.pipe.port; }
     get ssl() { return true; }
     get fd() { return this.pipe.fd; }
+    get dnsTime() { return this.pipe.dnsTime; }
+    get connectTime() { return this.pipe.connectTime; }
 
     removeEventHandlers() {
         this.removeAllListeners();

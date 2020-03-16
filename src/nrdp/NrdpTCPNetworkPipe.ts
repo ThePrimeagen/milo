@@ -1,7 +1,8 @@
 import {
     ICreateTCPNetworkPipeOptions, IDnsResult, INetworkPipe, IDataBuffer
 } from "../types";
-import { EventEmitter } from "../EventEmitter";
+import NetworkPipe from "../NetworkPipe";
+// #### should try to just use the default export here
 import { NrdpPlatform } from "./Platform";
 import DataBuffer from "./DataBuffer";
 import N = nrdsocket;
@@ -13,7 +14,7 @@ function assert(condition: any, msg?: string): asserts condition {
     }
 }
 
-export class NrdpTCPNetworkPipe extends EventEmitter implements INetworkPipe {
+export class NrdpTCPNetworkPipe extends NetworkPipe implements INetworkPipe {
     private sock: number;
     private writeBuffers: (Uint8Array | ArrayBuffer | IDataBuffer | string)[];
     private writeBufferOffsets: number[];
@@ -22,10 +23,6 @@ export class NrdpTCPNetworkPipe extends EventEmitter implements INetworkPipe {
     private platform: NrdpPlatform;
     private buffer?: ArrayBuffer;
 
-    public idle: boolean;
-    public forbidReuse: boolean;
-    public firstByteRead?: number;
-    public firstByteWritten?: number;
     public dnsTime: number;
     public dns: string;
     public dnsChannel?: string;
@@ -56,8 +53,6 @@ export class NrdpTCPNetworkPipe extends EventEmitter implements INetworkPipe {
         this.dns = dns;
         this.dnsChannel = dnsChannel;
         this.connectTime = connectTime;
-        this.idle = false;
-        this.forbidReuse = false;
         this.hostname = hostname;
         this.port = port;
     }

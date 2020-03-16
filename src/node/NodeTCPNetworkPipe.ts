@@ -8,7 +8,7 @@ import {
     createNonCopyBuffer,
 } from './utils';
 
-import { EventEmitter } from "../EventEmitter";
+import NetworkPipe from "../NetworkPipe";
 
 import {
     INetworkPipe,
@@ -25,7 +25,7 @@ enum State {
     Destroyed = "Destroyed",
 };
 
-class NodeTCPNetworkPipe extends EventEmitter implements INetworkPipe {
+class NodeTCPNetworkPipe extends NetworkPipe implements INetworkPipe {
     private sock?: net.Socket;
     private bufferPool: Buffer[];
     private bufferIdx: number;
@@ -34,10 +34,11 @@ class NodeTCPNetworkPipe extends EventEmitter implements INetworkPipe {
     public ipAddress: string = "the ip address!";
     public dns: string = "the dns type!";
     public dnsChannel?: string;
-    public idle: boolean;
-    public forbidReuse: boolean;
     public hostname: string;
     public port: number;
+
+    public dnsTime: number;
+    public connectTime: number;
 
     get ssl() { return false; }
 
@@ -46,10 +47,10 @@ class NodeTCPNetworkPipe extends EventEmitter implements INetworkPipe {
 
     public connection: Promise<NodeTCPNetworkPipe>;
 
-    constructor(host: string, port: number, onConnect?: () => void) {
+    constructor(host: string, port: number) {
         super();
-        this.idle = false;
-        this.forbidReuse = false;
+        this.dnsTime = -1;
+        this.connectTime = -1;
         this.bufferIdx = 0;
         this.state = State.Connecting;
         this.bufferPool = [];

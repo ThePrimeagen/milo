@@ -235,11 +235,13 @@ export interface ISHA256Context {
 };
 
 export interface INetworkPipeData {
-    idle: boolean; // these probably should just live in ConnectionPool
+    idle: boolean;
     forbidReuse: boolean;
+    firstByteWritten?: number;
+    firstByteRead?: number;
 };
 
-export interface INetworkPipe extends IEventEmitter {
+export interface INetworkPipe extends IEventEmitter, INetworkPipeData {
     write(buf: IDataBuffer | Uint8Array | ArrayBuffer | string, offset: number, length: number): void;
     write(buf: string): void;
 
@@ -256,10 +258,8 @@ export interface INetworkPipe extends IEventEmitter {
     readonly ssl: boolean;
     readonly closed: boolean;
 
-    readonly firstByteWritten?: number;
-    readonly firstByteRead?: number;
-    readonly dnsTime?: number;
-    readonly connectTime?: number;
+    readonly dnsTime: number;
+    readonly connectTime: number;
 
     readonly ipAddress: string;
     readonly dns: string; // dns type
