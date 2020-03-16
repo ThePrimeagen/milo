@@ -1,5 +1,5 @@
 {
-    "include": ["src", "typings", "examples"],
+    "include": ["src", "typings", "examples", "autobahn"],
     "compilerOptions": {
         "moduleResolution": "node",
         "sourceMap": true,

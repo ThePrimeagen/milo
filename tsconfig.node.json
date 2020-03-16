@@ -1,6 +1,6 @@
 {
     "extends": "./tsconfig.json",
-    "exclude": ["**/__tests__/**", "examples"],
+    "exclude": ["**/__tests__/**", "examples", "autobahn"],
     "compilerOptions": {
         "outDir": "./build/node",
         "lib": ["es6"],

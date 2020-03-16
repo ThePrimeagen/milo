@@ -1,9 +1,29 @@
-import { Platform, DataBuffer } from "../../Platform";
-import { INetworkPipe } from "../../types";
-import WSFramer, { constructFrameHeader } from "../framer";
-import { Opcodes } from "../types";
-import { IDataBuffer } from "../../types";
-import maskFn from "../mask";
+import { Platform } from "../../../Platform";
+import { DataBuffer } from "../../../DataBuffer";
+
+import {
+    constructFrameHeader,
+    isHeaderParsable,
+    generateMask,
+    parseHeader
+} from "../header";
+
+const mask = 0xAABBAABB;
+const maskBuf = new DataBuffer(4);
+maskBuf.setUInt32BE(0, mask);
+jest.doMock("../header", () => {
+    return {
+        constructFrameHeader,
+        isHeaderParsable,
+        parseHeader,
+        generateMask: () => maskBuf
+    }
+});
+
+import { INetworkPipe, IDataBuffer } from "../../../types";
+import WSFramer from "../index";
+import {Opcodes} from "../../types";
+import maskFn from "../../mask";
 
 // @ts-ignore
 const pipe = {
@@ -31,14 +51,8 @@ const pipe = {
   +---------------------------------------------------------------+
 */
 
-// FOR YOU JELMEGA
-const mask = 0xAABBAABB;
-const maskBuf = new Uint8Array(4);
-const maskView = new DataView(maskBuf.buffer);
-maskView.setUint32(0, mask, true);
-
-const countObj = { "count": 0 };
-const countObj2 = { "count": 2 };
+const countObj = {"count": 0};
+const countObj2 = {"count": 2};
 
 const countBuf = new DataBuffer(JSON.stringify(countObj));
 const countBuf2 = new DataBuffer(JSON.stringify(countObj2));
@@ -66,12 +80,13 @@ describe("WS", () => {
         const ptr = constructFrameHeader(
             buf, true, Opcodes.BinaryFrame, 1, maskBuf);
 
-        buf.setUInt8(6, 69 ^ maskBuf[0]);
+        buf.setUInt8(6, 255);
+        maskFn(buf, 6, 1, maskBuf);
 
         const ws = new WSFramer(pipe);
 
         ws.onFrame((contents: IDataBuffer) => {
-            expect(contents.getUInt8(0)).toEqual(69);
+            expect(contents.getUInt8(0)).toEqual(255);
             done();
         });
 
@@ -172,7 +187,6 @@ describe("WS", () => {
         // TODO: I think buf gets mutated with the mask... I think that is ok... maybe?
         const buf = new DataBuffer(1000);
 
-        // debugger;
         // Create the first frame, binary, and mask it.
         let bufPtr = constructFrameHeader(
             buf, true, Opcodes.BinaryFrame, countLen, maskBuf);

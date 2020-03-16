@@ -1,6 +1,7 @@
 import Url from "url-parse";
 import { HTTP1 } from "./HTTP1/HTTP1";
-import { Platform, DataBuffer } from "./Platform";
+import { Platform } from "./Platform";
+import { DataBuffer } from "./DataBuffer";
 import connectionPool, { ConnectionOptions, PendingConnection } from "./ConnectionPool";
 
 import {
@@ -440,9 +441,13 @@ export class Request {
         this.requestResponse.timeToFirstByteWritten = this.http.timeToFirstByteWritten;
         this.requestResponse.timeToFirstByteRead = this.http.timeToFirstByteRead;
 
-        if (!(this.transferEncoding & HTTPTransferEncoding.Chunked))
+        if (!(this.transferEncoding & HTTPTransferEncoding.Chunked)) {
             this.requestData.onChunk = undefined;
+        }
+
         if (!this.requestData.onData && !this.requestData.onChunk) {
+            console.log("EventData", event.contentLength);
+
             if (typeof event.contentLength === "undefined") {
                 this.responseDataArray = [];
             } else if (event.contentLength && event.contentLength > 0) {

@@ -247,7 +247,7 @@ export interface INetworkPipe extends IEventEmitter, INetworkPipeData {
 
     read(buf: ArrayBuffer | IDataBuffer, offset: number, length: number): number;
 
-    unread(buf: IDataBuffer | Uint8Array | ArrayBuffer): void;
+    unread(buf: IDataBuffer | ArrayBuffer, offset?: number, length?: number): void;
 
     close(): void;
 
