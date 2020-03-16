@@ -440,6 +440,7 @@ export class Request {
         this.requestResponse.requestSize = event.requestSize;
         this.requestResponse.timeToFirstByteWritten = this.http.timeToFirstByteWritten;
         this.requestResponse.timeToFirstByteRead = this.http.timeToFirstByteRead;
+        this.requestResponse.headersSize = event.headersSize;
 
         if (!(this.transferEncoding & HTTPTransferEncoding.Chunked)) {
             this.requestData.onChunk = undefined;
