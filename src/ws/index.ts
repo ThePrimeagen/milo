@@ -115,10 +115,6 @@ export default class WS {
         this.pipe = pipe;
 
         pipe.on("error", (err: Error): void => {
-            if (this.onerror) {
-                this.onerror(err);
-            }
-
             this.callCallback(error, this.onerror, err);
         });
 
@@ -146,7 +142,7 @@ export default class WS {
             }
         }
 
-        pipe.ondata = readData;
+        pipe.on("data", readData);
 
         this.frame.onFrame((buffer: IDataBuffer, state: WSState) => {
             switch (state.opcode) {
@@ -187,8 +183,6 @@ export default class WS {
         });
 
         this.callCallback(open, this.onopen);
-
-        // reads any data that is still present in the pipe.
         readData();
     }
 

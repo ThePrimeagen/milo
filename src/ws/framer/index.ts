@@ -144,9 +144,6 @@ export default class WSFramer {
     // TODO: Handle Continuation.
     processStreamData(packet: IDataBuffer, offset: number, endIdx: number) {
         // @ts-ignore
-        console.log("BUFFERS FROM MILO", packet.buffer);
-
-        // @ts-ignore
         if (this.closed) {
             throw new Error("Hey, closed for business bud.");
         }

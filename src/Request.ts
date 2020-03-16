@@ -446,7 +446,6 @@ export class Request {
         }
 
         if (!this.requestData.onData && !this.requestData.onChunk) {
-            console.log("EventData", event.contentLength);
 
             if (typeof event.contentLength === "undefined") {
                 this.responseDataArray = [];

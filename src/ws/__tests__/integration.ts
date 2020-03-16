@@ -20,7 +20,11 @@ function newServer(port: number, host = 'localhost'): Promise<_WebSocket.Server>
 async function onOpen(ws: WebSocket) {
     // TODO: THE OPTIMISZIZETNHNOIONS
     return new Promise(res => {
-        ws.onopen = res;
+        function on() {
+            ws.off("open", on);
+            res();
+        }
+        ws.on("open", on);
     });
 }
 

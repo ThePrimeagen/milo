@@ -33,7 +33,6 @@ export default function autobahn(WebSocketClass: WebSocket, {
 
         // @ts-ignore
         webSocket.onmessage = function(e: {data: any}) {
-            debugger;
             caseCount = JSON.parse(e.data);
             updateStatus("Will run " + caseCount + " cases ..");
         }
@@ -66,14 +65,12 @@ export default function autobahn(WebSocketClass: WebSocket, {
     function runNextCase() {
         const ws_uri = wsuri + "/runCase?case=" + currentCaseId + "&agent=" + agent;
         const webSocket = openWebSocket(ws_uri);
-            debugger;
 
         // @ts-ignore
         webSocket.binaryType = "arraybuffer";
 
         // @ts-ignore
         webSocket.onopen = function(e: {data: any}) {
-            debugger;
             updateStatus("Executing test case " + currentCaseId + "/" + caseCount);
         }
 
@@ -89,7 +86,6 @@ export default function autobahn(WebSocketClass: WebSocket, {
 
         // @ts-ignore
         webSocket.onmessage = function(e: {data: any}) {
-            debugger;
             Platform.log("onmessage", e);
             webSocket.send(e.data);
         }

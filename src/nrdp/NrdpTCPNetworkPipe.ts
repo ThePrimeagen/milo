@@ -218,7 +218,6 @@ export default function createTCPNetworkPipe(options: ICreateTCPNetworkPipeOptio
                 dnsStartTime = Platform.mono();
                 nrdp.dns.lookupHost(options.hostname, options.ipVersion,
                                     options.dnsTimeout, (dnsResult: IDnsResult) => {
-                                        // console.log("got dns result");
                                         if (!dnsResult.addresses.length) {
                                             reject(new Error("Failed to lookup host"));
                                             return;
