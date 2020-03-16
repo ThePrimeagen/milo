@@ -1,4 +1,5 @@
-import { Platform, DataBuffer } from "../Platform";
+import { Platform } from "../Platform";
+import { DataBuffer } from "../DataBuffer";
 import { assert, escapeData } from "../utils";
 import { IDataBuffer } from "../types";
 import { EventEmitter } from "../EventEmitter";

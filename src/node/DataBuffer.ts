@@ -375,7 +375,10 @@ string value for the second parameter, offset.`);
     getInt16BE(offset: number): number { throw new Error("Not Implemented"); }
     getInt16LE(offset: number): number { throw new Error("Not Implemented"); }
 
-    getUInt32BE(offset: number): number { throw new Error("Not Implemented"); }
+    getUInt32BE(offset: number): number {
+        return this.buffer.readUInt32BE(this.byteOffset + offset);
+    }
+
     getUInt32LE(offset: number): number { throw new Error("Not Implemented"); }
     getInt32BE(offset: number): number { throw new Error("Not Implemented"); }
     getInt32LE(offset: number): number { throw new Error("Not Implemented"); }
@@ -402,19 +405,20 @@ string value for the second parameter, offset.`);
     }
 
     setUInt16BE(offset: number, val: number): number {
-        this.buffer.writeUInt16BE(val, this.byteOffset + offset);
-        return offset;
+        return this.buffer.writeUInt16BE(val, this.byteOffset + offset);
     }
 
     setUInt16LE(offset: number, val: number): number {
-        this.buffer.writeUInt16LE(val, this.byteOffset + offset);
-        return offset;
+        return this.buffer.writeUInt16LE(val, this.byteOffset + offset);
     }
 
     setInt16BE(offset: number, val: number): number { throw new Error("Not Implemented"); }
     setInt16LE(offset: number, val: number): number { throw new Error("Not Implemented"); }
 
-    setUInt32BE(offset: number, val: number): number { throw new Error("Not Implemented"); }
+    setUInt32BE(offset: number, val: number): number {
+        return this.buffer.writeUInt32BE(val, this.byteOffset + offset);
+    }
+
     setUInt32LE(offset: number, val: number): number { throw new Error("Not Implemented"); }
     setInt32BE(offset: number, val: number): number { throw new Error("Not Implemented"); }
     setInt32LE(offset: number, val: number): number { throw new Error("Not Implemented"); }

@@ -6,6 +6,7 @@ import WS, { WSState } from "./ws";
 export {
     WS,
     WSState,
+    Platform,
 };
 
 export function _load(data: RequestData, callback: (response: RequestResponse) => void): number {

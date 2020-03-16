@@ -1,7 +1,8 @@
-import WSFramer, { WSState } from "./framer";
-import { Platform, DataBuffer } from "../Platform";
-import { Request, RequestData } from "../Request";
-import { headerValue } from "../utils";
+import { Platform } from "../Platform";
+import { DataBuffer } from "../DataBuffer";
+import WSFramer from './framer';
+import { WSState } from './framer/types';
+import { upgrade } from "./upgrade";
 
 import {
     INetworkPipe,
@@ -9,14 +10,17 @@ import {
 } from '../types';
 
 import {
+    UrlObject,
     Opcodes,
-    WSOptions
+    WSOptions,
+    CloseValues,
 } from './types';
 
 const defaultOptions = {
     maxFrameSize: 8192,
     poolInternals: false,
     noCopySentBuffers: false,
+    eventWrapper: true,
 } as WSOptions;
 
 const readView = new DataBuffer(16 * 1024);
@@ -24,6 +28,8 @@ const readView = new DataBuffer(16 * 1024);
 export {
     WSState
 };
+
+const EMPTY_BUFFER = new DataBuffer(0);
 
 type AnyCallback = ((...args: any[]) => void);
 export type CallbackNames = "message" | "close" | "open" | "error";
@@ -44,64 +50,6 @@ export enum ConnectionState {
     Connected = 2,
     Closed = 3,
 };
-
-export type UrlObject = {
-    host: string,
-    port: string | number
-}
-
-function _wsUpgrade(u: string | UrlObject): Promise<INetworkPipe> {
-    let url = u;
-    if (typeof url === "object") {
-        // TODO: Should I do this?
-        url = `ws://${url.host}:${url.port}`;
-    }
-
-    const data: RequestData = { url };
-
-    return new Promise((resolve, reject) => {
-        if (!data.headers) {
-            data.headers = {};
-        }
-
-        // TODO: Ask Jordan, WHY TYPESCRIPT WHY...
-        const arrayBufferKey = new DataBuffer(16);
-
-        arrayBufferKey.randomize();
-        const key = arrayBufferKey.toString("base64");
-
-
-        Platform.trace("key is", key, arrayBufferKey);
-        data.headers.Upgrade = "websocket";
-        data.headers.Connection = "Upgrade";
-        data.headers["Sec-WebSocket-Key"] = key;
-        data.headers["Sec-WebSocket-Version"] = "13";
-        data.forbidReuse = true;
-        data.freshConnect = true;
-        const req = new Request(data);
-        req.send().then(response => {
-            Platform.trace("Got response", response);
-            if (response.statusCode !== 101)
-                throw new Error("status code");
-
-            const upgradeKeyResponse = headerValue(response.headers, "sec-websocket-accept");
-            console.log("balls", JSON.stringify(response, null, 4));
-            if (!upgradeKeyResponse)
-                throw new Error("no Sec-WebSocket-Accept key");
-
-            const WS_KEY = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-            const shadkey = Platform.btoa(Platform.sha1(key + WS_KEY));
-            if (shadkey !== upgradeKeyResponse)
-                throw new Error(`Key mismatch expected: ${shadkey} got: ${upgradeKeyResponse}`);
-
-            Platform.trace("successfully upgraded");
-            resolve(req.networkPipe);
-        }).catch(error => {
-            Platform.trace("Got error", error);
-            reject(error);
-        });
-    });
-}
 
 
 export default class WS {
@@ -134,8 +82,28 @@ export default class WS {
         this.connect(url);
     }
 
+    private readyEvent(msg: string | IDataBuffer, state?: WSState) {
+        if (typeof msg === 'string') {
+            return msg;
+        }
+
+        let payload: string | IDataBuffer = msg;
+        if (state && state.opcode === Opcodes.TextFrame) {
+            payload = Platform.utf8toa(msg);
+        }
+
+        // TODO: What other dumb things do I need to add to this?
+        if (this.opts.eventWrapper) {
+            return {
+                data: payload
+            };
+        }
+
+        return payload;
+    }
+
     private async connect(url: string | UrlObject) {
-        const pipe = await _wsUpgrade(url)
+        const pipe = await upgrade(url)
         const {
             message,
             close,
@@ -147,10 +115,6 @@ export default class WS {
         this.pipe = pipe;
 
         pipe.on("error", (err: Error): void => {
-            if (this.onerror) {
-                this.onerror(err);
-            }
-
             this.callCallback(error, this.onerror, err);
         });
 
@@ -159,11 +123,13 @@ export default class WS {
                 return;
             }
             this.state = ConnectionState.Closed;
+
+            // TODO: Pipe closes with no error codes.
             this.callCallback(close, this.onclose, 1000, null);
         });
 
         // The pipe is ready to read.
-        pipe.on("data", () => {
+        const readData = () => {
             let bytesRead;
             while (1) {
 
@@ -174,18 +140,29 @@ export default class WS {
 
                 this.frame.processStreamData(readView, 0, bytesRead);
             }
-        });
+        }
+
+        pipe.on("data", readData);
 
         this.frame.onFrame((buffer: IDataBuffer, state: WSState) => {
             switch (state.opcode) {
             case Opcodes.CloseConnection:
                 this.state = ConnectionState.Closed;
-                const code = buffer.getUInt16BE(0);
-                const restOfData = buffer.subarray(2);
+                let code: number = CloseValues.NoStatusCode;
+                let restOfData: IDataBuffer = EMPTY_BUFFER;
+                
+                if (buffer.byteLength) {
+                    code = buffer.getUInt16BE(0);
+                }
+
+                if (buffer.byteLength > 2) {
+                    restOfData = buffer.subarray(2);
+                }
 
                 this.callCallback(close, this.onclose, code, restOfData);
 
                 // attempt to close the sockfd.
+                this.frame.send(buffer, 0, buffer.byteLength, Opcodes.CloseConnection);
                 this.pipe.close();
 
                 break;
@@ -196,10 +173,8 @@ export default class WS {
 
             case Opcodes.BinaryFrame:
             case Opcodes.TextFrame:
-                if (this.onmessage) {
-                    this.onmessage(buffer);
-                }
-                this.callCallback(message, this.onmessage, buffer);
+                const out = this.readyEvent(buffer, state);
+                this.callCallback(message, this.onmessage, out);
                 break;
 
             default:
@@ -208,6 +183,7 @@ export default class WS {
         });
 
         this.callCallback(open, this.onopen);
+        readData();
     }
 
     ping() {

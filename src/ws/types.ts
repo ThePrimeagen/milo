@@ -1,4 +1,3 @@
-// TODO: Continuation Frame
 export enum Opcodes {
     ContinuationFrame = 0x0, // denotes a continuation frame
     TextFrame = 0x1, // denotes a text frame
@@ -8,8 +7,21 @@ export enum Opcodes {
     Pong = 0xA, // denotes a pong
 };
 
+// TODO: Fill in values
+export enum CloseValues {
+    Shutdown = 1000,
+    GoAway = 1002,
+    NoStatusCode = 1005,
+};
+
 export type WSOptions = {
     maxFrameSize: number;
+    eventWrapper: boolean;
 };
+
+export type UrlObject = {
+    host: string,
+    port: string | number
+}
 
 

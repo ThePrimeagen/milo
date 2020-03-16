@@ -1,12 +1,10 @@
 import net from "net";
+
 import {
-    normalizeBuffer,
-    normalizeBufferLen,
-    normalizeUint8Array,
-    normalizeUint8ArrayLen,
-    toUint8Array,
-    createNonCopyBuffer,
-} from './utils';
+    Pool,
+    PoolItem,
+    PoolFreeFunction,
+} from '../pool';
 
 import NetworkPipe from "../NetworkPipe";
 
@@ -25,11 +23,40 @@ enum State {
     Destroyed = "Destroyed",
 };
 
+type ReadBufferItem = {
+    idx: number,
+    len: number,
+    offset: number,
+    readBuf: Buffer,
+};
+const EMPTY_BUFFER = Buffer.alloc(0);
+
+function createReadBufferPool(): Pool<ReadBufferItem> {
+    function factory(freeFn: PoolFreeFunction<ReadBufferItem>): PoolItem<ReadBufferItem> {
+        const item = {
+            idx: 0,
+            len: 0,
+            offset: 0,
+            readBuf: EMPTY_BUFFER,
+        };
+
+        const poolItem = {
+            item,
+            free: () => {
+                freeFn(poolItem);
+            }
+        };
+
+        return poolItem;
+    }
+    return new Pool<ReadBufferItem>(factory);
+}
+
 class NodeTCPNetworkPipe extends NetworkPipe implements INetworkPipe {
     private sock?: net.Socket;
-    private bufferPool: Buffer[];
-    private bufferIdx: number;
+    private bufferPool: PoolItem<ReadBufferItem>[];
     private state: State;
+    private pool: Pool<ReadBufferItem>;
 
     public ipAddress: string = "the ip address!";
     public dns: string = "the dns type!";
@@ -47,15 +74,15 @@ class NodeTCPNetworkPipe extends NetworkPipe implements INetworkPipe {
 
     public connection: Promise<NodeTCPNetworkPipe>;
 
-    constructor(host: string, port: number) {
+    constructor(host: string, port: number, onConnect?: () => void) {
         super();
         this.dnsTime = -1;
         this.connectTime = -1;
-        this.bufferIdx = 0;
         this.state = State.Connecting;
         this.bufferPool = [];
         this.hostname = host;
         this.port = port;
+        this.pool = createReadBufferPool();
 
         this.connection = new Promise((res, rej) => {
             // it defaults to tcp socket
@@ -68,7 +95,14 @@ class NodeTCPNetworkPipe extends NetworkPipe implements INetworkPipe {
                     callback: (nread: number, buf: Buffer): boolean => {
                         const copiedBuf = Buffer.allocUnsafe(nread);
                         buf.copy(copiedBuf, 0, 0, nread);
-                        this.bufferPool.push(copiedBuf);
+
+                        const item = this.pool.get();
+                        item.item.offset = 0;
+                        item.item.idx = 0;
+                        item.item.len = nread;
+                        item.item.readBuf = copiedBuf;
+
+                        this.bufferPool.push(item);
 
                         this.emit("data");
 
@@ -94,7 +128,6 @@ class NodeTCPNetworkPipe extends NetworkPipe implements INetworkPipe {
         });
     }
 
-    // @ts-ignore
     get fd() {
         return -1; // called for logging reasons throw new Error("Not supported in Node.");
     }
@@ -103,9 +136,8 @@ class NodeTCPNetworkPipe extends NetworkPipe implements INetworkPipe {
         this.removeAllListeners();
     }
 
-    // @ts-ignore
-    write(buf: Uint8Array | ArrayBuffer | string, offset?: number, length?: number): void {
-        if (this.state !== State.Alive) {
+    write(buf: IDataBuffer | ArrayBuffer | string, offset: number = 0, length?: number): void {
+        if (this.state != State.Alive) {
             throw new Error(`Unable to write sockets in current state, ${this.state}`);
         }
 
@@ -118,7 +150,21 @@ class NodeTCPNetworkPipe extends NetworkPipe implements INetworkPipe {
         if (!this.sock) {
             throw new Error("Must have sock");
         }
-        this.sock.write(normalizeUint8ArrayLen(buf, offset || 0, length));
+
+        // TODO: This is slow and stupid, stop it
+        let write: string | Uint8Array;
+        if (buf instanceof ArrayBuffer) {
+            write = new Uint8Array(buf).subarray(offset, length);
+        }
+        else if (typeof buf === 'string') {
+            write = buf;
+        }
+        else {
+            // TODO: This is the slow case, it is annoying.
+            write = (buf.slice(offset, length) as DataBuffer).buffer;
+        }
+
+        this.sock.write(write);
     }
 
     read(buf: IDataBuffer | ArrayBuffer, offset: number, length: number): number {
@@ -135,6 +181,7 @@ class NodeTCPNetworkPipe extends NetworkPipe implements INetworkPipe {
         let writeAmount = 0;
         let currentIdx = 0;
         let writeBuf: Buffer;
+
         if (buf instanceof ArrayBuffer) {
             writeBuf = Buffer.from(buf);
         }
@@ -144,21 +191,26 @@ class NodeTCPNetworkPipe extends NetworkPipe implements INetworkPipe {
         }
 
         do {
-            const b = this.bufferPool[0];
-            const bufRemaining = b.byteLength - this.bufferIdx;
+            const pItem = this.bufferPool[0];
+            const readItem = pItem.item;
+            const rIdx = readItem.idx + readItem.offset;
+            const bufRemaining = readItem.len - readItem.idx;
             const localReadAmount = Math.min(length - writeAmount, bufRemaining);
 
             writeAmount += localReadAmount;
 
-            b.copy(writeBuf, currentIdx, this.bufferIdx, this.bufferIdx + localReadAmount);
+            readItem.readBuf.copy(
+                writeBuf, currentIdx, rIdx, rIdx + localReadAmount);
 
             currentIdx += localReadAmount;
-            this.bufferIdx += localReadAmount;
+            readItem.idx += localReadAmount;
 
             // TODO: remove first........... . . . . .  . . . .
             if (localReadAmount === bufRemaining) {
-                this.bufferPool.shift();
-                this.bufferIdx = 0;
+                const removedItem = this.bufferPool.shift();
+                if (removedItem) {
+                    removedItem.free();
+                }
             }
 
         } while (writeAmount < length && this.bufferPool.length);
@@ -166,14 +218,30 @@ class NodeTCPNetworkPipe extends NetworkPipe implements INetworkPipe {
         return writeAmount;
     }
 
-    unread(buf: ArrayBuffer | Uint8Array | ArrayBuffer): void {
-        throw new Error("Must imprement this");
-        // assert(false, "Must implement this");
+    unread(buf: IDataBuffer | ArrayBuffer, offset: number = 0, length?: number) {
+        if (length === undefined) {
+            length = buf.byteLength - offset;
+        }
+
+        const item = this.pool.get();
+        item.item.offset = offset;
+        item.item.idx = 0;
+        item.item.len = length;
+
+        let readBuf: Buffer;
+        if (buf instanceof ArrayBuffer) {
+            readBuf = Buffer.from(buf);
+        }
+        else {
+            readBuf = (buf as DataBuffer).buffer;
+            item.item.offset += buf.byteOffset;
+        }
+
+        item.item.readBuf = readBuf;
+        this.bufferPool.push(item);
     }
 
     close(): void {
-        // successfully destroy socket.
-        // assert(this.sock !== undefined, "Must have sock");
         if (!this.sock) {
             throw new Error("Must have sock");
         }

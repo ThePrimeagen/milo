@@ -12,6 +12,7 @@ export class HTTP1 extends EventEmitter implements IHTTP {
     private connection?: string;
     private headersFinished: boolean;
     private chunkyParser?: ChunkyParser;
+    private contentLength?: number;
     private requestSize?: number;
 
     public httpVersion: string;
@@ -27,13 +28,16 @@ export class HTTP1 extends EventEmitter implements IHTTP {
         this.upgrade = false;
     }
 
+    private getPathName(hostName: string, query: string): string {
+        return `${hostName}${query}`;
+    }
     send(networkPipe: INetworkPipe, request: IHTTPRequest): boolean {
         this.networkPipe = networkPipe;
         this.request = request;
         let str =
-            `${request.method} ${request.url.pathname || "/"} HTTP/1.1\r
-Host: ${request.url.hostname}\r
-`;
+            `${request.method} ${this.getPathName(request.url.pathname || "/", request.url.query as unknown as string)} HTTP/1.1\r
+Host: ${request.url.host}\r\n`;
+
         const standardHeaders = Platform.standardHeaders;
         for (const key in standardHeaders) {
             if (Platform.standardHeaders.hasOwnProperty(key) && !(key in request.requestHeaders)) {
@@ -64,6 +68,7 @@ Host: ${request.url.hostname}\r
         const scratch = Platform.scratch;
         this.networkPipe.on("data", () => {
             while (true) {
+
                 assert(this.networkPipe, "Must have network pipe");
 
                 const read = this.networkPipe.read(scratch, 0, scratch.byteLength);
@@ -81,16 +86,29 @@ Host: ${request.url.hostname}\r
                     if (rnrn !== -1) {
                         this._parseHeaders(rnrn);
                         this.headersFinished = true;
-                        const remaining = this.headerBuffer.byteLength - (rnrn + 4);
-                        if (remaining) {
-                            this._processResponseData(this.headerBuffer,
-                                                      this.headerBuffer.byteLength - remaining,
-                                                      remaining);
+
+                        let remaining = this.headerBuffer.byteLength - (rnrn + 4);
+
+                        const hOffset = this.headerBuffer.byteLength - remaining;
+                        if (!this.chunkyParser && !this.contentLength) {
+                            this.networkPipe.unread(this.headerBuffer, hOffset, remaining);
+                            remaining = 0;
                         }
+
+                        if (remaining) {
+                            this._processResponseData(this.headerBuffer, hOffset, remaining);
+                        }
+
                         this.headerBuffer = undefined;
                         if (this.connection === "Upgrade") {
                             this.upgrade = true;
                             this.emit("finished");
+
+                            // If you don't break, you will
+                            // continue to process what's
+                            // left in the buffer which is
+                            // wrong on upgrade.
+                            break;
                         }
                     }
                 } else {
@@ -236,6 +254,7 @@ Host: ${request.url.hostname}\r
                 this.emit("error", new Error("Bad content length " + contentLength));
                 return false;
             }
+            this.contentLength = len;
             event.contentLength = len;
         }
 

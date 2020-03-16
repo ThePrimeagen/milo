@@ -18,7 +18,6 @@ export default function encode(buffer: string | Buffer, offset: number = 0, leng
     if (typeof length === "undefined")
         length = buf.byteLength;
 
-    //    console.log("for ....", buf.byteLength, buf);
     for (let i = offset; i < length; ++i) {
         const staticData: [number, number] = staticList[buf[i]];
 
@@ -27,7 +26,6 @@ export default function encode(buffer: string | Buffer, offset: number = 0, leng
 
         bitLen += bitsRemaining;
 
-        // console.log("do { ", staticData);
         do {
             const idx = Math.floor(ptr / 8);
             const bitIdx = ptr % 8;
@@ -40,7 +38,6 @@ export default function encode(buffer: string | Buffer, offset: number = 0, leng
             bitsRemaining -= bitsToEncode;
             ptr += bitsToEncode;
 
-            // console.log("Bits Remaining", bitsRemaining);
         } while (bitsRemaining > 0);
     }
 

@@ -1,16 +1,15 @@
 import maskFn from "../mask";
 import { IDataBuffer } from "../../types";
-import DataBuffer from "../../#{target}/DataBuffer";
+import { DataBuffer } from "../../DataBuffer";
 
 // FOR YOU JELMEGA
 // LittleEndian is going to be BBAABBAA
 // therefore, we write it in BigE.
 // 171IQ
 const mask = 0xAA_BB_AA_BB;
-const maskBuf = new Uint8Array(4);
-const maskView = new DataView(maskBuf.buffer);
+const maskBuf = new DataBuffer(4);
 
-maskView.setUint32(0, mask);
+maskBuf.setUInt32BE(0, mask);
 
 // 0b1011
 // 0b0100
