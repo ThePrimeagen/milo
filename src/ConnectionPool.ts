@@ -122,7 +122,6 @@ export class ConnectionPool {
     }
 
     abort(id: number): void {
-        const values = this._hosts.values() as HostData[];
         this._hosts.forEach((key, value) => {
             if (value.pending) {
                 for (let i = 0; i < value.pending.length; ++i) {
