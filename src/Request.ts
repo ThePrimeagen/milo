@@ -145,12 +145,12 @@ export class Request {
         this.requestResponse = new RequestResponse(this.id);
 
         this.http = new HTTP1();
-        this.http.onheaders = this._onHeaders.bind(this);
-        this.http.ondata = this._onData.bind(this);
-        this.http.onerror = this._onError.bind(this);
-        this.http.onfinished = () => {
+        this.http.on("headers", this._onHeaders.bind(this));
+        this.http.on("data", this._onData.bind(this));
+        this.http.on("error", this._onError.bind(this));
+        this.http.on("finished", () => {
             this._transition(RequestState.Finished);
-        };
+        });
 
         if (typeof data === "string") {
             data = { url: data };

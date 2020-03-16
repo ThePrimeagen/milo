@@ -1,15 +1,24 @@
 import { Platform, DataBuffer } from "../Platform";
 import { assert, escapeData } from "../utils";
-import { OnError, IDataBuffer } from "../types";
+import { IDataBuffer } from "../types";
+import { EventEmitter } from "../EventEmitter";
 
-export class ChunkyParser {
-    private buffers: IDataBuffer[] = [];
-    private offset: number = 0;
-    private dataNeeded: number = -1;
-    private available: number = 0;
+export class ChunkyParser extends EventEmitter {
+    private buffers: IDataBuffer[];
+    private offset: number;
+    private dataNeeded: number;
+    private available: number;
+
+    constructor() {
+        super();
+        this.buffers = [];
+        this.offset = 0;
+        this.dataNeeded = -1;
+        this.available = 0;
+    }
 
     feed(data: IDataBuffer, offset: number, length: number): void {
-        Platform.assert(this.onchunk, "Gotta have an onchunk");
+        Platform.assert(this.hasListener("chunk"), "Gotta have an onchunk");
         this.buffers.push(data.slice(offset, length));
         this.available += length;
         this._process();
@@ -42,8 +51,7 @@ export class ChunkyParser {
                                 if (buf.get(i) === 10) {
                                     const len = parseInt(str, 16);
                                     if (isNaN(len)) {
-                                        if (this.onerror)
-                                            this.onerror(new Error("Failed to chunky parse [" + str + "] " + len));
+                                        this.emit("error", new Error("Failed to chunky parse [" + str + "] " + len));
                                         return;
                                     }
                                     this.dataNeeded = len;
@@ -67,24 +75,18 @@ export class ChunkyParser {
                 const buffer = this.available ? this._extractChunk(this.available) : undefined;
                 Platform.assert(!this.available, "Nothing should be left");
                 Platform.assert(!this.buffers.length, "No buffers here");
-                if (this.ondone)
-                    this.ondone(buffer);
+                this.emit("done", buffer);
             } else if (this.dataNeeded + 2 <= this.available) {
                 const chunk = this._extractChunk(this.dataNeeded);
                 // Platform.trace("extracted a chunk", Platform.utf8toa(chunk));
                 this._consume(2);
                 this.dataNeeded = -1;
-                if (this.onchunk)
-                    this.onchunk(chunk);
+                this.emit("chunk", chunk);
             } else {
                 break;
             }
         }
     }
-
-    ondone?: (buffer: IDataBuffer | undefined) => void;
-    onchunk?: (chunk: IDataBuffer) => void;
-    onerror?: OnError;
 
     private _consume(bytes: number): void {
         Platform.assert(bytes <= this.available, "Not enough bytes to consume");

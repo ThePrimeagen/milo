@@ -1,6 +1,5 @@
 import {
-    ICreateSSLNetworkPipeOptions, INetworkPipe,
-    OnClose, OnData, OnError, IDataBuffer
+    ICreateSSLNetworkPipeOptions, INetworkPipe, IDataBuffer
 } from "../types";
 import { EventEmitter } from "../EventEmitter";
 import { NrdpPlatform } from "./Platform";
@@ -61,7 +60,7 @@ class NrdpSSLNetworkPipe extends EventEmitter implements INetworkPipe {
         this.outputBio = this.platform.ssl.BIO_new(memMethod);
 
         set_mem_eof_return(this.platform, this.outputBio);
-        this.pipe.ondata = () => {
+        this.pipe.on("data", () => {
             const read = this.pipe.read(this.platform.scratch, 0, this.platform.scratch.byteLength);
             if (read === -1) {
                 assert(N.errno === N.EWOULDBLOCK || N.errno === N.EAGAIN || this.pipe.closed,
@@ -82,19 +81,18 @@ class NrdpSSLNetworkPipe extends EventEmitter implements INetworkPipe {
             }
             if (this.connected) {
                 const pending = this.platform.ssl.BIO_ctrl_pending(this.inputBio);
-                if (pending && this.ondata) {
-                    this.ondata();
+                if (pending) {
+                    this.emit("data");
                 }
             }
-        };
-        this.pipe.onclose = () => {
-            if (this.onclose)
-                this.onclose();
-        };
-        this.pipe.onerror = (error: Error) => {
+        });
+        this.pipe.once("close", () => {
+            this.emit("close");
+        });
+        this.pipe.on("error", (error: Error) => {
             this.platform.error("got error", error);
             this._error(error);
-        };
+        });
 
         this.platform.ssl.SSL_set_bio(this.sslInstance, this.inputBio, this.outputBio);
         this._connect();
@@ -110,9 +108,7 @@ class NrdpSSLNetworkPipe extends EventEmitter implements INetworkPipe {
     get fd() { return this.pipe.fd; }
 
     removeEventHandlers() {
-        this.ondata = undefined;
-        this.onclose = undefined;
-        this.onerror = undefined;
+        this.removeAllListeners();
     }
 
     write(buf: IDataBuffer | string, offset?: number, length?: number): void {
@@ -224,8 +220,7 @@ class NrdpSSLNetworkPipe extends EventEmitter implements INetworkPipe {
         } else {
             this.buffer = new DataBuffer(buf);
         }
-        if (this.ondata)
-            this.ondata();
+        this.emit("data");
     }
 
     close(): void {
@@ -276,15 +271,9 @@ class NrdpSSLNetworkPipe extends EventEmitter implements INetworkPipe {
 
     private _error(error: Error): void {
         // ### have to shut down all sorts of ssl stuff
-        if (this.onerror)
-            this.onerror(error);
+        this.emit("error", error);
     }
-
-    ondata?: OnData;
-    onclose?: OnClose;
-    onerror?: OnError;
 };
-
 
 export default function createSSLNetworkPipe(options: ICreateSSLNetworkPipeOptions,
                                              p: NrdpPlatform): Promise<INetworkPipe> {

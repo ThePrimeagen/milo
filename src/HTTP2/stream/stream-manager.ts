@@ -50,13 +50,13 @@ export default class StreamManager {
 
         this.stateChanges = [];
 
-        pipe.ondata = () => {
+        pipe.on("data", () => {
             this.read();
-        }
+        });
 
-        pipe.onclose = () => {
+        pipe.once("close", () => {
             this._close();
-        };
+        });
 
         // A preamble must be sent as the first thing. (which is the string
         // below).

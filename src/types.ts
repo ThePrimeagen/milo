@@ -226,16 +226,17 @@ export interface ICreateSSLNetworkPipeOptions {
     pipe: INetworkPipe;
 };
 
-export type OnData = () => void;
-export type OnClose = () => void;
-export type OnError = (error: Error) => void;
-
 export interface ISHA256Context {
     add(buf: Uint8Array | ArrayBuffer | IDataBuffer | string): void;
 
     final(): ArrayBuffer;
     final(md: ArrayBuffer | Uint8Array | IDataBuffer, offset?: number): number;
     reset(): void;
+};
+
+export interface INetworkPipeData {
+    idle: boolean; // these probably should just live in ConnectionPool
+    forbidReuse: boolean;
 };
 
 export interface INetworkPipe extends IEventEmitter {
@@ -248,8 +249,6 @@ export interface INetworkPipe extends IEventEmitter {
 
     close(): void;
 
-    idle: boolean; // these probably should just live in ConnectionPool
-    forbidReuse: boolean;
     hostname: string;
     port: number;
     fd: number; // socket
@@ -265,10 +264,6 @@ export interface INetworkPipe extends IEventEmitter {
     readonly ipAddress: string;
     readonly dns: string; // dns type
     readonly dnsChannel?: string;
-
-    ondata?: OnData;
-    onclose?: OnClose;
-    onerror?: OnError;
 
     removeEventHandlers(): void;
 };
@@ -300,19 +295,14 @@ export interface IHTTPRequest {
     body?: string | Uint8Array | ArrayBuffer;
 };
 
-export interface IHTTP {
+export interface IHTTP extends IEventEmitter {
     httpVersion: string;
     send(pipe: INetworkPipe, request: IHTTPRequest): boolean;
 
     timeToFirstByteRead?: number;
     timeToFirstByteWritten?: number;
 
-    onheaders?: (headers: IHTTPHeadersEvent) => void;
-    ondata?: (data: IDataBuffer, offset: number, length: number) => void;
-
     upgrade: boolean;
-    onfinished?: () => void;
-    onerror?: OnError;
 };
 
 export interface IPlatform {

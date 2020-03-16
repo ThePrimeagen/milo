@@ -1,6 +1,5 @@
 import {
-    ICreateTCPNetworkPipeOptions, IDnsResult, INetworkPipe,
-    OnClose, OnData, OnError, IDataBuffer
+    ICreateTCPNetworkPipeOptions, IDnsResult, INetworkPipe, IDataBuffer
 } from "../types";
 import { EventEmitter } from "../EventEmitter";
 import { NrdpPlatform } from "./Platform";
@@ -69,9 +68,7 @@ export class NrdpTCPNetworkPipe extends EventEmitter implements INetworkPipe {
     get ssl() { return false; }
 
     removeEventHandlers() {
-        this.ondata = undefined;
-        this.onclose = undefined;
-        this.onerror = undefined;
+        this.removeAllListeners();
         if (this.selectMode) {
             if (this.sock !== -1) {
                 N.clearFD(this.sock);
@@ -123,8 +120,7 @@ export class NrdpTCPNetworkPipe extends EventEmitter implements INetworkPipe {
         case 0:
             N.close(this.sock);
             this.sock = -1;
-            if (this.onclose)
-                this.onclose();
+            this.emit("close");
             break;
         case -1:
             if (N.errno !== N.EWOULDBLOCK)
@@ -144,21 +140,15 @@ export class NrdpTCPNetworkPipe extends EventEmitter implements INetworkPipe {
         } else {
             this.buffer = buf;
         }
-        if (this.ondata)
-            this.ondata();
+        this.emit("data");
     }
 
     close(): void {
         assert(this.sock !== -1);
         N.close(this.sock); // ### error checking?
         this.sock = -1;
-        if (this.onclose)
-            this.onclose();
+        this.emit("close");
     }
-
-    public ondata?: OnData;
-    public onclose?: OnClose;
-    public onerror?: OnError;
 
     private _write(): void {
         assert(this.writeBuffers.length, "Should have write buffers " + this.sock);
@@ -199,22 +189,19 @@ export class NrdpTCPNetworkPipe extends EventEmitter implements INetworkPipe {
     }
     /* tslint:disable:no-shadowed-variable */
     private _onSelect(sock: number, mode: number): void {
-        if (mode & N.READ && this.ondata) {
-            this.ondata();
+        if (mode & N.READ) {
+            this.emit("data");
         }
 
         if (mode & N.WRITE) {
-            this.platform.log(`WOKE FOR WRITE ${this.sock} ${this.writeBuffers.length}`);
             this._write();
         }
-
     }
 
     private _error(error: Error): void {
         N.close(this.sock);
         this.sock = -1;
-        if (this.onerror)
-            this.onerror(error);
+        this.emit("error", error);
     }
 };
 

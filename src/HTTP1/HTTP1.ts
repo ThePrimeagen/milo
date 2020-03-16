@@ -1,12 +1,13 @@
 import {
     IHTTP, HTTPMethod, HTTPTransferEncoding, IHTTPRequest, INetworkPipe,
-    IHTTPHeadersEvent, OnError, ErrorCode, IDataBuffer
+    IHTTPHeadersEvent, ErrorCode, IDataBuffer
 } from "../types";
 import { Platform } from "../Platform";
+import { EventEmitter } from "../EventEmitter";
 import { ChunkyParser } from "./ChunkyParser";
 import { assert } from "../utils";
 
-export class HTTP1 implements IHTTP {
+export class HTTP1 extends EventEmitter implements IHTTP {
     private headerBuffer?: IDataBuffer;
     private connection?: string;
     private headersFinished: boolean;
@@ -20,6 +21,7 @@ export class HTTP1 implements IHTTP {
     public timeToFirstByteWritten?: number;
     public upgrade: boolean;
     constructor() {
+        super();
         this.headersFinished = false;
         this.httpVersion = "";
         this.upgrade = false;
@@ -60,7 +62,7 @@ Host: ${request.url.hostname}\r
 
         // BRB, Upping my bits above 3000...
         const scratch = Platform.scratch;
-        this.networkPipe.ondata = () => {
+        this.networkPipe.on("data", () => {
             while (true) {
                 assert(this.networkPipe, "Must have network pipe");
 
@@ -88,17 +90,17 @@ Host: ${request.url.hostname}\r
                         this.headerBuffer = undefined;
                         if (this.connection === "Upgrade") {
                             this.upgrade = true;
-                            this._finish();
+                            this.emit("finished");
                         }
                     }
                 } else {
                     this._processResponseData(scratch, 0, read);
                 }
             }
-        }
-        this.networkPipe.onclose = () => {
-            this._finish(); // ### check if we're okay to be closed?
-        };
+        });
+        this.networkPipe.once("close", () => {
+            this.emit("finished");
+        });
         return true;
     }
 
@@ -120,7 +122,7 @@ Host: ${request.url.hostname}\r
         const statusLine = split[0];
         // Platform.trace("got status", statusLine);
         if (statusLine.lastIndexOf("HTTP/1.", 0) !== 0) {
-            this._error(new Error("Bad status line " + statusLine));
+            this.emit("error", new Error("Bad status line " + statusLine));
             return false;
         }
         if (statusLine[7] === "1") {
@@ -128,7 +130,7 @@ Host: ${request.url.hostname}\r
         } else if (statusLine[7] === "0") {
             this.httpVersion = "1.0";
         } else {
-            this._error(new Error("Bad status line " + statusLine));
+            this.emit("error", new Error("Bad status line " + statusLine));
             return false;
         }
 
@@ -147,7 +149,7 @@ Host: ${request.url.hostname}\r
         // Platform.trace("got status", space, statusLine.substring(9, space))
         event.statusCode = parseInt(statusLine.substring(9, space), 10);
         if (isNaN(event.statusCode) || event.statusCode < 0) {
-            this._error(new Error("Bad status line " + statusLine));
+            this.emit("error", new Error("Bad status line " + statusLine));
             return false;
         }
         // this.requestResponse.headers = new ResponseHeaders;
@@ -162,7 +164,7 @@ Host: ${request.url.hostname}\r
             }
             let idx = split[i].indexOf(":");
             if (idx <= 0) {
-                this._error(new Error("Bad header " + split[i]));
+                this.emit("error", new Error("Bad header " + split[i]));
                 return false;
             }
             const key = split[i].substr(0, idx);
@@ -193,20 +195,22 @@ Host: ${request.url.hostname}\r
                 switch (encoding.trim()) {
                 case "chunked":
                     this.chunkyParser = new ChunkyParser();
-                    this.chunkyParser.onchunk = (chunk: IDataBuffer) => {
-                        Platform.trace("got a chunk right here", chunk.byteLength, typeof this.ondata);
-                        if (this.ondata)
-                            this.ondata(chunk, 0, chunk.byteLength);
-                    };
-                    this.chunkyParser.onerror = this._error.bind(this);
+                    this.chunkyParser.on("chunk", (chunk: IDataBuffer) => {
+                        Platform.trace("got a chunk right here", chunk.byteLength);
+                        this.emit("data", chunk, 0, chunk.byteLength);
+                    });
+                    this.chunkyParser.on("error", (err: Error) => {
+                        this.emit("error", err);
+                    });
 
-                    this.chunkyParser.ondone = (buffer: IDataBuffer | undefined) => {
+                    this.chunkyParser.on("done", (buffer: IDataBuffer | undefined) => {
                         if (buffer) {
                             assert(this.networkPipe, "Must have networkPipe");
                             this.networkPipe.unread(buffer);
                         }
-                        this._finish();
-                    };
+                        this.chunkyParser = undefined;
+                        this.emit("finished");
+                    });
 
                     event.transferEncoding |= HTTPTransferEncoding.Chunked;
                     break;
@@ -229,15 +233,13 @@ Host: ${request.url.hostname}\r
         if (contentLength) {
             const len = parseInt(contentLength, 10);
             if (len < 0 || isNaN(len)) {
-                this._error(new Error("Bad content length " + contentLength));
+                this.emit("error", new Error("Bad content length " + contentLength));
                 return false;
             }
             event.contentLength = len;
         }
 
-        if (this.onheaders) {
-            this.onheaders(event);
-        }
+        this.emit("headers", event);
         return true;
     }
 
@@ -246,24 +248,9 @@ Host: ${request.url.hostname}\r
         Platform.trace("processing data", typeof this.chunkyParser, length);
         if (this.chunkyParser) {
             this.chunkyParser.feed(data, offset, length);
-        } else if (this.ondata) {
-            this.ondata(data, offset, length);
+        } else {
+            this.emit("data", data, offset, length);
         }
     }
-
-    private _finish() {
-        if (this.onfinished)
-            this.onfinished();
-    }
-
-    private _error(error: Error) {
-        if (this.onerror)
-            this.onerror(error);
-    }
-
-    onheaders?: (headers: IHTTPHeadersEvent) => void;
-    ondata?: (data: IDataBuffer, offset: number, length: number) => void;
-    onfinished?: () => void;
-    onerror?: OnError;
 };
 

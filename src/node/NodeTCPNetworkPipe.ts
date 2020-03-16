@@ -12,9 +12,6 @@ import { EventEmitter } from "../EventEmitter";
 
 import {
     INetworkPipe,
-    OnData,
-    OnClose,
-    OnError,
     IDnsResult,
     IDataBuffer,
     ICreateTCPNetworkPipeOptions
@@ -37,9 +34,6 @@ class NodeTCPNetworkPipe extends EventEmitter implements INetworkPipe {
     public ipAddress: string = "the ip address!";
     public dns: string = "the dns type!";
     public dnsChannel?: string;
-    public ondata?: OnData;
-    public onclose?: OnClose;
-    public onerror?: OnError;
     public idle: boolean;
     public forbidReuse: boolean;
     public hostname: string;
@@ -75,9 +69,7 @@ class NodeTCPNetworkPipe extends EventEmitter implements INetworkPipe {
                         buf.copy(copiedBuf, 0, 0, nread);
                         this.bufferPool.push(copiedBuf);
 
-                        if (this.ondata) {
-                            this.ondata();
-                        }
+                        this.emit("data");
 
                         return true;
                     }
@@ -90,17 +82,13 @@ class NodeTCPNetworkPipe extends EventEmitter implements INetworkPipe {
             this.sock.on('end', () => {
                 console.log("tcp sock end");
                 this.state = State.Destroyed;
-                if (this.onclose) {
-                    this.onclose();
-                }
+                this.emit("close");
             });
 
             this.sock.on('error', e => {
                 this.state = State.Destroyed;
                 rej(e);
-                if (this.onerror) {
-                    this.onerror(e);
-                }
+                this.emit("error", e);
             });
         });
     }
@@ -111,9 +99,7 @@ class NodeTCPNetworkPipe extends EventEmitter implements INetworkPipe {
     }
 
     removeEventHandlers() {
-        this.ondata = undefined;
-        this.onclose = undefined;
-        this.onerror = undefined;
+        this.removeAllListeners();
     }
 
     // @ts-ignore

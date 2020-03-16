@@ -146,25 +146,24 @@ export default class WS {
         this.frame = new WSFramer(pipe, this.opts.maxFrameSize);
         this.pipe = pipe;
 
-        pipe.onerror = (err: Error): void => {
+        pipe.on("error", (err: Error): void => {
             if (this.onerror) {
                 this.onerror(err);
             }
 
             this.callCallback(error, this.onerror, err);
-        };
+        });
 
-        pipe.onclose = () => {
+        pipe.on("close", () => {
             if (this.state === ConnectionState.Closed) {
                 return;
             }
             this.state = ConnectionState.Closed;
             this.callCallback(close, this.onclose, 1000, null);
-        }
-
+        });
 
         // The pipe is ready to read.
-        pipe.ondata = () => {
+        pipe.on("data", () => {
             let bytesRead;
             while (1) {
 
@@ -175,7 +174,7 @@ export default class WS {
 
                 this.frame.processStreamData(readView, 0, bytesRead);
             }
-        };
+        });
 
         this.frame.onFrame((buffer: IDataBuffer, state: WSState) => {
             switch (state.opcode) {

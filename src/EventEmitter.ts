@@ -85,6 +85,11 @@ export class EventEmitter implements IEventEmitter {
         }
         return true;
     }
+
+    hasListener(event: string): boolean {
+        return this.listenerMap.get(event) !== undefined;
+    }
+
     listenerCount(event: string): number {
         const connections = this.listenerMap.get(event);
         if (!connections) {
@@ -92,14 +97,17 @@ export class EventEmitter implements IEventEmitter {
         }
         return connections.length;
     }
+
     prependListener(event: string, listener: EventListener): this {
         this.eventArray(event).unshift({ listener, once: false });
         return this;
     }
+
     prependOnceListener(event: string, listener: EventListener): this {
         this.eventArray(event).unshift({ listener, once: true });
         return this;
     }
+
     eventNames(): string[] {
         return this.listenerMap.keys();
     }
