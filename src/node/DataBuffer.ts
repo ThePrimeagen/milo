@@ -288,7 +288,7 @@ string value for the second parameter, offset.`);
 
     reverse(offset?: number, length?: number): void { throw new Error("Not Implemented"); }
 
-    sort(func?: (l: number, r: number) => number): void { throw new Error("Not Implemented"); }
+    sort(func?: (l: number, r: number) => number): this { throw new Error("Not Implemented"); }
     every(func: (val: number, i: number, buffer: IDataBuffer) => boolean, thisValue?: any): boolean {
         throw new Error("Not Implemented");
     }

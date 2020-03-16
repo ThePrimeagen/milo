@@ -142,8 +142,7 @@ export interface IDataBuffer {
      */
     slice(offset?: number, length?: number): IDataBuffer;
 
-    sort(func?: (l: number, r: number) => number): void;
-
+    sort(func?: (l: number, r: number) => number): this;
 
     /**
      * Subarray with length instead of endIdx
