@@ -8,6 +8,8 @@ import {
     createNonCopyBuffer,
 } from './utils';
 
+import { EventEmitter } from "../EventEmitter";
+
 import {
     NetworkPipe,
     OnData,
@@ -26,7 +28,7 @@ enum State {
     Destroyed = "Destroyed",
 };
 
-class NodeTCPNetworkPipe implements NetworkPipe {
+class NodeTCPNetworkPipe extends EventEmitter implements NetworkPipe {
     private sock?: net.Socket;
     private bufferPool: Buffer[];
     private bufferIdx: number;
@@ -51,6 +53,7 @@ class NodeTCPNetworkPipe implements NetworkPipe {
     public connection: Promise<NodeTCPNetworkPipe>;
 
     constructor(host: string, port: number, onConnect?: () => void) {
+        super();
         this.idle = false;
         this.forbidReuse = false;
         this.bufferIdx = 0;

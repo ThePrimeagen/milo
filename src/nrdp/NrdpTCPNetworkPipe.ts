@@ -2,6 +2,7 @@ import {
     CreateTCPNetworkPipeOptions, DnsResult, NetworkPipe,
     OnClose, OnData, OnError, IDataBuffer
 } from "../types";
+import { EventEmitter } from "../EventEmitter";
 import { NrdpPlatform } from "./Platform";
 import DataBuffer from "./DataBuffer";
 import N = nrdsocket;
@@ -13,7 +14,7 @@ function assert(condition: any, msg?: string): asserts condition {
     }
 }
 
-export class NrdpTCPNetworkPipe implements NetworkPipe {
+export class NrdpTCPNetworkPipe extends EventEmitter implements NetworkPipe {
     private sock: number;
     private writeBuffers: (Uint8Array | ArrayBuffer | IDataBuffer | string)[];
     private writeBufferOffsets: number[];
@@ -43,6 +44,7 @@ export class NrdpTCPNetworkPipe implements NetworkPipe {
                 dnsTime: number,
                 dns: string,
                 dnsChannel?: string) {
+        super();
         this.platform = p;
         platform = p;
         this.sock = socket;

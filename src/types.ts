@@ -26,6 +26,23 @@ export interface IUnorderedMap<Key, Value> {
     values(): Value[];
 }
 
+export type EventListener = (...args: any[]) => void;
+
+export interface IEventEmitter {
+    addListener(event: string, listener: EventListener): this;
+    on(event: string, listener: EventListener): this;
+    once(event: string, listener: EventListener): this;
+    removeListener(event: string, listener: EventListener): this;
+    off(event: string, listener: EventListener): this;
+    removeAllListeners(event?: string): this;
+    listeners(event: string): EventListener[];
+    emit(event: string, ...args: any[]): boolean;
+    listenerCount(event: string): number;
+    prependListener(event: string, listener: EventListener): this;
+    prependOnceListener(event: string, listener: EventListener): this;
+    eventNames(): string[];
+}
+
 export interface IDataBuffer {
     // properties
     bufferLength: number;
@@ -221,7 +238,7 @@ export interface SHA256Context {
     reset(): void;
 };
 
-export interface NetworkPipe {
+export interface NetworkPipe extends IEventEmitter {
     write(buf: IDataBuffer | Uint8Array | ArrayBuffer | string, offset: number, length: number): void;
     write(buf: string): void;
 

@@ -2,6 +2,7 @@ import {
     CreateSSLNetworkPipeOptions, NetworkPipe,
     OnClose, OnData, OnError, IDataBuffer
 } from "../types";
+import { EventEmitter } from "../EventEmitter";
 import { NrdpPlatform } from "./Platform";
 import DataBuffer from "./DataBuffer";
 import N = nrdsocket;
@@ -20,7 +21,7 @@ function set_mem_eof_return(p: NrdpPlatform, bio: N.Struct) {
     p.ssl.BIO_ctrl(bio, platform.ssl.BIO_C_SET_BUF_MEM_EOF_RETURN, -1, undefined);
 }
 
-class NrdpSSLNetworkPipe implements NetworkPipe {
+class NrdpSSLNetworkPipe extends EventEmitter implements NetworkPipe {
     private sslInstance: N.Struct;
     private inputBio: N.Struct;
     private outputBio: N.Struct;
@@ -39,6 +40,7 @@ class NrdpSSLNetworkPipe implements NetworkPipe {
     public forbidReuse: boolean;
 
     constructor(options: CreateSSLNetworkPipeOptions, p: NrdpPlatform, callback: (error?: Error) => void) {
+        super();
         platform = p;
         this.idle = false;
         this.forbidReuse = false;
