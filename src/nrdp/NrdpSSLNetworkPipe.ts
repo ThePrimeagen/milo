@@ -2,22 +2,13 @@ import {
     ICreateSSLNetworkPipeOptions, INetworkPipe, IDataBuffer
 } from "../types";
 import NetworkPipe from "../NetworkPipe";
-import { NrdpPlatform } from "./Platform";
+import Platform from "./Platform";
 import DataBuffer from "./DataBuffer";
 import N = nrdsocket;
 
-let platform: NrdpPlatform | undefined;
+// have to redeclare assert since NrdpPlatform doesn't declare assert as asserting
 function assert(condition: any, msg?: string): asserts condition {
-    if (platform) {
-        platform.assert(condition, msg);
-    } else {
-        nrdp.assert(condition, msg);
-    }
-}
-
-function set_mem_eof_return(p: NrdpPlatform, bio: N.Struct) {
-    assert(platform, "Must have platform :-)");
-    p.ssl.BIO_ctrl(bio, platform.ssl.BIO_C_SET_BUF_MEM_EOF_RETURN, -1, undefined);
+    Platform.assert(condition, msg);
 }
 
 class NrdpSSLNetworkPipe extends NetworkPipe implements INetworkPipe {
@@ -30,13 +21,10 @@ class NrdpSSLNetworkPipe extends NetworkPipe implements INetworkPipe {
     private writeBufferOffsets: number[];
     private writeBufferLengths: number[];
     private connectedCallback?: (error?: Error) => void;
-    private platform: NrdpPlatform;
     private buffer?: IDataBuffer;
 
-    constructor(options: ICreateSSLNetworkPipeOptions, p: NrdpPlatform, callback: (error?: Error) => void) {
+    constructor(options: ICreateSSLNetworkPipeOptions, callback: (error?: Error) => void) {
         super();
-        platform = p;
-        this.platform = p;
         this.connectedCallback = callback;
         this.connected = false;
         this.writeBuffers = [];
@@ -44,17 +32,17 @@ class NrdpSSLNetworkPipe extends NetworkPipe implements INetworkPipe {
         this.writeBufferLengths = [];
 
         this.pipe = options.pipe;
-        this.sslInstance = platform.ssl.createSSL();
+        this.sslInstance = Platform.ssl.createSSL();
 
-        const memMethod = this.platform.ssl.BIO_s_mem();
-        this.inputBio = this.platform.ssl.BIO_new(memMethod);
-        set_mem_eof_return(this.platform, this.inputBio);
+        const memMethod = Platform.ssl.BIO_s_mem();
+        this.inputBio = Platform.ssl.BIO_new(memMethod);
+        Platform.ssl.BIO_ctrl(this.inputBio, Platform.ssl.BIO_C_SET_BUF_MEM_EOF_RETURN, -1, undefined);
 
-        this.outputBio = this.platform.ssl.BIO_new(memMethod);
+        this.outputBio = Platform.ssl.BIO_new(memMethod);
 
-        set_mem_eof_return(this.platform, this.outputBio);
+        Platform.ssl.BIO_ctrl(this.outputBio, Platform.ssl.BIO_C_SET_BUF_MEM_EOF_RETURN, -1, undefined);
         this.pipe.on("data", () => {
-            const read = this.pipe.read(this.platform.scratch, 0, this.platform.scratch.byteLength);
+            const read = this.pipe.read(Platform.scratch, 0, Platform.scratch.byteLength);
             if (read === -1) {
                 assert(N.errno === N.EWOULDBLOCK || N.errno === N.EAGAIN || this.pipe.closed,
                        "Should be closed already");
@@ -65,15 +53,15 @@ class NrdpSSLNetworkPipe extends NetworkPipe implements INetworkPipe {
                 assert(this.pipe.closed, "Should be closed already");
                 return;
             }
-            this.platform.trace("got data", read);
+            Platform.trace("got data", read);
             // throw new Error("fiskball");
-            const written = this.platform.ssl.BIO_write(this.inputBio, this.platform.scratch, 0, read);
-            this.platform.trace("wrote", read, "bytes to inputBio =>", written);
+            const written = Platform.ssl.BIO_write(this.inputBio, Platform.scratch, 0, read);
+            Platform.trace("wrote", read, "bytes to inputBio =>", written);
             if (!this.connected) {
                 this._connect();
             }
             if (this.connected) {
-                const pending = this.platform.ssl.BIO_ctrl_pending(this.inputBio);
+                const pending = Platform.ssl.BIO_ctrl_pending(this.inputBio);
                 if (pending) {
                     this.emit("data");
                 }
@@ -83,11 +71,11 @@ class NrdpSSLNetworkPipe extends NetworkPipe implements INetworkPipe {
             this.emit("close");
         });
         this.pipe.on("error", (error: Error) => {
-            this.platform.error("got error", error);
+            Platform.error("got error", error);
             this._error(error);
         });
 
-        this.platform.ssl.SSL_set_bio(this.sslInstance, this.inputBio, this.outputBio);
+        Platform.ssl.SSL_set_bio(this.sslInstance, this.inputBio, this.outputBio);
         this._connect();
     }
 
@@ -117,7 +105,7 @@ class NrdpSSLNetworkPipe extends NetworkPipe implements INetworkPipe {
         if (!length)
             throw new Error("0 length write");
 
-        this.platform.trace("write called", buf, offset, length);
+        Platform.trace("write called", buf, offset, length);
 
         if (!this.connected) {
             throw new Error("SSLNetworkPipe is not connected");
@@ -125,8 +113,8 @@ class NrdpSSLNetworkPipe extends NetworkPipe implements INetworkPipe {
 
         const written = (this.writeBuffers.length
                          ? -1
-                         : this.platform.ssl.SSL_write(this.sslInstance, buf, offset, length));
-        this.platform.trace("wrote to output bio", length, "=>", written);
+                         : Platform.ssl.SSL_write(this.sslInstance, buf, offset, length));
+        Platform.trace("wrote to output bio", length, "=>", written);
 
         if (written === -1) {
             this.writeBuffers.push(buf);
@@ -141,68 +129,68 @@ class NrdpSSLNetworkPipe extends NetworkPipe implements INetworkPipe {
         if (this.buffer) {
             const byteLength = this.buffer.byteLength;
             if (length >= byteLength) {
-                this.platform.bufferSet(buf, offset, this.buffer, 0, byteLength);
+                Platform.bufferSet(buf, offset, this.buffer, 0, byteLength);
                 this.buffer = undefined;
                 return byteLength;
             } else {
-                this.platform.bufferSet(buf, offset, this.buffer, 0, length);
+                Platform.bufferSet(buf, offset, this.buffer, 0, length);
                 this.buffer = this.buffer.slice(length);
                 return length;
             }
         }
 
-        this.platform.trace("someone's calling read on ", this.pipe.fd, length,
-                            this.platform.ssl.SSL_pending(this.sslInstance));
-        const read = this.platform.ssl.SSL_read(this.sslInstance, buf, offset, length);
+        Platform.trace("someone's calling read on ", this.pipe.fd, length,
+                       Platform.ssl.SSL_pending(this.sslInstance));
+        const read = Platform.ssl.SSL_read(this.sslInstance, buf, offset, length);
         if (read <= 0) {
-            const err = this.platform.ssl.SSL_get_error(this.sslInstance, read);
-            // this.platform.error("got err", err);
+            const err = Platform.ssl.SSL_get_error(this.sslInstance, read);
+            // Platform.error("got err", err);
             this._flushOutputBio();
             switch (err) {
-            case this.platform.ssl.SSL_ERROR_NONE:
-                this.platform.error("got error none");
+            case Platform.ssl.SSL_ERROR_NONE:
+                Platform.error("got error none");
                 break;
-            case this.platform.ssl.SSL_ERROR_SSL:
-                this.platform.error("got error ssl");
+            case Platform.ssl.SSL_ERROR_SSL:
+                Platform.error("got error ssl");
                 break;
-            case this.platform.ssl.SSL_ERROR_WANT_READ:
-                this.platform.trace("got error want read");
+            case Platform.ssl.SSL_ERROR_WANT_READ:
+                Platform.trace("got error want read");
                 break;
-            case this.platform.ssl.SSL_ERROR_WANT_WRITE:
-                this.platform.trace("got error want write");
+            case Platform.ssl.SSL_ERROR_WANT_WRITE:
+                Platform.trace("got error want write");
                 break;
-            case this.platform.ssl.SSL_ERROR_WANT_X509_LOOKUP:
-                this.platform.error("got error want x509 lookup");
+            case Platform.ssl.SSL_ERROR_WANT_X509_LOOKUP:
+                Platform.error("got error want x509 lookup");
                 break;
-            case this.platform.ssl.SSL_ERROR_SYSCALL:
-                this.platform.error("got error syscall");
+            case Platform.ssl.SSL_ERROR_SYSCALL:
+                Platform.error("got error syscall");
                 break;
-            case this.platform.ssl.SSL_ERROR_ZERO_RETURN:
+            case Platform.ssl.SSL_ERROR_ZERO_RETURN:
                 this.close();
-                this.platform.trace("got error zero return");
+                Platform.trace("got error zero return");
                 break;
-            case this.platform.ssl.SSL_ERROR_WANT_CONNECT:
-                this.platform.error("got error want connect");
+            case Platform.ssl.SSL_ERROR_WANT_CONNECT:
+                Platform.error("got error want connect");
                 break;
-            case this.platform.ssl.SSL_ERROR_WANT_ACCEPT:
-                this.platform.error("got error want accept");
+            case Platform.ssl.SSL_ERROR_WANT_ACCEPT:
+                Platform.error("got error want accept");
                 break;
-            case this.platform.ssl.SSL_ERROR_WANT_ASYNC:
-                this.platform.error("got error want async");
+            case Platform.ssl.SSL_ERROR_WANT_ASYNC:
+                Platform.error("got error want async");
                 break;
-            case this.platform.ssl.SSL_ERROR_WANT_ASYNC_JOB:
-                this.platform.error("got error want async job");
+            case Platform.ssl.SSL_ERROR_WANT_ASYNC_JOB:
+                Platform.error("got error want async job");
                 break;
-            case this.platform.ssl.SSL_ERROR_WANT_CLIENT_HELLO_CB:
-                this.platform.error("got error want client hello cb");
+            case Platform.ssl.SSL_ERROR_WANT_CLIENT_HELLO_CB:
+                Platform.error("got error want client hello cb");
                 break;
             default:
-                this.platform.error("got error other", err);
+                Platform.error("got error other", err);
                 break;
             }
         }
 
-        // this.platform.trace("SSL_read called", read);
+        // Platform.trace("SSL_read called", read);
         return read;
     }
 
@@ -223,15 +211,15 @@ class NrdpSSLNetworkPipe extends NetworkPipe implements INetworkPipe {
     }
 
     private _flushOutputBio() {
-        const pending = this.platform.ssl.BIO_ctrl_pending(this.outputBio);
+        const pending = Platform.ssl.BIO_ctrl_pending(this.outputBio);
         // assert(pending <= this.scratch.byteLength,
         //        "Pending too large. Probably have to increase scratch buffer size");
         if (pending > 0) {
             // should maybe pool these arraybuffers
             const buf = new ArrayBuffer(pending);
-            const read = this.platform.ssl.BIO_read(this.outputBio, buf, 0, pending);
+            const read = Platform.ssl.BIO_read(this.outputBio, buf, 0, pending);
             assert(read === pending, "Read should be pending");
-            // this.platform.trace("writing", read, this.platform.ssl.BIO_ctrl_pending(this.outputBio));
+            // Platform.trace("writing", read, Platform.ssl.BIO_ctrl_pending(this.outputBio));
             this.pipe.write(buf, 0, read);
             // Platform
         }
@@ -239,22 +227,22 @@ class NrdpSSLNetworkPipe extends NetworkPipe implements INetworkPipe {
 
     private _connect() {
         assert(this.connectedCallback);
-        const ret = this.platform.ssl.SSL_connect(this.sslInstance);
-        // this.platform.trace("CALLED CONNECT", ret);
+        const ret = Platform.ssl.SSL_connect(this.sslInstance);
+        // Platform.trace("CALLED CONNECT", ret);
         if (ret <= 0) {
-            const err = this.platform.ssl.SSL_get_error(this.sslInstance, ret);
-            // this.platform.trace("GOT ERROR FROM SSL_CONNECT", err);
-            if (this.platform.ssl.SSL_get_error(this.sslInstance, ret) === this.platform.ssl.SSL_ERROR_WANT_READ) {
+            const err = Platform.ssl.SSL_get_error(this.sslInstance, ret);
+            // Platform.trace("GOT ERROR FROM SSL_CONNECT", err);
+            if (Platform.ssl.SSL_get_error(this.sslInstance, ret) === Platform.ssl.SSL_ERROR_WANT_READ) {
                 this._flushOutputBio();
             } else {
-                this.platform.error("BIG FAILURE", this.platform.ssl.SSL_get_error(this.sslInstance, ret), N.errno);
-                this.connectedCallback(new Error(`SSL_connect failure ${this.platform.ssl.SSL_get_error(this.sslInstance, ret)} ${N.errno}`));
+                Platform.error("BIG FAILURE", Platform.ssl.SSL_get_error(this.sslInstance, ret), N.errno);
+                this.connectedCallback(new Error(`SSL_connect failure ${Platform.ssl.SSL_get_error(this.sslInstance, ret)} ${N.errno}`));
                 this.connectedCallback = undefined;
             }
         } else {
-            // this.platform.trace("sheeeet", ret);
+            // Platform.trace("sheeeet", ret);
             assert(ret === 1, "This should be 1");
-            // this.platform.trace("we're connected");
+            // Platform.trace("we're connected");
             this.connected = true;
             this.firstByteWritten = this.pipe.firstByteWritten;
             this.firstByteRead = this.pipe.firstByteRead;
@@ -270,10 +258,9 @@ class NrdpSSLNetworkPipe extends NetworkPipe implements INetworkPipe {
     }
 };
 
-export default function createSSLNetworkPipe(options: ICreateSSLNetworkPipeOptions,
-                                             p: NrdpPlatform): Promise<INetworkPipe> {
+export default function createSSLNetworkPipe(options: ICreateSSLNetworkPipeOptions): Promise<INetworkPipe> {
     return new Promise<INetworkPipe>((resolve, reject) => {
-        const sslPipe = new NrdpSSLNetworkPipe(options, p, (error?: Error) => {
+        const sslPipe = new NrdpSSLNetworkPipe(options, (error?: Error) => {
             // platform.trace("connected or something", error);
             if (error) {
                 reject(error);

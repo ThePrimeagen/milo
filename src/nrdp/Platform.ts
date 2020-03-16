@@ -112,10 +112,10 @@ export class NrdpPlatform implements IPlatform {
     }
 
     createTCPNetworkPipe(options: ICreateTCPNetworkPipeOptions): Promise<INetworkPipe> {
-        return createNrdpTCPNetworkPipe(options, this);
+        return createNrdpTCPNetworkPipe(options);
     }
     createSSLNetworkPipe(options: ICreateSSLNetworkPipeOptions): Promise<INetworkPipe> {
-        return createNrdpSSLNetworkPipe(options, this);
+        return createNrdpSSLNetworkPipe(options);
     }
 
     bufferConcat(...args: ArrayBuffer[] | Uint8Array[] | IDataBuffer[]) {
