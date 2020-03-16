@@ -17,9 +17,6 @@ export type WSState = {
     isMasked: boolean;
     currentMask: IDataBuffer;
 
-    currentHeader: IDataBuffer;
-    currentHeaderLen: number;
-
     isControlFrame: boolean;
     state: FramerState;
 
