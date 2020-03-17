@@ -1,5 +1,5 @@
-import { Platform } from "../Platform";
-import { DataBuffer } from "../DataBuffer";
+import Platform from "../Platform";
+import DataBuffer from "../DataBuffer";
 import WSFramer from './framer';
 import { WSState } from './framer/types';
 import { upgrade } from "./upgrade";
@@ -150,7 +150,7 @@ export default class WS {
                 this.state = ConnectionState.Closed;
                 let code: number = CloseValues.NoStatusCode;
                 let restOfData: IDataBuffer = EMPTY_BUFFER;
-                
+
                 if (buffer.byteLength) {
                     code = buffer.getUInt16BE(0);
                 }

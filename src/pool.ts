@@ -1,7 +1,7 @@
 import { IDataBuffer } from './types';
-import { DataBuffer } from './DataBuffer';
+import DataBuffer from './DataBuffer';
 
-export type PoolItem<T> = {free: () => void, item: T};
+export type PoolItem<T> = { free: () => void, item: T };
 export type PoolFreeFunction<T> = (item: PoolItem<T>) => void;
 export type PoolFactory<T> = (freeFn: PoolFreeFunction<T>) => PoolItem<T>;
 

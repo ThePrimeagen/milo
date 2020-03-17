@@ -1,5 +1,5 @@
-import { Platform } from '../../Platform';
-import { DataBuffer } from '../../DataBuffer'
+import Platform from '../../Platform';
+import DataBuffer from '../../DataBuffer'
 
 import { createDefaultState } from './state';
 
@@ -77,7 +77,7 @@ export default class WSFramer {
 
     // TODO: Contiuation frames, spelt wrong
     send(buf: IDataBuffer, offset: number,
-        length: number, frameType: Opcodes = Opcodes.BinaryFrame) {
+         length: number, frameType: Opcodes = Opcodes.BinaryFrame) {
 
         if (length > 2 ** 32) {
             throw new Error("You are dumb");
@@ -87,7 +87,6 @@ export default class WSFramer {
         let ptr = offset;
         let ptrLength = 0;
         let ft = frameType;
-        let count = 0;
 
         const header = this.sendHeader;
 
@@ -133,7 +132,7 @@ export default class WSFramer {
     }
 
     fillInHeaderBuffer(packet: IDataBuffer, offset: number, endIdx: number) {
-        let ptr = this.headerLen;
+        const ptr = this.headerLen;
         const writeLen =
             Math.min(endIdx - offset, this.header.byteLength - ptr);
 
@@ -201,7 +200,7 @@ export default class WSFramer {
                 if (state.opcode === Opcodes.CloseConnection) {
                     this.closed = true;
                 }
-            } else  {
+            } else {
                 state.payloads.push(state.payload);
             }
 

@@ -1,5 +1,5 @@
-import { Platform } from "../../../Platform";
-import { DataBuffer } from "../../../DataBuffer";
+import Platform from "../../../Platform";
+import DataBuffer from "../../../DataBuffer";
 
 import {
     constructFrameHeader,
@@ -22,7 +22,7 @@ jest.doMock("../header", () => {
 
 import { INetworkPipe, IDataBuffer } from "../../../types";
 import WSFramer from "../index";
-import {Opcodes} from "../../types";
+import { Opcodes } from "../../types";
 import maskFn from "../../mask";
 
 // @ts-ignore
@@ -51,8 +51,8 @@ const pipe = {
   +---------------------------------------------------------------+
 */
 
-const countObj = {"count": 0};
-const countObj2 = {"count": 2};
+const countObj = { "count": 0 };
+const countObj2 = { "count": 2 };
 
 const countBuf = new DataBuffer(JSON.stringify(countObj));
 const countBuf2 = new DataBuffer(JSON.stringify(countObj2));

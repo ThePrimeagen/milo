@@ -1,4 +1,4 @@
-import { Platform } from "../Platform";
+import Platform from "../Platform";
 import { VersionIdentification } from "./consts";
 import { RequestData, Request } from "../Request";
 import { INetworkPipe } from "../types";

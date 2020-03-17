@@ -7,8 +7,8 @@ import {
 } from './types';
 
 import { Request, RequestData, RequestResponse } from "../Request";
-import { Platform } from "../Platform";
-import { DataBuffer } from "../DataBuffer";
+import Platform from "../Platform";
+import DataBuffer from "../DataBuffer";
 import { headerValue } from "../utils";
 
 export function upgrade(u: string | UrlObject): Promise<INetworkPipe> {

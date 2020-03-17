@@ -1,7 +1,7 @@
 import Url from "url-parse";
-import { HTTP1 } from "./HTTP1/HTTP1";
-import { Platform } from "./Platform";
-import { DataBuffer } from "./DataBuffer";
+import HTTP1 from "./HTTP1/HTTP1";
+import Platform from "./Platform";
+import DataBuffer from "./DataBuffer";
 import connectionPool, { ConnectionOptions, PendingConnection } from "./ConnectionPool";
 
 import {

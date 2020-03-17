@@ -1,6 +1,6 @@
 import assert from "assert";
 
-import { Platform } from "../../Platform";
+import Platform from "../../Platform";
 import { IDataBuffer } from "../../types";
 import { HeaderTable } from "./internals/header-table";
 

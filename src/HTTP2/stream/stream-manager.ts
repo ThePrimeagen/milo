@@ -1,5 +1,5 @@
-import { Platform } from "../../Platform";
-import { DataBuffer } from "../../DataBuffer";
+import Platform from "../../Platform";
+import DataBuffer from "../../DataBuffer";
 import {
     INetworkPipe,
     IDataBuffer,

@@ -2,14 +2,14 @@
 import WebSocket from 'ws';
 
 // @ts-ignore
-import {Platform} from '../dist/milo.node';
+import { Platform } from '../dist/milo.node';
 
 export default function autobahn(WebSocketClass: WebSocket, {
     updateReport = true,
     port = 9001,
 }) {
     const agent = "ThePrimeagen";
-    const wsuri = `ws://localhost:${port}`; //:${port}/runCase?case=${testCase}&agent=ThePrimeagen
+    const wsuri = `ws://localhost:${port}`; // :${port}/runCase?case=${testCase}&agent=ThePrimeagen
     let currentCaseId: number;
     let caseCount: number;
 
@@ -32,7 +32,7 @@ export default function autobahn(WebSocketClass: WebSocket, {
         const webSocket = openWebSocket(ws_uri);
 
         // @ts-ignore
-        webSocket.onmessage = function(e: {data: any}) {
+        webSocket.onmessage = function(e: { data: any }) {
             caseCount = JSON.parse(e.data);
             updateStatus("Will run " + caseCount + " cases ..");
         }
@@ -70,7 +70,7 @@ export default function autobahn(WebSocketClass: WebSocket, {
         webSocket.binaryType = "arraybuffer";
 
         // @ts-ignore
-        webSocket.onopen = function(e: {data: any}) {
+        webSocket.onopen = function(e: { data: any }) {
             updateStatus("Executing test case " + currentCaseId + "/" + caseCount);
         }
 
@@ -85,7 +85,7 @@ export default function autobahn(WebSocketClass: WebSocket, {
         }
 
         // @ts-ignore
-        webSocket.onmessage = function(e: {data: any}) {
+        webSocket.onmessage = function(e: { data: any }) {
             Platform.log("onmessage", e);
             webSocket.send(e.data);
         }

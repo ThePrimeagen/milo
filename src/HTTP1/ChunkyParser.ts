@@ -1,10 +1,10 @@
-import { Platform } from "../Platform";
-import { DataBuffer } from "../DataBuffer";
+import Platform from "../Platform";
+import DataBuffer from "../DataBuffer";
 import { assert, escapeData } from "../utils";
 import { IDataBuffer } from "../types";
-import { EventEmitter } from "../EventEmitter";
+import EventEmitter from "../EventEmitter";
 
-export class ChunkyParser extends EventEmitter {
+export default class ChunkyParser extends EventEmitter {
     private buffers: IDataBuffer[];
     private offset: number;
     private dataNeeded: number;

@@ -1,6 +1,7 @@
 import Url from "url-parse";
 import { INetworkPipe, ICreateTCPNetworkPipeOptions, IUnorderedMap } from "./types";
-import { Platform, UnorderedMap } from "./Platform";
+import Platform from "./Platform";
+import UnorderedMap from "./UnorderedMap";
 import { assert } from "./utils";
 
 export interface ConnectionOptions {

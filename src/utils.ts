@@ -1,4 +1,4 @@
-import { Platform } from "./Platform";
+import Platform from "./Platform";
 import { IDataBuffer } from "./types";
 
 export function headerValue(headers: string[], header: string): string {

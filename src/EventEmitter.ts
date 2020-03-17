@@ -6,7 +6,7 @@ interface EventConnection {
     once: boolean;
 };
 
-export class EventEmitter implements IEventEmitter {
+export default class EventEmitter implements IEventEmitter {
     constructor() {
         this.listenerMap = new UnorderedMap();
     }

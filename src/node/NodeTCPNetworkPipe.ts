@@ -1,6 +1,10 @@
 import net from "net";
 
 import {
+    IPlatform
+} from "../types";
+
+import {
     Pool,
     PoolItem,
     PoolFreeFunction,
@@ -74,8 +78,8 @@ class NodeTCPNetworkPipe extends NetworkPipe implements INetworkPipe {
 
     public connection: Promise<NodeTCPNetworkPipe>;
 
-    constructor(host: string, port: number, onConnect?: () => void) {
-        super();
+    constructor(platform: IPlatform, host: string, port: number) {
+        super(platform);
         this.dnsTime = -1;
         this.connectTime = -1;
         this.state = State.Connecting;
@@ -137,7 +141,7 @@ class NodeTCPNetworkPipe extends NetworkPipe implements INetworkPipe {
     }
 
     write(buf: IDataBuffer | ArrayBuffer | string, offset: number = 0, length?: number): void {
-        if (this.state != State.Alive) {
+        if (this.state !== State.Alive) {
             throw new Error(`Unable to write sockets in current state, ${this.state}`);
         }
 
@@ -216,29 +220,6 @@ class NodeTCPNetworkPipe extends NetworkPipe implements INetworkPipe {
         } while (writeAmount < length && this.bufferPool.length);
 
         return writeAmount;
-    }
-
-    unread(buf: IDataBuffer | ArrayBuffer, offset: number = 0, length?: number) {
-        if (length === undefined) {
-            length = buf.byteLength - offset;
-        }
-
-        const item = this.pool.get();
-        item.item.offset = offset;
-        item.item.idx = 0;
-        item.item.len = length;
-
-        let readBuf: Buffer;
-        if (buf instanceof ArrayBuffer) {
-            readBuf = Buffer.from(buf);
-        }
-        else {
-            readBuf = (buf as DataBuffer).buffer;
-            item.item.offset += buf.byteOffset;
-        }
-
-        item.item.readBuf = readBuf;
-        this.bufferPool.push(item);
     }
 
     close(): void {

@@ -3,8 +3,9 @@ import DataBuffer from "./DataBuffer";
 import UnorderedMap from "./UnorderedMap";
 import N = nrdsocket;
 
-type BIO_ctrl_pending_type = (b: N.Struct) => number;
+type ASN1_INTEGER_to_BN_type = (ai: N.Struct, bn: N.Struct) => N.Struct;
 type BIO_ctrl_type = (bp: N.Struct, cmd: number, larg: number, parg: N.DataPointer | undefined) => number;
+type BIO_ctrl_pending_type = (b: N.Struct) => number;
 type BIO_ctrl_wpending_type = (b: N.Struct) => number;
 type BIO_free_type = (a: N.Struct) => number;
 type BIO_int_ctrl_type = (bp: N.Struct, cmd: number, larg: number, iarg: number) => number;
@@ -16,7 +17,12 @@ type BIO_read_type = (b: N.Struct, data: ArrayBuffer | Uint8Array | IDataBuffer,
 type BIO_s_mem_type = () => N.Struct;
 type BIO_write_type = (b: N.Struct, data: ArrayBuffer | Uint8Array | IDataBuffer | string,
                        offset: number, dlen: number) => number;
+type BN_bn2hex_type = (a: N.Struct) => N.DataPointer;
+type BN_free_type = (a: N.Struct) => void;
+type CRYPTO_free_type = (ptr: N.DataPointer, file: string, line: number) => void;
 type ERR_error_string_n_type = (e: number, buf: ArrayBuffer | Uint8Array | IDataBuffer, len: number) => void;
+type OPENSSL_sk_num_type = (chain: N.Struct) => number;
+type OPENSSL_sk_value_type = (chain: N.Struct, index: number) => N.Struct;
 type PEM_read_bio_X509_type = (bp: N.Struct, x: N.DataPointer | undefined, cb: N.Struct | undefined,
                                u: ArrayBuffer | Uint8Array | IDataBuffer | undefined) => N.Struct;
 type SSL_CTX_ctrl_type = (ctx: N.Struct, cmd: number, larg: number,
@@ -44,14 +50,28 @@ type SSL_up_ref_type = (s: N.Struct) => number;
 type SSL_write_type = (ssl: N.Struct, buf: ArrayBuffer | Uint8Array | IDataBuffer | string,
                        offset: number, num: number) => number;
 type TLS_client_method_type = () => N.Struct;
+type X509_NAME_oneline_type = (a: N.Struct, buf: ArrayBuffer | Uint8Array | IDataBuffer, size: number) => N.DataPointer;
+type X509_STORE_CTX_get0_chain_type = (ctx: N.Struct) => N.Struct;
 type X509_STORE_CTX_get_ex_data_type = (struct: N.Struct, idx: number) => N.Struct;
 type X509_STORE_add_cert_type = (ctx: N.Struct, x: N.Struct) => number;
 type X509_VERIFY_PARAM_free_type = (param: N.Struct) => void;
 type X509_VERIFY_PARAM_new_type = () => N.Struct;
 type X509_VERIFY_PARAM_set_time_type = (param: N.Struct, t: number) => void;
 type X509_free_type = (x509: N.Struct) => void;
+type X509_get_issuer_name_type = (a: N.Struct) => N.Struct;
+type X509_get_serialNumber_type = (a: N.Struct) => N.Struct;
+type X509_get_subject_name_type = (a: N.Struct) => N.Struct;
+type X509_getm_notAfter_type = (x: N.Struct) => N.Struct;
+type X509_getm_notBefore_type = (x: N.Struct) => N.Struct;
 
-type SSL_CTX_verify_callback_type = (preverifyOk: number) => number;
+type SSL_CTX_verify_callback_type = (preverifyOk: number, x509Ctx: N.Struct) => number;
+type X509Data = {
+    certsubjectname?: string;
+    certissuername?: string;
+    certsernum?: string;
+    notbefore?: string;
+    notafter?: string;
+};
 
 export class NrdpSSL {
 
@@ -77,6 +97,8 @@ export class NrdpSSL {
     public BIO_s_mem: BIO_s_mem_type;
     public BIO_write: BIO_write_type;
     public ERR_error_string_n: ERR_error_string_n_type;
+    public OPENSSL_sk_num: OPENSSL_sk_num_type;
+    public OPENSSL_sk_value: OPENSSL_sk_value_type;
     public PEM_read_bio_X509: PEM_read_bio_X509_type;
     public SSL_CTX_ctrl: SSL_CTX_ctrl_type;
     public SSL_CTX_free: SSL_CTX_free_type;
@@ -101,11 +123,22 @@ export class NrdpSSL {
     public SSL_write: SSL_write_type;
     public TLS_client_method: TLS_client_method_type;
     public X509_STORE_add_cert: X509_STORE_add_cert_type;
+    public X509_STORE_CTX_get0_chain: X509_STORE_CTX_get0_chain_type;
     public X509_STORE_CTX_get_ex_data: X509_STORE_CTX_get_ex_data_type;
     public X509_VERIFY_PARAM_free: X509_VERIFY_PARAM_free_type;
     public X509_VERIFY_PARAM_new: X509_VERIFY_PARAM_new_type;
     public X509_VERIFY_PARAM_set_time: X509_VERIFY_PARAM_set_time_type;
     public X509_free: X509_free_type;
+    public X509_get_subject_name: X509_get_subject_name_type;
+    public X509_get_issuer_name: X509_get_issuer_name_type;
+    public X509_get_serialNumber: X509_get_serialNumber_type;
+    public X509_getm_notBefore: X509_getm_notBefore_type;
+    public X509_getm_notAfter: X509_getm_notAfter_type;
+    public ASN1_INTEGER_to_BN: ASN1_INTEGER_to_BN_type;
+    public BN_bn2hex: BN_bn2hex_type;
+    public BN_free: BN_free_type;
+    public CRYPTO_free: CRYPTO_free_type;
+    public X509_NAME_oneline: X509_NAME_oneline_type;
 
     public readonly SSL_CTRL_MODE = 33;
 
@@ -260,8 +293,7 @@ export class NrdpSSL {
         this.ERRstringBuf = new DataBuffer(128);
         this.trustStoreHash = "";
         this.x509s = [];
-        // this.BIO_set_mem_eof_return = <BIO_set_mem_eof_return_type>
-        //                               N.bindFunction("void BIO_set_mem_eof_return(BIO *b, int v);");
+
         this.BIO_ctrl = N.bindFunction<BIO_ctrl_type>("long BIO_ctrl(BIO *bp, int cmd, long larg, void *parg);");
         this.BIO_ctrl_pending = N.bindFunction<BIO_ctrl_pending_type>("size_t BIO_ctrl_pending(BIO *b);");
         this.BIO_ctrl_wpending = N.bindFunction<BIO_ctrl_wpending_type>("size_t BIO_ctrl_wpending(BIO *b);");
@@ -274,6 +306,8 @@ export class NrdpSSL {
         this.BIO_s_mem = N.bindFunction<BIO_s_mem_type>("const BIO_METHOD *BIO_s_mem();");
         this.BIO_write = N.bindFunction<BIO_write_type>("int BIO_write(BIO *b, const Buffer *buf);");
         this.ERR_error_string_n = N.bindFunction<ERR_error_string_n_type>("void ERR_error_string_n(unsigned long e, char *buf, size_t len);");
+        this.OPENSSL_sk_num = N.bindFunction<OPENSSL_sk_num_type>("int OPENSSL_sk_num(const OPENSSL_STACK *stack);");
+        this.OPENSSL_sk_value = N.bindFunction<OPENSSL_sk_value_type>("Struct *OPENSSL_sk_value(const OPENSSL_STACK *stack, size_t index);");
         this.PEM_read_bio_X509 = N.bindFunction<PEM_read_bio_X509_type>("X509 *PEM_read_bio_X509(BIO *bp, X509 **x, pem_password_cb *cb, void *u);");
         this.SSL_CTX_ctrl = N.bindFunction<SSL_CTX_ctrl_type>("long SSL_CTX_ctrl(SSL_CTX *ctx, int cmd, long larg, void *parg);");
         this.SSL_CTX_free = N.bindFunction<SSL_CTX_free_type>("void SSL_CTX_free(SSL_CTX *ctx);");
@@ -302,55 +336,65 @@ export class NrdpSSL {
         // our existing SSL *
         this.X509_STORE_CTX_get_ex_data = N.bindFunction<X509_STORE_CTX_get_ex_data_type>("Struct *X509_STORE_CTX_get_ex_data(Struct *struct, int idx);");
         this.X509_STORE_add_cert = N.bindFunction<X509_STORE_add_cert_type>("int X509_STORE_add_cert(X509_STORE *ctx, X509 *x);");
+        this.X509_STORE_CTX_get0_chain = N.bindFunction<X509_STORE_CTX_get0_chain_type>("Struct *X509_STORE_CTX_get0_chain(X509_STORE_CTX *ctx);");
         this.X509_VERIFY_PARAM_free = N.bindFunction<X509_VERIFY_PARAM_free_type>("void X509_VERIFY_PARAM_free(X509_VERIFY_PARAM *param);");
         this.X509_VERIFY_PARAM_new = N.bindFunction<X509_VERIFY_PARAM_new_type>("X509_VERIFY_PARAM *X509_VERIFY_PARAM_new(void);");
         this.X509_VERIFY_PARAM_set_time = N.bindFunction<X509_VERIFY_PARAM_set_time_type>("void X509_VERIFY_PARAM_set_time(X509_VERIFY_PARAM *param, time_t t);");
         this.X509_free = N.bindFunction<X509_free_type>("void X509_free(X509 *a);");
 
+        this.X509_get_subject_name = N.bindFunction<X509_get_subject_name_type>("X509_NAME *X509_get_subject_name(const X509 *a);");
+        this.X509_get_issuer_name = N.bindFunction<X509_get_issuer_name_type>("X509_NAME *X509_get_issuer_name(const X509 *a);");
+        this.X509_get_serialNumber = N.bindFunction<X509_get_serialNumber_type>("ASN1_INTEGER *X509_get_serialNumber(const X509 *a);");
+        this.X509_getm_notBefore = N.bindFunction<X509_getm_notBefore_type>("ASN1_TIME *X509_getm_notBefore(const X509 *x);");
+        this.X509_getm_notAfter = N.bindFunction<X509_getm_notAfter_type>("ASN1_TIME *X509_getm_notAfter(const X509 *x);");
+        this.ASN1_INTEGER_to_BN = N.bindFunction<ASN1_INTEGER_to_BN_type>("BIGNUM *ASN1_INTEGER_to_BN(const ASN1_INTEGER *ai, BIGNUM *bn);");
+        this.BN_bn2hex = N.bindFunction<BN_bn2hex_type>("char *BN_bn2hex(const BIGNUM *a);");
+        this.BN_free = N.bindFunction<BN_free_type>("void BN_free(BIGNUM *a);");
+        this.CRYPTO_free = N.bindFunction<CRYPTO_free_type>("void CRYPTO_free(void *ptr, const char *file, int ");
+        this.X509_NAME_oneline = N.bindFunction<X509_NAME_oneline_type>("char *X509_NAME_oneline(const X509_NAME *a, char *buf, int siz");
+
         this.sslCtxVerifyCallback = N.setSSLCallback("SSL_verify_cb", (preverifyOk: number, x509Ctx: N.Struct) => {
-            this.platform.log("ballsack", typeof x509Ctx,
-                              this.SSL_get_ex_data_X509_STORE_CTX_idx(),
-                              typeof this.SSL_get_ex_data_X509_STORE_CTX_idx());
             const ssl: N.Struct = this.X509_STORE_CTX_get_ex_data(x509Ctx, this.SSL_get_ex_data_X509_STORE_CTX_idx());
             nrdp.assert(ssl);
             const sslInitialCtx: N.Struct = this.SSL_get_SSL_CTX(ssl);
             nrdp.assert(sslInitialCtx);
             const cb = this.verifyCallbackContexts.get(sslInitialCtx);
             if (cb) {
-                preverifyOk = cb(preverifyOk);
+                preverifyOk = cb(preverifyOk, x509Ctx);
             }
             return preverifyOk;
         });
 
         this.verifyCallbackContexts = new UnorderedMap();
     }
-    SSL_CTX_set_verify_callback(ctx: N.Struct, cb: (preverifyOk: number) => number): void {
+    SSL_CTX_set_verify_callback(ctx: N.Struct, cb: SSL_CTX_verify_callback_type): void {
         nrdp.assert(!this.verifyCallbackContexts.has(ctx));
         this.verifyCallbackContexts.set(ctx, cb);
         this.SSL_CTX_set_verify(ctx, this.SSL_VERIFY_PEER, this.sslCtxVerifyCallback);
     }
 
-    public createSSL() {
+    public createSSL(verifyCallback?: SSL_CTX_verify_callback_type) {
         if (!this.sslCtx || this.trustStoreHash !== nrdp.trustStoreHash) {
             const meth = this.TLS_client_method();
             this.sslCtx = this.SSL_CTX_new(meth);
             this.sslCtx.free = "SSL_CTX_free";
-            this.SSL_CTX_set_verify_callback(this.sslCtx, (preverifyOk: number) => {
-                return preverifyOk;
-            });
+            if (verifyCallback) {
+                this.SSL_CTX_set_verify_callback(this.sslCtx, verifyCallback);
+            }
             this.platform.trace("cipher", nrdp.cipherList);
             this.SSL_CTX_set_cipher_list(this.sslCtx, nrdp.cipherList);
-            let retVal = this.SSL_CTX_ctrl(this.sslCtx, this.SSL_CTRL_MODE,
-                                           this.SSL_MODE_RELEASE_BUFFERS,
-                                           // | this.platform.SSL_MODE_AUTO_RETRY,
-                                           undefined);
+            // ### should check return value
+            this.SSL_CTX_ctrl(this.sslCtx, this.SSL_CTRL_MODE,
+                              this.SSL_MODE_RELEASE_BUFFERS | this.SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER,
+                              // | this.platform.SSL_MODE_AUTO_RETRY,
+                              undefined);
             const ctxOptions = (this.SSL_OP_ALL |
                                 this.SSL_OP_NO_TLSv1 |
                                 this.SSL_OP_NO_SSLv2 |
                                 this.SSL_OP_NO_SSLv3 |
                                 this.SSL_OP_CIPHER_SERVER_PREFERENCE);
 
-            retVal = this.SSL_CTX_set_options(this.sslCtx, ctxOptions);
+            const retVal = this.SSL_CTX_set_options(this.sslCtx, ctxOptions);
 
             const certStore = this.SSL_CTX_get_cert_store(this.sslCtx);
             const trustStoreData = nrdp.trustStore;
@@ -389,5 +433,10 @@ export class NrdpSSL {
         }
         // nrdp.l.success("balle", i);
         return nrdp.utf8toa(this.ERRstringBuf, 0, i);
+    }
+
+    x509Data(x509: N.Struct): X509Data {
+        const ret = {};
+        return {};
     }
 };

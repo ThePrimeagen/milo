@@ -1,4 +1,4 @@
-import { DataBuffer } from '../../DataBuffer'
+import DataBuffer from '../../DataBuffer'
 
 import {
     FramerState,

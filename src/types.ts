@@ -239,6 +239,9 @@ export interface INetworkPipeData {
     forbidReuse: boolean;
     firstByteWritten?: number;
     firstByteRead?: number;
+
+    stash(buf: IDataBuffer | ArrayBuffer, offset?: number, length?: number): void;
+    unstash(buf: ArrayBuffer | IDataBuffer, offset: number, length: number): number;
 };
 
 export interface INetworkPipe extends IEventEmitter, INetworkPipeData {
@@ -246,8 +249,6 @@ export interface INetworkPipe extends IEventEmitter, INetworkPipeData {
     write(buf: string): void;
 
     read(buf: ArrayBuffer | IDataBuffer, offset: number, length: number): number;
-
-    unread(buf: IDataBuffer | ArrayBuffer, offset?: number, length?: number): void;
 
     close(): void;
 

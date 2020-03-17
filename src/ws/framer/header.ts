@@ -1,5 +1,5 @@
-import { DataBuffer } from '../../DataBuffer'
-import { Platform } from '../../Platform';
+import DataBuffer from '../../DataBuffer'
+import Platform from '../../Platform';
 import maskFn from '../mask';
 
 import {
@@ -22,8 +22,8 @@ import {
  * straight out of rfc:
  * https://tools.ietf.org/html/rfc6455
  *
-  0                   1                   2                   3
-  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
  +-+-+-+-+-------+-+-------------+-------------------------------+
  |F|R|R|R| opcode|M| Payload len |    Extended payload length    |
  |I|S|S|S|  (4)  |A|     (7)     |             (16/64)           |
@@ -40,7 +40,7 @@ import {
  + - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
  |                     Payload Data continued ...                |
  +---------------------------------------------------------------+
- */
+*/
 
 const maskBuf = new DataBuffer(MASK_SIZE);
 
@@ -144,11 +144,11 @@ export function parseHeader(header: IDataBuffer, state: WSState): number {
 
     const opcode = byte1 & 0xF;
 
-    if (opcode != Opcodes.ContinuationFrame &&
-        opcode != Opcodes.BinaryFrame) {
-    }
+    // if (opcode !== Opcodes.ContinuationFrame &&
+    //     opcode !== Opcodes.BinaryFrame) {
+    // }
 
-    if (opcode != Opcodes.ContinuationFrame) {
+    if (opcode !== Opcodes.ContinuationFrame) {
         state.opcode = opcode;
     }
 
@@ -156,7 +156,7 @@ export function parseHeader(header: IDataBuffer, state: WSState): number {
 
     state.isMasked = (byte2 & 0x80) >>> 7 === 1;
 
-    state.payloadLength =  (byte2 & 0x7F);
+    state.payloadLength = (byte2 & 0x7F);
 
     if (state.payloadLength === 126) {
         state.payloadLength = header.getUInt16BE(ptr);

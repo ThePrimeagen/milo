@@ -2,12 +2,12 @@ import {
     IHTTP, HTTPMethod, HTTPTransferEncoding, IHTTPRequest, INetworkPipe,
     IHTTPHeadersEvent, ErrorCode, IDataBuffer
 } from "../types";
-import { Platform } from "../Platform";
-import { EventEmitter } from "../EventEmitter";
-import { ChunkyParser } from "./ChunkyParser";
+import Platform from "../Platform";
+import EventEmitter from "../EventEmitter";
+import ChunkyParser from "./ChunkyParser";
 import { assert } from "../utils";
 
-export class HTTP1 extends EventEmitter implements IHTTP {
+export default class HTTP1 extends EventEmitter implements IHTTP {
     private headerBuffer?: IDataBuffer;
     private connection?: string;
     private headersFinished: boolean;
@@ -91,7 +91,7 @@ Host: ${request.url.host}\r\n`;
 
                         const hOffset = this.headerBuffer.byteLength - remaining;
                         if (!this.chunkyParser && !this.contentLength) {
-                            this.networkPipe.unread(this.headerBuffer, hOffset, remaining);
+                            this.networkPipe.stash(this.headerBuffer, hOffset, remaining);
                             remaining = 0;
                         }
 
@@ -224,7 +224,7 @@ Host: ${request.url.host}\r\n`;
                     this.chunkyParser.on("done", (buffer: IDataBuffer | undefined) => {
                         if (buffer) {
                             assert(this.networkPipe, "Must have networkPipe");
-                            this.networkPipe.unread(buffer);
+                            this.networkPipe.stash(buffer);
                         }
                         this.chunkyParser = undefined;
                         this.emit("finished");

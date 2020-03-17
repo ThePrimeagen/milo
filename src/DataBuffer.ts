@@ -1,3 +1,3 @@
 import DataBuffer from "./#{target}/DataBuffer";
-export { DataBuffer };
+export default DataBuffer;
 

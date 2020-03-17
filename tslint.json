@@ -1,6 +1,11 @@
 {
     "extends": "tslint:recommended",
     "rulesDirectory": [],
+    "linterOptions": {
+      "exclude": [
+          "**/runner.ts"
+      ]
+    },
     "rules": {
         "max-line-length": {
             "options": [120]
