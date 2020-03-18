@@ -10,7 +10,7 @@ import SettingsFrame from "../frame/settings-frame";
 
 // 1.  Everytime a new connection request is made to  the same server, we need
 // to start a http2 stream with server and hand back a common
-// NetwrokPipe to the caller
+// NetworkPipe to the caller
 //
 // 2.  We need a good startup sequence manager.
 //
