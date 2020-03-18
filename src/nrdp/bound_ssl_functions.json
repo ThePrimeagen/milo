@@ -1,0 +1,414 @@
+{
+    "functions": [
+        {
+            "signature": "long BIO_ctrl(BIO *bp, int cmd, long larg, void *parg);",
+            "name": "BIO_ctrl",
+            "type": "(bp: N.Struct, cmd: number, larg: number, parg: N.DataPointer | undefined) => number"
+        },
+        {
+            "signature": "size_t BIO_ctrl_pending(BIO *b);",
+            "name": "BIO_ctrl_pending",
+            "type": "(b: N.Struct) => number"
+        },
+        {
+            "signature": "size_t BIO_ctrl_wpending(BIO *b);",
+            "name": "BIO_ctrl_wpending",
+            "type": "(b: N.Struct) => number"
+        },
+        {
+            "signature": "int BIO_free(BIO *a);",
+            "name": "BIO_free",
+            "type": "(a: N.Struct) => number"
+        },
+        {
+            "signature": "long BIO_int_ctrl(BIO *bp, int cmd, long larg, int iarg);",
+            "name": "BIO_int_ctrl",
+            "type": "(bp: N.Struct, cmd: number, larg: number, iarg: number) => number"
+        },
+        {
+            "signature": "BIO *BIO_new(const BIO_METHOD *type);",
+            "name": "BIO_new",
+            "type": "(ctx: N.Struct) => N.Struct | undefined"
+        },
+        {
+            "signature": "BIO *BIO_new_mem_buf(const void *buf, int len);",
+            "name": "BIO_new_mem_buf",
+            "type": "(buf: ArrayBuffer | Uint8Array | IDataBuffer, len: number) => N.Struct | undefined"
+        },
+        {
+            "signature": "BIO *BIO_new_socket(int sock, int close_flag);",
+            "name": "BIO_new_socket",
+            "type": "(sock: number, closeFlag: number) => N.Struct | undefined"
+        },
+        {
+            "signature": "int BIO_read(BIO *b, Buffer *data);",
+            "name": "BIO_read",
+            "type": "(b: N.Struct, data: ArrayBuffer | Uint8Array | IDataBuffer, offset: number, length: number) => number"
+        },
+        {
+            "signature": "const BIO_METHOD *BIO_s_mem();",
+            "name": "BIO_s_mem",
+            "type": "() => N.Struct | undefined"
+        },
+        {
+            "signature": "int BIO_write(BIO *b, const Buffer *buf);",
+            "name": "BIO_write",
+            "type": "(b: N.Struct, data: ArrayBuffer | Uint8Array | IDataBuffer | string, offset: number, length: number) => number"
+        },
+        {
+            "signature": "void ERR_error_string_n(unsigned long e, char *buf, size_t len);",
+            "name": "ERR_error_string_n",
+            "type": "(e: number, buf: ArrayBuffer | Uint8Array | IDataBuffer, len: number) => void"
+        },
+        {
+            "signature": "int OPENSSL_sk_num(const OPENSSL_STACK *stack);",
+            "name": "OPENSSL_sk_num",
+            "type": "(chain: N.Struct) => number"
+        },
+        {
+            "signature": "Struct *OPENSSL_sk_value(const OPENSSL_STACK *stack, size_t index);",
+            "name": "OPENSSL_sk_value",
+            "type": "(chain: N.Struct, index: number) => N.Struct | undefined"
+        },
+        {
+            "signature": "X509 *PEM_read_bio_X509(BIO *bp, X509 **x, pem_password_cb *cb, void *u);",
+            "name": "PEM_read_bio_X509",
+            "type": "(bp: N.Struct, x: N.DataPointer | undefined, cb: N.Struct | undefined, u: N.DataPointer | undefined) => N.Struct | undefined"
+        },
+        {
+            "signature": "long SSL_CTX_ctrl(SSL_CTX *ctx, int cmd, long larg, void *parg);",
+            "name": "SSL_CTX_ctrl",
+            "type": "(ctx: N.Struct, cmd: number, larg: number, parg: N.DataPointer | undefined) => number"
+        },
+        {
+            "signature": "void SSL_CTX_free(SSL_CTX *ctx);",
+            "name": "SSL_CTX_free",
+            "type": "(ctx: N.Struct) => void"
+        },
+        {
+            "signature": "X509_STORE *SSL_CTX_get_cert_store(const SSL_CTX *ctx);",
+            "name": "SSL_CTX_get_cert_store",
+            "type": "(ctx: N.Struct) => N.Struct | undefined"
+        },
+        {
+            "signature": "SSL_CTX *SSL_CTX_new(const SSL_METHOD *method);",
+            "name": "SSL_CTX_new",
+            "type": "(method: N.Struct) => N.Struct | undefined"
+        },
+        {
+            "signature": "int SSL_CTX_set1_param(SSL_CTX *ctx, X509_VERIFY_PARAM *vpm)",
+            "name": "SSL_CTX_set1_param",
+            "type": "(ctx: N.Struct, vpm: N.Struct) => number"
+        },
+        {
+            "signature": "int SSL_CTX_set_cipher_list(SSL_CTX *ctx, const char *str);",
+            "name": "SSL_CTX_set_cipher_list",
+            "type": "(ctx: N.Struct, str: string) => number"
+        },
+        {
+            "signature": "long SSL_CTX_set_options(SSL_CTX *ctx, long options);",
+            "name": "SSL_CTX_set_options",
+            "type": "(ctx: N.Struct, options: number) => number"
+        },
+        {
+            "signature": "void SSL_CTX_set_verify(SSL_CTX *ctx, int mode, SSL_verify_cb verify_callback);",
+            "name": "SSL_CTX_set_verify",
+            "type": "(ctx: N.Struct, mode: number, verifyCallback: N.DataPointer | undefined) => void"
+        },
+        {
+            "signature": "int SSL_connect(SSL *ssl);",
+            "name": "SSL_connect",
+            "type": "(ssl: N.Struct) => number"
+        },
+        {
+            "signature": "void SSL_free(SSL *ssl);",
+            "name": "SSL_free",
+            "type": "(ssl: N.Struct) => void"
+        },
+        {
+            "signature": "int SSL_get_error(const SSL *ssl, int ret);",
+            "name": "SSL_get_error",
+            "type": "(ssl: N.Struct, ret: number) => number"
+        },
+        {
+            "signature": "int SSL_get_ex_data_X509_STORE_CTX_idx(void);",
+            "name": "SSL_get_ex_data_X509_STORE_CTX_idx",
+            "type": "() => number"
+        },
+        {
+            "signature": "SSL_CTX *SSL_get_SSL_CTX(const SSL *ssl);",
+            "name": "SSL_get_SSL_CTX",
+            "type": "(ssl: N.Struct) => N.Struct | undefined"
+        },
+        {
+            "signature": "SSL *SSL_new(SSL_CTX *ctx);",
+            "name": "SSL_new",
+            "type": "(ctx: N.Struct) => N.Struct | undefined"
+        },
+        {
+            "signature": "int SSL_pending(const SSL *ssl);",
+            "name": "SSL_pending",
+            "type": "(ssl: N.Struct) => number"
+        },
+        {
+            "signature": "int SSL_read(SSL *ssl, Buffer *buf);",
+            "name": "SSL_read",
+            "type": "(ssl: N.Struct, buf: ArrayBuffer | Uint8Array | IDataBuffer, offset: number, length: number) => number"
+        },
+        {
+            "signature": "void SSL_set_bio(SSL *ssl, BIO *rbio, BIO *wbio);",
+            "name": "SSL_set_bio",
+            "type": "(ssl: N.Struct, rbio: N.Struct | N.BIO, wbio: N.Struct | N.BIO) => void"
+        },
+        {
+            "signature": "void SSL_set_default_read_buffer_len(SSL *s, size_t len);",
+            "name": "SSL_set_default_read_buffer_len",
+            "type": "(s: N.Struct, len: number) => void"
+        },
+        {
+            "signature": "void SSL_set_read_ahead(SSL *s, int yes);",
+            "name": "SSL_set_read_ahead",
+            "type": "(s: N.Struct, yes: number) => void"
+        },
+        {
+            "signature": "int SSL_up_ref(SSL *s);",
+            "name": "SSL_up_ref",
+            "type": "(s: N.Struct) => number"
+        },
+        {
+            "signature": "int SSL_write(SSL *ssl, const Buffer *buf);",
+            "name": "SSL_write",
+            "type": "(ssl: N.Struct, buf: ArrayBuffer | Uint8Array | IDataBuffer | string, offset: number, num: number) => number"
+        },
+        {
+            "signature": "const SSL_METHOD *TLS_client_method(void);",
+            "name": "TLS_client_method",
+            "type": "() => N.Struct | undefined"
+        },
+        {
+            "signature": "Struct *X509_STORE_CTX_get_ex_data(Struct *struct, int idx);",
+            "name": "X509_STORE_CTX_get_ex_data",
+            "type": "(struct: N.Struct, idx: number) => N.Struct | undefined"
+        },
+        {
+            "signature": "int X509_STORE_add_cert(X509_STORE *ctx, X509 *x);",
+            "name": "X509_STORE_add_cert",
+            "type": "(ctx: N.Struct, x: N.Struct) => number"
+        },
+        {
+            "signature": "Struct *X509_STORE_CTX_get0_chain(X509_STORE_CTX *ctx);",
+            "name": "X509_STORE_CTX_get0_chain",
+            "type": "(ctx: N.Struct) => N.Struct | undefined"
+        },
+        {
+            "signature": "void X509_VERIFY_PARAM_free(X509_VERIFY_PARAM *param);",
+            "name": "X509_VERIFY_PARAM_free",
+            "type": "(param: N.Struct) => void"
+        },
+        {
+            "signature": "X509_VERIFY_PARAM *X509_VERIFY_PARAM_new(void);",
+            "name": "X509_VERIFY_PARAM_new",
+            "type": "() => N.Struct | undefined"
+        },
+        {
+            "signature": "void X509_VERIFY_PARAM_set_time(X509_VERIFY_PARAM *param, time_t t);",
+            "name": "X509_VERIFY_PARAM_set_time",
+            "type": "(param: N.Struct, t: number) => void"
+        },
+        {
+            "signature": "void X509_free(X509 *a);",
+            "name": "X509_free",
+            "type": "(x509: N.Struct) => void"
+        },
+        {
+            "signature": "X509_NAME *X509_get_subject_name(const X509 *a);",
+            "name": "X509_get_subject_name",
+            "type": "(a: N.Struct) => N.Struct | undefined"
+        },
+        {
+            "signature": "X509_NAME *X509_get_issuer_name(const X509 *a);",
+            "name": "X509_get_issuer_name",
+            "type": "(a: N.Struct) => N.Struct | undefined"
+        },
+        {
+            "signature": "ASN1_INTEGER *X509_get_serialNumber(const X509 *a);",
+            "name": "X509_get_serialNumber",
+            "type": "(a: N.Struct) => N.Struct | undefined"
+        },
+        {
+            "signature": "ASN1_TIME *X509_getm_notBefore(const X509 *x);",
+            "name": "X509_getm_notBefore",
+            "type": "(a: N.Struct) => N.Struct | undefined"
+        },
+        {
+            "signature": "ASN1_TIME *X509_getm_notAfter(const X509 *x);",
+            "name": "X509_getm_notAfter",
+            "type": "(a: N.Struct) => N.Struct | undefined"
+        },
+        {
+            "signature": "BIGNUM *ASN1_INTEGER_to_BN(const ASN1_INTEGER *ai, BIGNUM *bn);",
+            "name": "ASN1_INTEGER_to_BN",
+            "type": "(ai: N.Struct, bn: N.Struct) => N.Struct | undefined"
+        },
+        {
+            "signature": "char *BN_bn2hex(const BIGNUM *a);",
+            "name": "BN_bn2hex",
+            "type": "(a: N.Struct) => N.DataPointer | undefined"
+        },
+        {
+            "signature": "void BN_free(BIGNUM *a);",
+            "name": "BN_free",
+            "type": "(a: N.Struct) => void"
+        },
+        {
+            "signature": "void CRYPTO_free(void *ptr, const char *file, int line);",
+            "name": "CRYPTO_free",
+            "type": "(ptr: N.DataPointer|N.ConstDataPointer|N.Struct, file: string, line: number) => void"
+        },
+        {
+            "signature": "char *X509_NAME_oneline(const X509_NAME *a, char *buf, int size);",
+            "name": "X509_NAME_oneline",
+            "type": "(a: N.Struct, buf: ArrayBuffer | Uint8Array | IDataBuffer, size: number) => N.DataPointer | undefined"
+        }
+    ],
+
+    "constants": [
+        { "name": "SSL_CTRL_MODE", "value": 33 },
+        { "name": "X509_V_OK", "value": 0 },
+        { "name": "X509_V_ERR_UNSPECIFIED", "value": 1 },
+        { "name": "X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT", "value": 2 },
+        { "name": "X509_V_ERR_UNABLE_TO_GET_CRL", "value": 3 },
+        { "name": "X509_V_ERR_UNABLE_TO_DECRYPT_CERT_SIGNATURE", "value": 4 },
+        { "name": "X509_V_ERR_UNABLE_TO_DECRYPT_CRL_SIGNATURE", "value": 5 },
+        { "name": "X509_V_ERR_UNABLE_TO_DECODE_ISSUER_PUBLIC_KEY", "value": 6 },
+        { "name": "X509_V_ERR_CERT_SIGNATURE_FAILURE", "value": 7 },
+        { "name": "X509_V_ERR_CRL_SIGNATURE_FAILURE", "value": 8 },
+        { "name": "X509_V_ERR_CERT_NOT_YET_VALID", "value": 9 },
+        { "name": "X509_V_ERR_CERT_HAS_EXPIRED", "value": 10 },
+        { "name": "X509_V_ERR_CRL_NOT_YET_VALID", "value": 11 },
+        { "name": "X509_V_ERR_CRL_HAS_EXPIRED", "value": 12 },
+        { "name": "X509_V_ERR_ERROR_IN_CERT_NOT_BEFORE_FIELD", "value": 13 },
+        { "name": "X509_V_ERR_ERROR_IN_CERT_NOT_AFTER_FIELD", "value": 14 },
+        { "name": "X509_V_ERR_ERROR_IN_CRL_LAST_UPDATE_FIELD", "value": 15 },
+        { "name": "X509_V_ERR_ERROR_IN_CRL_NEXT_UPDATE_FIELD", "value": 16 },
+        { "name": "X509_V_ERR_OUT_OF_MEM", "value": 17 },
+        { "name": "X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT", "value": 18 },
+        { "name": "X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN", "value": 19 },
+        { "name": "X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY", "value": 20 },
+        { "name": "X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE", "value": 21 },
+        { "name": "X509_V_ERR_CERT_CHAIN_TOO_LONG", "value": 22 },
+        { "name": "X509_V_ERR_CERT_REVOKED", "value": 23 },
+        { "name": "X509_V_ERR_INVALID_CA", "value": 24 },
+        { "name": "X509_V_ERR_PATH_LENGTH_EXCEEDED", "value": 25 },
+        { "name": "X509_V_ERR_INVALID_PURPOSE", "value": 26 },
+        { "name": "X509_V_ERR_CERT_UNTRUSTED", "value": 27 },
+        { "name": "X509_V_ERR_CERT_REJECTED", "value": 28 },
+        { "name": "X509_V_ERR_SUBJECT_ISSUER_MISMATCH", "value": 29 },
+        { "name": "X509_V_ERR_AKID_SKID_MISMATCH", "value": 30 },
+        { "name": "X509_V_ERR_AKID_ISSUER_SERIAL_MISMATCH", "value": 31 },
+        { "name": "X509_V_ERR_KEYUSAGE_NO_CERTSIGN", "value": 32 },
+        { "name": "X509_V_ERR_UNABLE_TO_GET_CRL_ISSUER", "value": 33 },
+        { "name": "X509_V_ERR_UNHANDLED_CRITICAL_EXTENSION", "value": 34 },
+        { "name": "X509_V_ERR_KEYUSAGE_NO_CRL_SIGN", "value": 35 },
+        { "name": "X509_V_ERR_UNHANDLED_CRITICAL_CRL_EXTENSION", "value": 36 },
+        { "name": "X509_V_ERR_INVALID_NON_CA", "value": 37 },
+        { "name": "X509_V_ERR_PROXY_PATH_LENGTH_EXCEEDED", "value": 38 },
+        { "name": "X509_V_ERR_KEYUSAGE_NO_DIGITAL_SIGNATURE", "value": 39 },
+        { "name": "X509_V_ERR_PROXY_CERTIFICATES_NOT_ALLOWED", "value": 40 },
+        { "name": "X509_V_ERR_INVALID_EXTENSION", "value": 41 },
+        { "name": "X509_V_ERR_INVALID_POLICY_EXTENSION", "value": 42 },
+        { "name": "X509_V_ERR_NO_EXPLICIT_POLICY", "value": 43 },
+        { "name": "X509_V_ERR_DIFFERENT_CRL_SCOPE", "value": 44 },
+        { "name": "X509_V_ERR_UNSUPPORTED_EXTENSION_FEATURE", "value": 45 },
+        { "name": "X509_V_ERR_UNNESTED_RESOURCE", "value": 46 },
+        { "name": "X509_V_ERR_PERMITTED_VIOLATION", "value": 47 },
+        { "name": "X509_V_ERR_EXCLUDED_VIOLATION", "value": 48 },
+        { "name": "X509_V_ERR_SUBTREE_MINMAX", "value": 49 },
+        { "name": "X509_V_ERR_APPLICATION_VERIFICATION", "value": 50 },
+        { "name": "X509_V_ERR_UNSUPPORTED_CONSTRAINT_TYPE", "value": 51 },
+        { "name": "X509_V_ERR_UNSUPPORTED_CONSTRAINT_SYNTAX", "value": 52 },
+        { "name": "X509_V_ERR_UNSUPPORTED_NAME_SYNTAX", "value": 53 },
+        { "name": "X509_V_ERR_CRL_PATH_VALIDATION_ERROR", "value": 54 },
+        { "name": "X509_V_ERR_PATH_LOOP", "value": 55 },
+        { "name": "X509_V_ERR_SUITE_B_INVALID_VERSION", "value": 56 },
+        { "name": "X509_V_ERR_SUITE_B_INVALID_ALGORITHM", "value": 57 },
+        { "name": "X509_V_ERR_SUITE_B_INVALID_CURVE", "value": 58 },
+        { "name": "X509_V_ERR_SUITE_B_INVALID_SIGNATURE_ALGORITHM", "value": 59 },
+        { "name": "X509_V_ERR_SUITE_B_LOS_NOT_ALLOWED", "value": 60 },
+        { "name": "X509_V_ERR_SUITE_B_CANNOT_SIGN_P_384_WITH_P_256", "value": 61 },
+        { "name": "X509_V_ERR_HOSTNAME_MISMATCH", "value": 62 },
+        { "name": "X509_V_ERR_EMAIL_MISMATCH", "value": 63 },
+        { "name": "X509_V_ERR_IP_ADDRESS_MISMATCH", "value": 64 },
+        { "name": "X509_V_ERR_DANE_NO_MATCH", "value": 65 },
+        { "name": "X509_V_ERR_EE_KEY_TOO_SMALL", "value": 66 },
+        { "name": "X509_V_ERR_CA_KEY_TOO_SMALL", "value": 67 },
+        { "name": "X509_V_ERR_CA_MD_TOO_WEAK", "value": 68 },
+        { "name": "X509_V_ERR_INVALID_CALL", "value": 69 },
+        { "name": "X509_V_ERR_STORE_LOOKUP", "value": 70 },
+        { "name": "X509_V_ERR_NO_VALID_SCTS", "value": 71 },
+        { "name": "X509_V_ERR_PROXY_SUBJECT_NAME_VIOLATION", "value": 72 },
+        { "name": "X509_V_ERR_OCSP_VERIFY_NEEDED", "value": 73 },
+        { "name": "X509_V_ERR_OCSP_VERIFY_FAILED", "value": 74 },
+        { "name": "X509_V_ERR_OCSP_CERT_UNKNOWN", "value": 75 },
+        { "name": "SSL_OP_ALLOW_NO_DHE_KEX", "value": "0x00000400" },
+        { "name": "SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION", "value": "0x00040000" },
+        { "name": "SSL_OP_CIPHER_SERVER_PREFERENCE", "value": "0x00400000" },
+        { "name": "SSL_OP_CISCO_ANYCONNECT", "value": "0x00008000" },
+        { "name": "SSL_OP_COOKIE_EXCHANGE", "value": "0x00002000" },
+        { "name": "SSL_OP_CRYPTOPRO_TLSEXT_BUG", "value": "0x80000000" },
+        { "name": "SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS", "value": "0x00000800" },
+        { "name": "SSL_OP_ENABLE_MIDDLEBOX_COMPAT", "value": "0x00100000" },
+        { "name": "SSL_OP_LEGACY_SERVER_CONNECT", "value": "0x00000004" },
+        { "name": "SSL_OP_NO_ANTI_REPLAY", "value": "0x01000000" },
+        { "name": "SSL_OP_NO_COMPRESSION", "value": "0x00020000" },
+        { "name": "SSL_OP_NO_DTLSv1", "value": "0x04000000" },
+        { "name": "SSL_OP_NO_DTLSv1_2", "value": "0x08000000" },
+        { "name": "SSL_OP_NO_ENCRYPT_THEN_MAC", "value": "0x00080000" },
+        { "name": "SSL_OP_NO_EXTENDED_MASTER_SECRET", "value": "0x00000001" },
+        { "name": "SSL_OP_NO_QUERY_MTU", "value": "0x00001000" },
+        { "name": "SSL_OP_NO_RENEGOTIATION", "value": "0x40000000" },
+        { "name": "SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION", "value": "0x00010000" },
+        { "name": "SSL_OP_NO_SSLv2", "value": "0x0" },
+        { "name": "SSL_OP_NO_SSLv3", "value": "0x02000000" },
+        { "name": "SSL_OP_NO_TICKET", "value": "0x00004000" },
+        { "name": "SSL_OP_NO_TLSv1", "value": "0x04000000" },
+        { "name": "SSL_OP_NO_TLSv1_1", "value": "0x10000000" },
+        { "name": "SSL_OP_NO_TLSv1_2", "value": "0x08000000" },
+        { "name": "SSL_OP_NO_TLSv1_3", "value": "0x20000000" },
+        { "name": "SSL_OP_PRIORITIZE_CHACHA", "value": "0x00200000" },
+        { "name": "SSL_OP_SAFARI_ECDHE_ECDSA_BUG", "value": "0x00000040" },
+        { "name": "SSL_OP_TLSEXT_PADDING", "value": "0x00000010" },
+        { "name": "SSL_OP_TLS_ROLLBACK_BUG", "value": "0x00800000" },
+        { "name": "SSL_OP_ALL", "value": "0x80000854", "comment": "too large for safeint" },
+        { "name": "BIO_C_SET_BUF_MEM_EOF_RETURN", "value": 130 },
+        { "name": "SSL_ERROR_NONE", "value": 0 },
+        { "name": "SSL_ERROR_SSL", "value": 1 },
+        { "name": "SSL_ERROR_WANT_READ", "value": 2 },
+        { "name": "SSL_ERROR_WANT_WRITE", "value": 3 },
+        { "name": "SSL_ERROR_WANT_X509_LOOKUP", "value": 4 },
+        { "name": "SSL_ERROR_SYSCALL", "value": 5 },
+        { "name": "SSL_ERROR_ZERO_RETURN", "value": 6 },
+        { "name": "SSL_ERROR_WANT_CONNECT", "value": 7 },
+        { "name": "SSL_ERROR_WANT_ACCEPT", "value": 8 },
+        { "name": "SSL_ERROR_WANT_ASYNC", "value": 9 },
+        { "name": "SSL_ERROR_WANT_ASYNC_JOB", "value": 10 },
+        { "name": "SSL_ERROR_WANT_CLIENT_HELLO_CB", "value": 11 },
+        { "name": "SSL_MODE_ENABLE_PARTIAL_WRITE", "value": "0x00000001" },
+        { "name": "SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER", "value": "0x00000002" },
+        { "name": "SSL_MODE_AUTO_RETRY", "value": "0x00000004" },
+        { "name": "SSL_MODE_NO_AUTO_CHAIN", "value": "0x00000008" },
+        { "name": "SSL_MODE_RELEASE_BUFFERS", "value": "0x00000010" },
+        { "name": "SSL_MODE_SEND_CLIENTHELLO_TIME", "value": "0x00000020" },
+        { "name": "SSL_MODE_SEND_SERVERHELLO_TIME", "value": "0x00000040" },
+        { "name": "SSL_MODE_SEND_FALLBACK_SCSV", "value": "0x00000080" },
+        { "name": "SSL_MODE_ASYNC", "value": "0x00000100" },
+        { "name": "SSL_MODE_NO_KTLS_TX", "value": "0x00000200" },
+        { "name": "SSL_MODE_DTLS_SCTP_LABEL_LENGTH_BUG", "value": "0x00000400" },
+        { "name": "SSL_MODE_NO_KTLS_RX", "value": "0x00000800" },
+        { "name": "SSL_VERIFY_NONE", "value": "0x00" },
+        { "name": "SSL_VERIFY_PEER", "value": "0x01" },
+        { "name": "SSL_VERIFY_FAIL_IF_NO_PEER_CERT", "value": "0x02" },
+        { "name": "SSL_VERIFY_CLIENT_ONCE", "value": "0x04" },
+        { "name": "SSL_VERIFY_POST_HANDSHAKE", "value": "0x08" }
+    ]
+}

@@ -59,6 +59,9 @@ declare namespace nrdsocket {
         set(index: number, value: number): void;
         get(index: number): void;
 
+        stringify(maxLen?: number): string | undefined;
+        free(): void;
+
         null: boolean;
 
         clear(): void;
@@ -71,6 +74,9 @@ declare namespace nrdsocket {
         readonly size: number;
 
         get(index: number): number;
+
+        stringify(maxLen?: number): string | undefined;
+        free(): void;
 
         clear(): void;
     }
