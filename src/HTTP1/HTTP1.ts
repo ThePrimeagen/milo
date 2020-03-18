@@ -1,10 +1,11 @@
 import {
-    IHTTP, HTTPMethod, HTTPTransferEncoding, IHTTPRequest, INetworkPipe,
+    IHTTP, HTTPMethod, HTTPTransferEncoding, IHTTPRequest,
     IHTTPHeadersEvent, ErrorCode, IDataBuffer
 } from "../types";
 import Platform from "../Platform";
 import EventEmitter from "../EventEmitter";
 import ChunkyParser from "./ChunkyParser";
+import NetworkPipe from "../NetworkPipe";
 import { assert } from "../utils";
 
 export default class HTTP1 extends EventEmitter implements IHTTP {
@@ -16,7 +17,7 @@ export default class HTTP1 extends EventEmitter implements IHTTP {
     private requestSize?: number;
 
     public httpVersion: string;
-    public networkPipe?: INetworkPipe;
+    public networkPipe?: NetworkPipe;
     public request?: IHTTPRequest;
     public timeToFirstByteRead?: number;
     public timeToFirstByteWritten?: number;
@@ -31,7 +32,7 @@ export default class HTTP1 extends EventEmitter implements IHTTP {
     private getPathName(hostName: string, query: string): string {
         return `${hostName}${query}`;
     }
-    send(networkPipe: INetworkPipe, request: IHTTPRequest): boolean {
+    send(networkPipe: NetworkPipe, request: IHTTPRequest): boolean {
         this.networkPipe = networkPipe;
         this.request = request;
         let str =
@@ -116,7 +117,7 @@ Host: ${request.url.host}\r\n`;
                 }
             }
         });
-        this.networkPipe.once("close", () => {
+        this.networkPipe.on("close", () => {
             this.emit("finished");
         });
         return true;
@@ -224,7 +225,7 @@ Host: ${request.url.host}\r\n`;
                     this.chunkyParser.on("done", (buffer: IDataBuffer | undefined) => {
                         if (buffer) {
                             assert(this.networkPipe, "Must have networkPipe");
-                            this.networkPipe.stash(buffer);
+                            this.networkPipe.stash(buffer, 0, buffer.byteLength);
                         }
                         this.chunkyParser = undefined;
                         this.emit("finished");

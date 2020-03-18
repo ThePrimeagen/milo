@@ -1,5 +1,6 @@
 import Platform from '../../Platform';
 import DataBuffer from '../../DataBuffer'
+import NetworkPipe from "../../NetworkPipe";
 
 import { createDefaultState } from './state';
 
@@ -23,7 +24,6 @@ import {
 } from '../buffer';
 
 import {
-    INetworkPipe,
     IDataBuffer,
 } from '../../types';
 
@@ -44,12 +44,12 @@ export default class WSFramer {
     private msgState: WSState;
     private controlState: WSState;
     private closed: boolean;
-    private pipe: INetworkPipe;
+    private pipe: NetworkPipe;
     private sendHeader: IDataBuffer;
     private header: IDataBuffer;
     private headerLen: number;
 
-    constructor(pipe: INetworkPipe, maxFrameSize = 8096, maxPacketSize = 1024 * 1024 * 4) {
+    constructor(pipe: NetworkPipe, maxFrameSize = 8096, maxPacketSize = 1024 * 1024 * 4) {
         this.sendHeader = new DataBuffer(MAX_HEADER_SIZE);
         this.header = new DataBuffer(MAX_HEADER_SIZE);
         this.headerLen = 0;

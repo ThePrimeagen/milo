@@ -6,13 +6,13 @@ import {
     IDnsResult,
     IpVersion,
     IPlatform,
-    INetworkPipe,
     ICreateTCPNetworkPipeOptions,
     ICreateSSLNetworkPipeOptions,
     ISHA256Context,
     HTTPRequestHeaders
 } from "../types";
 
+import NetworkPipe from "../NetworkPipe";
 import createTCPNetworkPipe from "./NodeTCPNetworkPipe";
 
 import sha1 from "sha1";
@@ -199,11 +199,11 @@ class NodePlatform implements IPlatform {
         console.error.apply(console, args);
     }
 
-    createSSLNetworkPipe(options: ICreateSSLNetworkPipeOptions): Promise<INetworkPipe> {
+    createSSLNetworkPipe(options: ICreateSSLNetworkPipeOptions): Promise<NetworkPipe> {
         throw new Error("Really not implementetd...");
     }
 
-    createTCPNetworkPipe(options: ICreateTCPNetworkPipeOptions): Promise<INetworkPipe> {
+    createTCPNetworkPipe(options: ICreateTCPNetworkPipeOptions): Promise<NetworkPipe> {
         return createTCPNetworkPipe(options);
     }
 

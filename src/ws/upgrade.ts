@@ -1,7 +1,4 @@
-import {
-    INetworkPipe,
-} from '../types';
-
+import NetworkPipe from "../NetworkPipe";
 import {
     UrlObject,
 } from './types';
@@ -11,7 +8,7 @@ import Platform from "../Platform";
 import DataBuffer from "../DataBuffer";
 import { headerValue } from "../utils";
 
-export function upgrade(u: string | UrlObject): Promise<INetworkPipe> {
+export function upgrade(u: string | UrlObject): Promise<NetworkPipe> {
     let url = u;
     if (typeof url === "object") {
         // TODO: Should I do this?

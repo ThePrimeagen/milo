@@ -13,7 +13,6 @@ import {
 import NetworkPipe from "../NetworkPipe";
 
 import {
-    INetworkPipe,
     IDnsResult,
     IDataBuffer,
     ICreateTCPNetworkPipeOptions
@@ -56,7 +55,7 @@ function createReadBufferPool(): Pool<ReadBufferItem> {
     return new Pool<ReadBufferItem>(factory);
 }
 
-class NodeTCPNetworkPipe extends NetworkPipe implements INetworkPipe {
+class NodeTCPNetworkPipe extends NetworkPipe implements NetworkPipe {
     private sock?: net.Socket;
     private bufferPool: PoolItem<ReadBufferItem>[];
     private state: State;
@@ -137,7 +136,7 @@ class NodeTCPNetworkPipe extends NetworkPipe implements INetworkPipe {
     }
 
     removeEventHandlers() {
-        this.removeAllListeners();
+        this.clearListeners();
     }
 
     write(buf: IDataBuffer | ArrayBuffer | string, offset: number = 0, length?: number): void {
@@ -233,7 +232,7 @@ class NodeTCPNetworkPipe extends NetworkPipe implements INetworkPipe {
 
 // TODO: We only allow ipv4
 // we should create an opts
-export default function createTCPNetworkPipe(options: ICreateTCPNetworkPipeOptions): Promise<INetworkPipe> {
+export default function createTCPNetworkPipe(options: ICreateTCPNetworkPipeOptions): Promise<NetworkPipe> {
     return new Promise((res, rej) => {
         // @ts-ignore
         const pipe = new NodeTCPNetworkPipe(options.host, options.port);

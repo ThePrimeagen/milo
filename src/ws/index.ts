@@ -1,11 +1,11 @@
 import Platform from "../Platform";
 import DataBuffer from "../DataBuffer";
+import NetworkPipe from "../NetworkPipe";
 import WSFramer from './framer';
 import { WSState } from './framer/types';
 import { upgrade } from "./upgrade";
 
 import {
-    INetworkPipe,
     IDataBuffer,
 } from '../types';
 
@@ -56,7 +56,7 @@ export default class WS {
     // @ts-ignore
     private frame: WSFramer;
     // @ts-ignore
-    private pipe: INetworkPipe;
+    private pipe: NetworkPipe;
 
     private callbacks: CallbackMap;
     private state: ConnectionState;
@@ -68,7 +68,7 @@ export default class WS {
     public onerror?: ErrorCallback;
 
     constructor(url: string | UrlObject, opts: WSOptions = defaultOptions) {
-        // pipe: INetworkPipe, opts: WSOptions = defaultOptions) {
+        // pipe: NetworkPipe, opts: WSOptions = defaultOptions) {
         this.state = ConnectionState.Connecting;
         this.opts = opts;
 

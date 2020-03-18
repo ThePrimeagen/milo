@@ -20,15 +20,16 @@ jest.doMock("../header", () => {
     }
 });
 
-import { INetworkPipe, IDataBuffer } from "../../../types";
+import { IDataBuffer } from "../../../types";
 import WSFramer from "../index";
 import { Opcodes } from "../../types";
 import maskFn from "../../mask";
+import NetworkPipe from "../../../NetworkPipe";
 
 // @ts-ignore
 const pipe = {
     write: jest.fn()
-} as INetworkPipe;
+} as NetworkPipe;
 
 /*
   0                   1                   2                   3

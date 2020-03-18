@@ -1,8 +1,4 @@
 import {
-    INetworkPipe,
-} from '../../src/types';
-
-import {
     WS,
     WSState,
     _wsUpgrade,

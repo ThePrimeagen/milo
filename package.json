@@ -30,6 +30,7 @@
   "dependencies": {
     "atob": "^2.1.2",
     "btoa": "^1.2.1",
+    "emittery": "^0.6.0",
     "network-byte-order": "^0.2.0",
     "sha1": "^1.1.1",
     "tslint": "^6.1.0",

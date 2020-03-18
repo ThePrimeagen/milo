@@ -1,5 +1,5 @@
 import {
-    ICreateTCPNetworkPipeOptions, IDnsResult, INetworkPipe, IDataBuffer, IPlatform
+    ICreateTCPNetworkPipeOptions, IDnsResult, IDataBuffer, IPlatform
 } from "../types";
 import NetworkPipe from "../NetworkPipe";
 import { NrdpPlatform } from "./Platform";
@@ -10,7 +10,7 @@ function assert(platform: IPlatform, condition: any, msg?: string): asserts cond
     platform.assert(condition, msg);
 }
 
-export class NrdpTCPNetworkPipe extends NetworkPipe implements INetworkPipe {
+export class NrdpTCPNetworkPipe extends NetworkPipe implements NetworkPipe {
     private sock: number;
     private writeBuffers: (Uint8Array | ArrayBuffer | IDataBuffer | string)[];
     private writeBufferOffsets: number[];
@@ -55,7 +55,7 @@ export class NrdpTCPNetworkPipe extends NetworkPipe implements INetworkPipe {
     get ssl() { return false; }
 
     removeEventHandlers() {
-        this.removeAllListeners();
+        this.clearListeners();
         if (this.selectMode) {
             if (this.sock !== -1) {
                 N.clearFD(this.sock);
@@ -171,11 +171,11 @@ export class NrdpTCPNetworkPipe extends NetworkPipe implements INetworkPipe {
 };
 
 export default function createTCPNetworkPipe(platform: NrdpPlatform,
-                                             options: ICreateTCPNetworkPipeOptions): Promise<INetworkPipe> {
+                                             options: ICreateTCPNetworkPipeOptions): Promise<NetworkPipe> {
     let dnsStartTime = 0;
     let dns: string | undefined;
     let dnsChannel: string | undefined;
-    return new Promise<INetworkPipe>((resolve, reject) => {
+    return new Promise<NetworkPipe>((resolve, reject) => {
         new Promise<N.Sockaddr>(innerResolve => {
             let ipAddress = options.hostname;
             if (typeof options.port !== "undefined")
