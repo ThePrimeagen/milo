@@ -1,6 +1,7 @@
 import Url from "url-parse";
-import { INetworkPipe, ICreateTCPNetworkPipeOptions, IUnorderedMap } from "./types";
+import { ICreateTCPNetworkPipeOptions, IUnorderedMap } from "./types";
 import Platform from "./Platform";
+import NetworkPipe from "./NetworkPipe";
 import UnorderedMap from "./UnorderedMap";
 import { assert } from "./utils";
 
@@ -16,15 +17,15 @@ export interface PendingConnection {
     readonly id: number;
 
     abort(): void;
-    onNetworkPipe(): Promise<INetworkPipe>;
+    onNetworkPipe(): Promise<NetworkPipe>;
 }
 
 class PendingConnectionImpl implements PendingConnection {
     private pool: ConnectionPool;
     private error?: Error;
-    private pipe?: INetworkPipe;
+    private pipe?: NetworkPipe;
     private rejectFunction?: (reason: Error) => void;
-    private resolveFunction?: (pipe: INetworkPipe) => void;
+    private resolveFunction?: (pipe: NetworkPipe) => void;
 
     public hostname: string;
     public port: number;
@@ -50,7 +51,7 @@ class PendingConnectionImpl implements PendingConnection {
         }
         this.pool.abort(this.id);
     }
-    onNetworkPipe(): Promise<INetworkPipe> {
+    onNetworkPipe(): Promise<NetworkPipe> {
         Platform.log("onNetworkPipe called", typeof this.pipe, typeof this.error);
         assert(!this.resolveFunction, "must not have resolve");
         assert(!this.rejectFunction, "must not have reject");
@@ -70,7 +71,7 @@ class PendingConnectionImpl implements PendingConnection {
         });
     }
 
-    resolve(pipe: INetworkPipe): void {
+    resolve(pipe: NetworkPipe): void {
         assert(!this.pipe, "must not have pipe");
         assert(!this.error, "must not have error");
 
@@ -94,7 +95,7 @@ class PendingConnectionImpl implements PendingConnection {
 
 interface HostData {
     hostPort: string;
-    pipes: INetworkPipe[];
+    pipes: NetworkPipe[];
     initializing: number;
     pending: PendingConnectionImpl[];
     ssl: boolean;
@@ -150,7 +151,7 @@ export class ConnectionPool {
         throw new Error("Can't find request to abort with id " + id);
     }
 
-    finish(pipe: INetworkPipe): void {
+    finish(pipe: NetworkPipe): void {
         Platform.trace(`pipe returned to the nest ${pipe.hostname}:${pipe.port} forbidReuse ${pipe.forbidReuse} closed ${pipe.closed} fd ${pipe.fd}`);
         if (pipe.forbidReuse) {
             if (!pipe.closed) {
@@ -236,7 +237,7 @@ export class ConnectionPool {
                     connectTimeout: pending.connectTimeout,
                     ipVersion: 4 // gotta do happy eyeballs and send off multiple tcp network pipe things
                 } as ICreateTCPNetworkPipeOptions;
-                Platform.createTCPNetworkPipe(tcpOpts).then((pipe: INetworkPipe) => {
+                Platform.createTCPNetworkPipe(tcpOpts).then((pipe: NetworkPipe) => {
                     Platform.trace(`Got tcp connection for ${hostPort} with fd ${pipe.fd}`);
                     if (ssl) {
                         Platform.trace(`Requesting ssl pipe for ${hostPort} with fd ${pipe.fd}`);
@@ -244,7 +245,7 @@ export class ConnectionPool {
                     } else {
                         return pipe;
                     }
-                }).then((pipe: INetworkPipe) => {
+                }).then((pipe: NetworkPipe) => {
                     pending.resolve(pipe);
                 }).catch((error: Error) => {
                     pending.reject(error);
@@ -309,7 +310,7 @@ export class ConnectionPool {
 
             ++data.initializing;
             Platform.trace(`Requesting tcp connection for ${data.hostPort}`);
-            Platform.createTCPNetworkPipe(tcpOpts).then((pipe: INetworkPipe) => {
+            Platform.createTCPNetworkPipe(tcpOpts).then((pipe: NetworkPipe) => {
                 Platform.trace(`Got tcp connection for ${data.hostPort} with fd ${pipe.fd}`);
                 if (data.ssl) {
                     Platform.trace(`Requesting ssl pipe for ${data.hostPort} with fd ${pipe.fd}`);
@@ -317,7 +318,7 @@ export class ConnectionPool {
                 } else {
                     return pipe;
                 }
-            }).then((pipe: INetworkPipe) => {
+            }).then((pipe: NetworkPipe) => {
                 pipe.idle = false;
                 assert(data);
                 --data.initializing;

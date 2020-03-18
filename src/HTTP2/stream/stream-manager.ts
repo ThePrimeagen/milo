@@ -1,9 +1,7 @@
 import Platform from "../../Platform";
 import DataBuffer from "../../DataBuffer";
-import {
-    INetworkPipe,
-    IDataBuffer,
-} from '../../types';
+import { IDataBuffer, } from '../../types';
+import NetworkPipe from "../../NetworkPipe";
 import FrameConstructor from "../frame/frame-constructor";
 import * as FrameUtils from "../frame/utils";
 import SettingsFrame from "../frame/settings-frame";
@@ -31,7 +29,7 @@ function zeroBit(value: number, bit: number) {
 }
 
 export default class StreamManager {
-    private pipe: INetworkPipe;
+    private pipe: NetworkPipe;
     // TODO: REMOVE THIS AND USE THE H E DOUBLE HOCKEY STICKS READ BUFF FROM
     // THE PLATFORM
     private readBuffer: IDataBuffer;
@@ -41,7 +39,7 @@ export default class StreamManager {
     private stateChanges: StateChangeCallback[];
 
     // TODO: Settings?
-    constructor(pipe: INetworkPipe, settings = {}) {
+    constructor(pipe: NetworkPipe, settings = {}) {
         this.readBuffer = new DataBuffer(BUFFER_SIZE);
         this.pipe = pipe;
         this.nextId = 1;
@@ -55,9 +53,9 @@ export default class StreamManager {
             this.read();
         });
 
-        pipe.once("close", () => {
-            this._close();
-        });
+        // pipe.once("close", () => {
+        //     this._close();
+        // });
 
         // A preamble must be sent as the first thing. (which is the string
         // below).

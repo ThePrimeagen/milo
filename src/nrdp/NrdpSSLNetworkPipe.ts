@@ -1,5 +1,5 @@
 import {
-    ICreateSSLNetworkPipeOptions, INetworkPipe, IDataBuffer, IPlatform
+    ICreateSSLNetworkPipeOptions, IDataBuffer, IPlatform
 } from "../types";
 import { NrdpPlatform } from "./Platform";
 import NetworkPipe from "../NetworkPipe";
@@ -10,11 +10,11 @@ function assert(platform: IPlatform, condition: any, msg?: string): asserts cond
     platform.assert(condition, msg);
 }
 
-class NrdpSSLNetworkPipe extends NetworkPipe implements INetworkPipe {
+class NrdpSSLNetworkPipe extends NetworkPipe implements NetworkPipe {
     private sslInstance: N.Struct;
     private inputBio: N.Struct;
     private outputBio: N.Struct;
-    private pipe: INetworkPipe;
+    private pipe: NetworkPipe;
     private connected: boolean;
     private writeBuffers: (Uint8Array | ArrayBuffer | string | IDataBuffer)[];
     private writeBufferOffsets: number[];
@@ -95,7 +95,7 @@ class NrdpSSLNetworkPipe extends NetworkPipe implements INetworkPipe {
                 }
             }
         });
-        this.pipe.once("close", () => {
+        this.pipe.on("close", () => {
             this.emit("close");
         });
         this.pipe.on("error", (error: Error) => {
@@ -119,7 +119,7 @@ class NrdpSSLNetworkPipe extends NetworkPipe implements INetworkPipe {
     get connectTime() { return this.pipe.connectTime; }
 
     removeEventHandlers() {
-        this.removeAllListeners();
+        this.clearListeners();
     }
 
     write(buf: IDataBuffer | string, offset?: number, length?: number): void {
@@ -272,8 +272,8 @@ class NrdpSSLNetworkPipe extends NetworkPipe implements INetworkPipe {
 };
 
 export default function createSSLNetworkPipe(platform: NrdpPlatform,
-                                             options: ICreateSSLNetworkPipeOptions): Promise<INetworkPipe> {
-    return new Promise<INetworkPipe>((resolve, reject) => {
+                                             options: ICreateSSLNetworkPipeOptions): Promise<NetworkPipe> {
+    return new Promise<NetworkPipe>((resolve, reject) => {
         const sslPipe = new NrdpSSLNetworkPipe(platform, options, (error?: Error) => {
             // platform.trace("connected or something", error);
             if (error) {

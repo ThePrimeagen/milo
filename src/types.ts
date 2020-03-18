@@ -1,3 +1,4 @@
+import NetworkPipe from "./NetworkPipe";
 export type IpVersion = 4 | 6;
 export type IpConnectivityMode = 4 | 6 | 10 | 0; // 0 is invalid, 10 is dual
 export type HTTPMethod = "POST" | "HEAD" | "PUT" | "DELETE" | "PATCH" | "GET";
@@ -223,7 +224,7 @@ export interface ICreateTCPNetworkPipeOptions {
 };
 
 export interface ICreateSSLNetworkPipeOptions {
-    pipe: INetworkPipe;
+    pipe: NetworkPipe;
 };
 
 export interface ISHA256Context {
@@ -232,41 +233,6 @@ export interface ISHA256Context {
     final(): ArrayBuffer;
     final(md: ArrayBuffer | Uint8Array | IDataBuffer, offset?: number): number;
     reset(): void;
-};
-
-export interface INetworkPipeData {
-    idle: boolean;
-    forbidReuse: boolean;
-    firstByteWritten?: number;
-    firstByteRead?: number;
-
-    stash(buf: IDataBuffer | ArrayBuffer, offset?: number, length?: number): void;
-    unstash(buf: ArrayBuffer | IDataBuffer, offset: number, length: number): number;
-};
-
-export interface INetworkPipe extends IEventEmitter, INetworkPipeData {
-    write(buf: IDataBuffer | Uint8Array | ArrayBuffer | string, offset: number, length: number): void;
-    write(buf: string): void;
-
-    read(buf: ArrayBuffer | IDataBuffer, offset: number, length: number): number;
-
-    close(): void;
-
-    hostname: string;
-    port: number;
-    fd: number; // socket
-
-    readonly ssl: boolean;
-    readonly closed: boolean;
-
-    readonly dnsTime: number;
-    readonly connectTime: number;
-
-    readonly ipAddress: string;
-    readonly dns: string; // dns type
-    readonly dnsChannel?: string;
-
-    removeEventHandlers(): void;
 };
 
 export enum HTTPTransferEncoding {
@@ -298,7 +264,7 @@ export interface IHTTPRequest {
 
 export interface IHTTP extends IEventEmitter {
     httpVersion: string;
-    send(pipe: INetworkPipe, request: IHTTPRequest): boolean;
+    send(pipe: NetworkPipe, request: IHTTPRequest): boolean;
 
     timeToFirstByteRead?: number;
     timeToFirstByteWritten?: number;
@@ -343,8 +309,8 @@ export interface IPlatform {
 
     standardHeaders: { [key: string]: string };
 
-    createTCPNetworkPipe(options: ICreateTCPNetworkPipeOptions): Promise<INetworkPipe>;
-    createSSLNetworkPipe(options: ICreateSSLNetworkPipeOptions): Promise<INetworkPipe>;
+    createTCPNetworkPipe(options: ICreateTCPNetworkPipeOptions): Promise<NetworkPipe>;
+    createSSLNetworkPipe(options: ICreateSSLNetworkPipeOptions): Promise<NetworkPipe>;
     createSHA256Context(): ISHA256Context;
 
     bufferConcat(...args: ArrayBuffer[] | Uint8Array[] | IDataBuffer[]): ArrayBuffer;

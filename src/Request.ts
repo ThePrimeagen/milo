@@ -2,11 +2,12 @@ import Url from "url-parse";
 import HTTP1 from "./HTTP1/HTTP1";
 import Platform from "./Platform";
 import DataBuffer from "./DataBuffer";
+import NetworkPipe from "./NetworkPipe";
 import connectionPool, { ConnectionOptions, PendingConnection } from "./ConnectionPool";
 
 import {
     ICreateTCPNetworkPipeOptions, IpConnectivityMode,
-    INetworkPipe, IRequestTimeouts, IHTTP, HTTPMethod, IHTTPHeadersEvent,
+    IRequestTimeouts, IHTTP, HTTPMethod, IHTTPHeadersEvent,
     HTTPTransferEncoding, ErrorCode, IDataBuffer
 } from "./types";
 import { assert } from "./utils";
@@ -127,7 +128,7 @@ export class Request {
     requestData: RequestData;
     url: Url;
     id: number;
-    networkPipe?: INetworkPipe;
+    networkPipe?: NetworkPipe;
 
     private resolve?: (response: RequestResponse) => void;
     private reject?: (error: Error) => void;
@@ -182,7 +183,7 @@ export class Request {
             dnsTimeout: 10000,
             connectTimeout: 10000,
         },
-    }): Promise<INetworkPipe> {
+    }): Promise<NetworkPipe> {
 
         let parsedUrl: Url;
         if (typeof url === 'string') {
@@ -224,7 +225,7 @@ export class Request {
             ipVersion: 4 // gotta do happy eyeballs and send off multiple tcp network pipe things
         } as ICreateTCPNetworkPipeOptions;
 
-        return Platform.createTCPNetworkPipe(tcpOpts).then((pipe: INetworkPipe) => {
+        return Platform.createTCPNetworkPipe(tcpOpts).then((pipe: NetworkPipe) => {
             if (ssl) {
                 return Platform.createSSLNetworkPipe({ pipe });
             } else {
@@ -263,7 +264,7 @@ export class Request {
             Platform.trace(`got a pending connection ${conn.id}`);
             // conn is abortable
             return conn.onNetworkPipe();
-        }).then((pipe: INetworkPipe) => {
+        }).then((pipe: NetworkPipe) => {
             Platform.trace("GOT OUR PIPE NOW");
             this.networkPipe = pipe;
             if (pipe.dnsTime) {
