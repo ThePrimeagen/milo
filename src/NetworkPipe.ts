@@ -84,6 +84,10 @@ export abstract class NetworkPipe extends Emittery.Typed<NetworkPipeDataEvents, 
         }
         return -1;
     }
+
+    hasStash() {
+        return !!this.buffer;
+    }
 };
 
 export default NetworkPipe;

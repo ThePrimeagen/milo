@@ -8,6 +8,8 @@ import { NetworkPipe } from "../NetworkPipe";
 // "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 // Then a settings frame directly after.
 export async function createRawConnection(data: RequestData | string): Promise<NetworkPipe> {
+    // TODO: YOU MUST CHANGE THIS.
+    // @ts-ignore
     return await Request.connect(data);
 }
 

@@ -178,62 +178,6 @@ export class Request {
         return this;
     }
 
-    static connect(url: string | RequestData, opts = {
-        timeouts: {
-            dnsTimeout: 10000,
-            connectTimeout: 10000,
-        },
-    }): Promise<NetworkPipe> {
-
-        let parsedUrl: Url;
-        if (typeof url === 'string') {
-            parsedUrl = new Url(url);
-        } else {
-            parsedUrl = new Url(url.url);
-        }
-
-        let port: number = 0;
-        if (parsedUrl.port) {
-            port = parseInt(parsedUrl.port, 10);
-        }
-
-        // Platform.trace("Request#send port", port);
-        let ssl = false;
-        switch (parsedUrl.protocol) {
-        case "https:":
-        case "wss:":
-            ssl = true;
-            if (!port) {
-                port = 443;
-            }
-            break;
-        default:
-            if (!port) {
-                port = 80;
-            }
-            break;
-        }
-
-
-        // Platform.trace("Request#send creating TCP pipe");
-        const timeouts = opts.timeouts;
-        const tcpOpts = {
-            hostname: parsedUrl.hostname,
-            port,
-            dnsTimeout: timeouts && timeouts.dnsTimeout,
-            connectTimeout: timeouts && timeouts.connectTimeout,
-            ipVersion: 4 // gotta do happy eyeballs and send off multiple tcp network pipe things
-        } as ICreateTCPNetworkPipeOptions;
-
-        return Platform.createTCPNetworkPipe(tcpOpts).then((pipe: NetworkPipe) => {
-            if (ssl) {
-                return Platform.createSSLNetworkPipe({ pipe });
-            } else {
-                return pipe;
-            }
-        });
-    }
-
     send(): Promise<RequestResponse> {
         this.requestResponse.networkStartTime = Platform.mono();
         // Platform.trace("send called", this.state, this.url);
