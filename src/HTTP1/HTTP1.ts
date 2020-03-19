@@ -115,7 +115,6 @@ Host: ${request.url.host}\r\n`;
                 }
             }
         });
-        // @ts-ignore
         this.networkPipe.on("close", () => {
             this.emit("finished");
         });
