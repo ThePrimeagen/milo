@@ -11,5 +11,8 @@ import autobahn from './runner';
 const updateReport = process.env.UPDATE_REPORT === 'true';
 const Class = process.env.MILO === 'true' ? WS : WebSocket
 
-autobahn(Class, { updateReport });
+autobahn(Class, { 
+    updateReport,
+    port: 9001,
+});
 

@@ -1,0 +1,3 @@
+[submodule "autobahn-testsuite"]
+	path = autobahn-testsuite
+	url = git@github.com:crossbario/autobahn-testsuite.git
