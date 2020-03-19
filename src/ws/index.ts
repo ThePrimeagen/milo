@@ -205,12 +205,17 @@ export default class WS {
 
 
      private validateControlFrame(buffer: IDataBuffer, state: WSState): boolean {
-        // A control frame is considered a bad if the payload length is greater
-        // than 125.
-        if (state.isControlFrame && state.payloadLength > 125) {
-            this.frame.send(CLOSE_1002_BUFFER, 0, 2, Opcodes.CloseConnection);
-            return false;
-        }
+
+         // TODO: There is message deflate that I believe is used as part
+         // of these reserved bits, but not for autobahn tests 3.* series.
+         const rsv = state.rsv1 + state.rsv2 + state.rsv3;
+
+         // A control frame is considered a bad if the payload length is greater
+         // than 125.
+         if (state.isControlFrame && state.payloadLength > 125 || rsv) {
+             this.frame.send(CLOSE_1002_BUFFER, 0, 2, Opcodes.CloseConnection);
+             return false;
+         }
 
         return true;
     }
