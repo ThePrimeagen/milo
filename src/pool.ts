@@ -21,8 +21,7 @@ export class Pool<T> {
             this.pool.push(this.factory(this.boundFree));
         }
 
-        // @ts-ignore
-        return this.pool.pop();
+        return this.pool.pop() as PoolItem<T>;
     }
 
     private free(item: PoolItem<T>) {
