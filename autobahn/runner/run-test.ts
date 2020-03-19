@@ -16,7 +16,7 @@ export async function runAutobahnTests(WebSocketClass: WebSocket, {
     const packageJson = JSON.parse(fs.
         readFileSync(path.join(root, "package.json")).toString());
     const agent = `Milo_${packageJson.version}`;
-    const wsuri = `ws://localhost:${port}`; 
+    const wsuri = `ws://localhost:${port}`;
     let currentCaseId: number;
     let caseCount: number;
 

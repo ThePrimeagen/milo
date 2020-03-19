@@ -6,18 +6,18 @@ import {
 
 import shell from "shelljs";
 
-const gitSubmoduleError = `Attempted to cd to autobahn-testsuite directory and was unable to.  
-This is likely due to not initializing git submodules.  Please execute: 
-            
+const gitSubmoduleError = `Attempted to cd to autobahn-testsuite directory and was unable to.
+This is likely due to not initializing git submodules.  Please execute:
+
     git submodule update --init --recursive
 
 `;
 
-const dockerError = `Failed executing: 
+const dockerError = `Failed executing:
 
-    which docker 
+    which docker
 
-Docker does not appear to be in your $PATH or not installed on your system.  
+Docker does not appear to be in your $PATH or not installed on your system.
 Please install docker and retry.`;
 
 export async function systemReq() {
