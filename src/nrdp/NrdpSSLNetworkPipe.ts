@@ -10,7 +10,7 @@ function assert(platform: IPlatform, condition: any, msg?: string): asserts cond
     platform.assert(condition, msg);
 }
 
-class NrdpSSLNetworkPipe extends NetworkPipe implements NetworkPipe {
+class NrdpSSLNetworkPipe extends NetworkPipe {
     private sslInstance: N.Struct;
     private inputBio: N.Struct;
     private outputBio: N.Struct;

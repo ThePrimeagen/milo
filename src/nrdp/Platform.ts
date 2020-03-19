@@ -33,7 +33,6 @@ export class NrdpPlatform implements IPlatform {
         nrdp.l.trace.apply(nrdp.l, args);
     }
 
-    // @ts-ignore
     get ipConnectivityMode(): IpConnectivityMode {
         switch (nrdp.device.ipConnectivityMode) {
         case "4":
@@ -50,7 +49,6 @@ export class NrdpPlatform implements IPlatform {
 
     private cachedStandardHeaders?: { [key: string]: string };
     private cachedUILanguages?: string[];
-    // @ts-ignore
     get standardHeaders(): { [key: string]: string } {
         const currentLanguages = this.UILanguages;
         if (!this.cachedStandardHeaders || this.cachedUILanguages !== currentLanguages) {
@@ -65,7 +63,6 @@ export class NrdpPlatform implements IPlatform {
         return this.cachedStandardHeaders;
     }
 
-    // @ts-ignore
     get defaultRequestTimeouts(): IRequestTimeouts {
         const opts = nrdp.options;
         return {
@@ -129,9 +126,7 @@ export class NrdpPlatform implements IPlatform {
     bufferLastIndexOf = nrdp_platform.bufferLastIndexOf;
     lookupDnsHost = nrdp.dns.lookupHost.bind(nrdp.dns);
 
-    // @ts-ignore
     get UILanguages(): string[] { return nrdp.device.UILanguages; }
-    // @ts-ignore
     get location(): string { return nrdp.gibbon.location; }
 
     quit(exitCode: number = 0): void { nrdp.exit(exitCode); }

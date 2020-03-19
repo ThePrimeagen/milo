@@ -160,9 +160,10 @@ export class ConnectionPool {
             return;
         }
 
-        assert(!pipe.listenerCount("data"), "Shouldn't have data callbacks anymore");
-        assert(!pipe.listenerCount("close"), "Shouldn't have close callbacks anymore");
-        assert(!pipe.listenerCount("error"), "Shouldn't have error callbacks anymore");
+        // ###
+        // assert(!pipe.listenerCount("data"), "Shouldn't have data callbacks anymore");
+        // assert(!pipe.listenerCount("close"), "Shouldn't have close callbacks anymore");
+        // assert(!pipe.listenerCount("error"), "Shouldn't have error callbacks anymore");
         const hostPort = `${pipe.hostname}:${pipe.port}`;
         let data = this._hosts.get(hostPort);
         if (!data) { // can this happen?

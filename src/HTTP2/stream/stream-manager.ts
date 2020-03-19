@@ -49,6 +49,7 @@ export default class StreamManager {
 
         this.stateChanges = [];
 
+        // @ts-ignore
         pipe.on("data", () => {
             this.read();
         });

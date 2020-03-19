@@ -10,7 +10,7 @@ function assert(platform: IPlatform, condition: any, msg?: string): asserts cond
     platform.assert(condition, msg);
 }
 
-export class NrdpTCPNetworkPipe extends NetworkPipe implements NetworkPipe {
+export class NrdpTCPNetworkPipe extends NetworkPipe {
     private sock: number;
     private writeBuffers: (Uint8Array | ArrayBuffer | IDataBuffer | string)[];
     private writeBufferOffsets: number[];

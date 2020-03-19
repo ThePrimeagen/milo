@@ -55,7 +55,7 @@ function createReadBufferPool(): Pool<ReadBufferItem> {
     return new Pool<ReadBufferItem>(factory);
 }
 
-class NodeTCPNetworkPipe extends NetworkPipe implements NetworkPipe {
+class NodeTCPNetworkPipe extends NetworkPipe {
     private sock?: net.Socket;
     private bufferPool: PoolItem<ReadBufferItem>[];
     private state: State;

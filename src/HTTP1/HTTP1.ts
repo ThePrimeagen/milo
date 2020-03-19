@@ -7,7 +7,6 @@ import EventEmitter from "../EventEmitter";
 import ChunkyParser from "./ChunkyParser";
 import NetworkPipe from "../NetworkPipe";
 import { assert } from "../utils";
-
 export default class HTTP1 extends EventEmitter implements IHTTP {
     private headerBuffer?: IDataBuffer;
     private connection?: string;
@@ -69,7 +68,6 @@ Host: ${request.url.host}\r\n`;
         const scratch = Platform.scratch;
         this.networkPipe.on("data", () => {
             while (true) {
-
                 assert(this.networkPipe, "Must have network pipe");
 
                 const read = this.networkPipe.read(scratch, 0, scratch.byteLength);
@@ -117,6 +115,7 @@ Host: ${request.url.host}\r\n`;
                 }
             }
         });
+        // @ts-ignore
         this.networkPipe.on("close", () => {
             this.emit("finished");
         });
