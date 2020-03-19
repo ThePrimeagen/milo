@@ -313,8 +313,6 @@ export interface IPlatform {
     createSSLNetworkPipe(options: ICreateSSLNetworkPipeOptions): Promise<NetworkPipe>;
     createSHA256Context(): ISHA256Context;
 
-    bufferConcat(...args: ArrayBuffer[] | Uint8Array[] | IDataBuffer[]): ArrayBuffer;
-
     bufferIndexOf(haystack: Uint8Array | ArrayBuffer | string,
                   haystackOffset: number,
                   haystackLength: number | undefined,

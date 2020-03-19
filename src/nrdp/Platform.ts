@@ -118,11 +118,6 @@ export class NrdpPlatform implements IPlatform {
         return createNrdpSSLNetworkPipe(this, options);
     }
 
-    bufferConcat(...args: ArrayBuffer[] | Uint8Array[] | IDataBuffer[]) {
-        // @ts-ignore
-        return ArrayBuffer.concat(...args);
-    }
-
     bufferSet = nrdp_platform.bufferSet;
     bufferIndexOf = nrdp_platform.bufferIndexOf;
     bufferLastIndexOf = nrdp_platform.bufferLastIndexOf;

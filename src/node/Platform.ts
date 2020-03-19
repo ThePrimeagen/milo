@@ -207,22 +207,6 @@ class NodePlatform implements IPlatform {
         return createTCPNetworkPipe(options);
     }
 
-    bufferConcat(...args: ArrayBuffer[] | Uint8Array[]): ArrayBuffer {
-        let bufs;
-
-        if (args[0] instanceof ArrayBuffer) {
-            // @ts-ignore
-            bufs = args.map(x => new Uint8Array(x));
-        }
-        else {
-            bufs = args;
-        }
-
-        const concattedBuf = Buffer.concat(bufs);
-        const offset = concattedBuf.byteOffset;
-        return concattedBuf.buffer.slice(offset, offset + concattedBuf.length);
-    }
-
     // "heremybigHHTTP string\r\n"
     bufferIndexOf(haystack: Uint8Array | ArrayBuffer | string,
                   haystackOffset: number, haystackLength: number | undefined,
