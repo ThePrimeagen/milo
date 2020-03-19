@@ -14,17 +14,17 @@ export async function runAutobahnTests(WebSocketClass: WebSocket, {
 }) {
 
     const packageJson = JSON.parse(fs.
-        readFileSync(path.join(root, "package.json")).toString());
+                                   readFileSync(path.join(root, "package.json")).toString());
     const agent = `Milo_${packageJson.version}`;
     const wsuri = `ws://localhost:${port}`;
     let currentCaseId: number;
     let caseCount: number;
 
-    console.log("runAutobahnTests", agent, wsuri);
+    Platform.log("runAutobahnTests", agent, wsuri);
 
     return new Promise((res, rej) => {
         function startTestRun() {
-            console.log("startTestRun");
+            Platform.log("startTestRun");
             currentCaseId = 1;
             getCaseCount(runNextCase);
         }
@@ -34,44 +34,44 @@ export async function runAutobahnTests(WebSocketClass: WebSocket, {
         }
 
         function openWebSocket(wsUri: string) {
-            console.log("openSocket", wsUri);
+            Platform.log("openSocket", wsUri);
             // @ts-ignore
             return new WebSocketClass(wsUri);
         }
 
         function getCaseCount(cont: () => void) {
-            const ws_uri = wsuri + "/getCaseCount";
-            const webSocket = openWebSocket(ws_uri);
+            const wsUri = wsuri + "/getCaseCount";
+            const webSocket = openWebSocket(wsUri);
 
             // @ts-ignore
-            webSocket.onmessage = function(e: { data: any }) {
+            webSocket.onmessage = (e: { data: any }) => {
                 caseCount = JSON.parse(e.data);
-                console.log("getCaseCount#onmessage", caseCount);
+                Platform.log("getCaseCount#onmessage", caseCount);
                 updateStatus("Will run " + caseCount + " cases ..");
             }
 
             // @ts-ignore
-            webSocket.onclose = function() {
-                console.log("getCaseCount#close");
+            webSocket.onclose = () => {
+                Platform.log("getCaseCount#close");
                 cont();
             }
         }
 
         function updateReports() {
-            console.log("updateReport");
+            Platform.log("updateReport");
             if (!updateReport) {
                 return;
             }
-            const ws_uri = wsuri + "/updateReports?agent=" + agent;
-            const webSocket = openWebSocket(ws_uri);
+            const wsUri = wsuri + "/updateReports?agent=" + agent;
+            const webSocket = openWebSocket(wsUri);
 
             // @ts-ignore
-            webSocket.onopen = function() {
+            webSocket.onopen = () => {
                 updateStatus("Updating reports ..");
             }
 
             // @ts-ignore
-            webSocket.onclose = function() {
+            webSocket.onclose = () => {
                 updateStatus("Reports updated.");
                 updateStatus("Test suite finished!");
 
@@ -83,19 +83,19 @@ export async function runAutobahnTests(WebSocketClass: WebSocket, {
         }
 
         function runNextCase() {
-            const ws_uri = wsuri + "/runCase?case=" + currentCaseId + "&agent=" + agent;
-            const webSocket = openWebSocket(ws_uri);
+            const wsUri = wsuri + "/runCase?case=" + currentCaseId + "&agent=" + agent;
+            const webSocket = openWebSocket(wsUri);
 
-            console.log("runNextCase", ws_uri);
+            Platform.log("runNextCase", wsUri);
 
             webSocket.binaryType = "arraybuffer";
-            webSocket.onopen = function(e: { data: any }) {
+            webSocket.onopen = (e: { data: any }) => {
                 updateStatus("Executing test case " + currentCaseId + "/" + caseCount);
             }
 
-            webSocket.onclose = function() {
+            webSocket.onclose = () => {
                 currentCaseId = currentCaseId + 1;
-                console.log("runNextCase#onclose", currentCaseId);
+                Platform.log("runNextCase#onclose", currentCaseId);
                 if (currentCaseId <= caseCount) {
                     runNextCase();
                 } else {
@@ -104,7 +104,7 @@ export async function runAutobahnTests(WebSocketClass: WebSocket, {
                 }
             }
 
-            webSocket.onmessage = function(e: { data: any }) {
+            webSocket.onmessage = (e: { data: any }) => {
                 Platform.log("onmessage", e);
                 webSocket.send(e.data);
             }
