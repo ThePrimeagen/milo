@@ -147,7 +147,6 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
         const mode = this.writeBuffers.length ? N.READWRITE : N.READ;
         if (mode !== this.selectMode) {
             this.selectMode = mode;
-            this.platform.log(`SETTING ${mode} for ${this.writeBuffers.length}`);
             N.setFD(this.sock, mode, this._onSelect.bind(this));
             assert(this.platform, !(mode & N.WRITE) || this.writeBuffers.length, "Should have write buffers now");
         }
