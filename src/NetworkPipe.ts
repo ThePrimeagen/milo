@@ -29,7 +29,7 @@ export abstract class NetworkPipe extends Emittery.Typed<NetworkPipeDataEvents, 
     firstByteWritten?: number;
     firstByteRead?: number;
 
-    // abstract propreties
+    // abstract properties
     abstract hostname: string;
     abstract port: number;
     abstract fd: number; // socket
