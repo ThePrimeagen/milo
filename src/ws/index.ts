@@ -30,6 +30,8 @@ export {
 };
 
 const EMPTY_BUFFER = new DataBuffer(0);
+const CLOSE_1002_BUFFER = new DataBuffer(2);
+CLOSE_1002_BUFFER.setUInt16BE(0, CloseValues.GoAway);
 
 type AnyCallback = ((...args: any[]) => void);
 export type CallbackNames = "message" | "close" | "open" | "error";
@@ -147,6 +149,11 @@ export default class WS {
         pipe.on("data", readData);
 
         this.frame.onFrame((buffer: IDataBuffer, state: WSState) => {
+
+            if (!this.validateControlFrame(buffer, state)) {
+                return;
+            }
+
             switch (state.opcode) {
             case Opcodes.CloseConnection:
                 this.state = ConnectionState.Closed;
@@ -173,6 +180,10 @@ export default class WS {
                 this.frame.send(buffer, 0, buffer.byteLength, Opcodes.Pong);
                 break;
 
+            // We are a client only framework.  We do not do pongs.
+            case Opcodes.Pong:
+                    break;
+
             case Opcodes.TextFrame:
             case Opcodes.BinaryFrame:
                 const out = this.readyEvent(buffer, state);
@@ -180,7 +191,7 @@ export default class WS {
                 break;
 
             default:
-                throw new Error("Can you handle this?");
+                throw new Error("Unknown Websocket code");
             }
         });
 
@@ -191,6 +202,19 @@ export default class WS {
     ping() {
         /**/
     }
+
+
+     private validateControlFrame(buffer: IDataBuffer, state: WSState): boolean {
+        // A control frame is considered a bad if the payload length is greater
+        // than 125.
+        if (state.isControlFrame && state.payloadLength > 125) {
+            this.frame.send(CLOSE_1002_BUFFER, 0, 2, Opcodes.CloseConnection);
+            return false;
+        }
+
+        return true;
+    }
+
 
     private callCallback(callbacks: AnyCallback[],
                          secondCallback: AnyCallback | undefined, arg1?: any, arg2?: any) {

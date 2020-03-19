@@ -156,7 +156,7 @@ export default class WSFramer {
                 const startingLen = this.headerLen;
 
                 // Ensures that the packet has been filled in.
-                this.fillInHeaderBuffer(packet, offset, endIdx);
+                this.fillInHeaderBuffer(packet, ptr, endIdx);
 
                 // First check to see if there is enough to parse
                 if (!isHeaderParsable(this.header, this.headerLen)) {
