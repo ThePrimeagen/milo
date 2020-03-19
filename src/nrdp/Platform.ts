@@ -1,3 +1,5 @@
+import "./polyfills";
+
 import {
     ICreateSSLNetworkPipeOptions, ICreateTCPNetworkPipeOptions, IpConnectivityMode,
     IPlatform, IRequestTimeouts, ISHA256Context, IDataBuffer

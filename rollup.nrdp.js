@@ -3,14 +3,12 @@ import resolve from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs";
 import target from "./rollup-target-plugin";
 import babel from "rollup-plugin-babel";
-import pkg from "./package.json";
 
 export default {
     input: "build/nrdp/milo.js",
     output: {
         dir: "dist/",
-        format: "esm",
-        file: pkg.module,
+        format: "iife",
         name: "milo",
         exports: "named"
     }, plugins: [
@@ -20,9 +18,20 @@ export default {
         resolve(),
         commonjs(),
         babel({
-            exclude: "node_modules/**",
-            include: "node_modules/emittery/**",
-            babelrc: false
-        })
+            babelrc: false,
+		    presets: [
+                [
+                    '@babel/preset-env', 
+                    { 
+                        targets: {
+                            safari: '6'
+                        },
+                        modules: false,
+                        useBuiltIns: 'entry',
+                        corejs: 3
+                    }
+                ]
+            ],
+        }),
     ]
 };
