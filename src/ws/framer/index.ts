@@ -99,10 +99,11 @@ export default class WSFramer {
                 ft = Opcodes.ContinuationFrame;
             }
 
-            const frameSize = Math.min(endIdx - ptr, this.maxFrameSize);
+            const remainingSize = endIdx - ptr;
+            const frameSize = Math.min(remainingSize, this.maxFrameSize);
             const mask = generateMask();
             const headerEnd = constructFrameHeader(
-                header, true, ft, frameSize, mask);
+                header, remainingSize === frameSize, ft, frameSize, mask);
 
             const fullBuf = new DataBuffer(headerEnd + frameSize);
 

@@ -9,7 +9,8 @@ import {
     ICreateTCPNetworkPipeOptions,
     ICreateSSLNetworkPipeOptions,
     ISHA256Context,
-    HTTPRequestHeaders
+    HTTPRequestHeaders,
+    IpConnectivityMode
 } from "../types";
 
 import NetworkPipe from "../NetworkPipe";
@@ -50,9 +51,19 @@ class NodePlatform implements IPlatform {
     public defaultRequestTimeouts = {};
     public standardHeaders: HTTPRequestHeaders = {};
     public scratch: IDataBuffer;
+    public UILanguages: string[] = ['en'];
+    public ipConnectivityMode: IpConnectivityMode;
 
     constructor() {
         this.scratch = new DataBuffer(1024 * 32);
+
+        // TODO: probably need to think about this.
+        // TODO: Pipe this through to net
+        this.ipConnectivityMode = 4;
+    }
+
+    quit(code: number) {
+        process.exit(code);
     }
 
     utf8Length(str: string): number {
@@ -100,8 +111,6 @@ class NodePlatform implements IPlatform {
         return out;
     }
 
-    // base64 encode
-    // fixme? anders....
     // @ts-ignore
     btoa(buffer: Uint8Array | ArrayBuffer | string, returnUint8Array?: boolean): string | Uint8Array {
         let out;
@@ -204,7 +213,8 @@ class NodePlatform implements IPlatform {
     }
 
     createTCPNetworkPipe(options: ICreateTCPNetworkPipeOptions): Promise<NetworkPipe> {
-        return createTCPNetworkPipe(options);
+        // @ts-ignore
+        return createTCPNetworkPipe(this, options);
     }
 
     // "heremybigHHTTP string\r\n"

@@ -58,8 +58,9 @@ function createReadBufferPool(): Pool<ReadBufferItem> {
 class NodeTCPNetworkPipe extends NetworkPipe {
     private sock?: net.Socket;
     private bufferPool: PoolItem<ReadBufferItem>[];
-    private state: State;
+    private stashPool: PoolItem<ReadBufferItem>[];
     private pool: Pool<ReadBufferItem>;
+    private state: State;
 
     public ipAddress: string = "the ip address!";
     public dns: string = "the dns type!";
@@ -83,6 +84,7 @@ class NodeTCPNetworkPipe extends NetworkPipe {
         this.connectTime = -1;
         this.state = State.Connecting;
         this.bufferPool = [];
+        this.stashPool = [];
         this.hostname = host;
         this.port = port;
         this.pool = createReadBufferPool();
@@ -118,7 +120,6 @@ class NodeTCPNetworkPipe extends NetworkPipe {
             });
 
             this.sock.on('end', () => {
-                console.log("tcp sock end");
                 this.state = State.Destroyed;
                 this.emit("close");
             });
@@ -171,11 +172,59 @@ class NodeTCPNetworkPipe extends NetworkPipe {
     }
 
     read(buf: IDataBuffer | ArrayBuffer, offset: number, length: number): number {
+        return this.readFromPool(this.bufferPool, buf, offset, length);
+    }
+
+    close(): void {
+        if (!this.sock) {
+            throw new Error("Must have sock");
+        }
+
+        this.sock.destroy();
+    }
+
+    // Do I want to keep it this way?  Or should I go with stashed items...
+    stash(buf: IDataBuffer | ArrayBuffer, offset: number = 0, length?: number) {
+        if (length === undefined) {
+            length = buf.byteLength - offset;
+        }
+
+        const item = this.pool.get();
+        item.item.offset = offset;
+        item.item.idx = 0;
+        item.item.len = length;
+
+        let readBuf: Buffer;
+        if (buf instanceof ArrayBuffer) {
+            readBuf = Buffer.from(buf);
+        }
+        else {
+            readBuf = (buf as DataBuffer).buffer;
+            item.item.offset += buf.byteOffset;
+        }
+
+        item.item.readBuf = readBuf;
+        this.stashPool.push(item);
+    }
+
+    unstash(buf: IDataBuffer | ArrayBuffer, offset: number = 0, length?: number): number {
+        if (length === undefined) {
+            length = buf.byteLength - offset;
+        }
+
+        return this.readFromPool(this.stashPool, buf, offset, length);
+    }
+
+    hasStash(): boolean {
+        return !!this.stashPool.length;
+    }
+
+    private readFromPool(pool: PoolItem<ReadBufferItem>[], buf: IDataBuffer | ArrayBuffer, offset: number, length: number): number {
         if (this.state !== State.Alive) {
             throw new Error(`Unable to read sockets in current state, ${this.state}`);
         }
 
-        if (this.bufferPool.length === 0) {
+        if (pool.length === 0) {
             return 0;
         }
 
@@ -194,7 +243,7 @@ class NodeTCPNetworkPipe extends NetworkPipe {
         }
 
         do {
-            const pItem = this.bufferPool[0];
+            const pItem = pool[0];
             const readItem = pItem.item;
             const rIdx = readItem.idx + readItem.offset;
             const bufRemaining = readItem.len - readItem.idx;
@@ -210,33 +259,26 @@ class NodeTCPNetworkPipe extends NetworkPipe {
 
             // TODO: remove first........... . . . . .  . . . .
             if (localReadAmount === bufRemaining) {
-                const removedItem = this.bufferPool.shift();
+                const removedItem = pool.shift();
                 if (removedItem) {
                     removedItem.free();
                 }
             }
 
-        } while (writeAmount < length && this.bufferPool.length);
+        } while (writeAmount < length && pool.length);
 
         return writeAmount;
-    }
-
-    close(): void {
-        if (!this.sock) {
-            throw new Error("Must have sock");
-        }
-
-        this.sock.destroy();
     }
 };
 
 // TODO: We only allow ipv4
 // we should create an opts
-export default function createTCPNetworkPipe(options: ICreateTCPNetworkPipeOptions): Promise<NetworkPipe> {
+export default function createTCPNetworkPipe(platform: IPlatform, options: ICreateTCPNetworkPipeOptions): Promise<NetworkPipe> {
     return new Promise((res, rej) => {
-        // @ts-ignore
-        const pipe = new NodeTCPNetworkPipe(options.host, options.port);
-        // @ts-ignore
+        const pipe = new NodeTCPNetworkPipe(
+            platform,
+            options.hostname,
+            options.port);
         pipe.connection.then(res).catch(rej);
     });
 };

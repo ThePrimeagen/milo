@@ -51,7 +51,6 @@ export enum ConnectionState {
     Closed = 3,
 };
 
-
 export default class WS {
     // @ts-ignore
     private frame: WSFramer;
@@ -59,16 +58,14 @@ export default class WS {
     private pipe: NetworkPipe;
 
     private callbacks: CallbackMap;
-    private state: ConnectionState;
     private opts: WSOptions;
+    private state: ConnectionState;
 
     public onmessage?: MessageCallback;
     public onclose?: CloseCallback;
     public onopen?: OpenCallback;
     public onerror?: ErrorCallback;
-
     constructor(url: string | UrlObject, opts: WSOptions = defaultOptions) {
-        // pipe: NetworkPipe, opts: WSOptions = defaultOptions) {
         this.state = ConnectionState.Connecting;
         this.opts = opts;
 
@@ -129,11 +126,16 @@ export default class WS {
         });
 
         // The pipe is ready to read.
-        const readData = () => {
+        const readData = (fromStash: boolean = false) => {
             let bytesRead;
             while (1) {
 
-                bytesRead = pipe.read(readView, 0, readView.byteLength);
+                if (fromStash) {
+                    bytesRead = pipe.unstash(readView, 0, readView.byteLength);
+                } else {
+                    bytesRead = pipe.read(readView, 0, readView.byteLength);
+                }
+
                 if (bytesRead <= 0) {
                     break;
                 }
@@ -171,8 +173,8 @@ export default class WS {
                 this.frame.send(buffer, 0, buffer.byteLength, Opcodes.Pong);
                 break;
 
-            case Opcodes.BinaryFrame:
             case Opcodes.TextFrame:
+            case Opcodes.BinaryFrame:
                 const out = this.readyEvent(buffer, state);
                 this.callCallback(message, this.onmessage, out);
                 break;
@@ -183,7 +185,7 @@ export default class WS {
         });
 
         this.callCallback(open, this.onopen);
-        readData();
+        readData(true);
     }
 
     ping() {
