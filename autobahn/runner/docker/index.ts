@@ -1,4 +1,4 @@
-import shell, {exec} from 'shelljs';
+import shell, { exec } from 'shelljs';
 import death from 'death';
 
 import { autobahnDocker } from '../paths';
@@ -6,16 +6,17 @@ import { readyConfig } from './config';
 import { killDocker } from './kill';
 import { launch } from './launch';
 import { stop } from './stop';
+import Platform from "../../../Platform";
 
 export {
     stop
 };
 
-const ON_DEATH = death({uncaughtException: true});
+const ON_DEATH = death({ uncaughtException: true });
 
 // Attempts to kill all autobahn testsuites
 ON_DEATH((...args: any[]) => {
-    console.log(args);
+    Platform.log(args);
     killDocker();
     process.exit();
 });

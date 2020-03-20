@@ -5,6 +5,8 @@ import {
     // @ts-ignore
 } from '../../dist/milo.node.js';
 
+import Platform from "../../Platform";
+
 async function run() {
     let dataCount = 0;
     const then = Date.now();
@@ -26,9 +28,9 @@ async function run() {
 
         if (++dataCount === dataFetchCount) {
             const now = Date.now();
-            console.log("Total Bytes Received:", bytesReceived);
-            console.log("Time Spent:", now - then);
-            console.log("Mbps:", (bytesReceived / (now - then)) * 1000);
+            Platform.log("Total Bytes Received:", bytesReceived);
+            Platform.log("Time Spent:", now - then);
+            Platform.log("Mbps:", (bytesReceived / (now - then)) * 1000);
             return;
         }
         else if (dataCount < dataFetchCount) {
@@ -37,7 +39,7 @@ async function run() {
     };
 
     ws.onClose(() => {
-        console.log("close");
+        Platform.log("close");
     });
 
     ws.send("send");

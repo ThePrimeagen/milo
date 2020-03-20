@@ -1,6 +1,8 @@
 import ws from "ws";
+import Platform from "../../Platform";
 
-console.log("We are about to server.", 1337);
+
+Platform.log("We are about to server.", 1337);
 const wss = new ws.Server({
     port: 1337
 });
@@ -23,9 +25,9 @@ function getBigAssBufferSlice() {
     return reallyLargeBuffer.slice(low, high);
 }
 
-console.log("We are about to connection.");
+Platform.log("We are about to connection.");
 wss.on('connection', (websocket: WebSocket) => {
-    console.log("OHHHH MY WE ARE CONNECTED.");
+    Platform.log("OHHHH MY WE ARE CONNECTED.");
 
     // let timerId: number = 0;
     function sendData() {
@@ -54,6 +56,6 @@ wss.on('connection', (websocket: WebSocket) => {
     });
 });
 
-console.log(Object.keys(wss));
+Platform.log(Object.keys(wss));
 
 

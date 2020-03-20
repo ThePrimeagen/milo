@@ -197,14 +197,17 @@ class NodePlatform implements IPlatform {
     }
 
     log(...args: any): void {
+        /* tslint:disable:no-console */
         console.log.apply(console, args);
     }
 
-    trace(...args: any) {
+    trace(...args: any) { // this is NRDP trace, not console.trace
+        /* tslint:disable:no-console */
         console.log(...args);
     }
 
     error(...args: any): void {
+        /* tslint:disable:no-console */
         console.error.apply(console, args);
     }
 

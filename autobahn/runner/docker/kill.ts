@@ -1,10 +1,12 @@
-import {exec} from 'shelljs';
+import { exec } from 'shelljs';
 import { getDockers } from './docker-ps';
+import Platform from "../../../Platform";
+
 
 export async function killDocker() {
     const dockers = await getDockers();
     dockers.forEach(d => {
-        console.log("d", d);
+        Platform.log("d", d);
         if (~d[1].indexOf('crossbario/autobahn-testsuite')) {
             exec(`docker kill ${d[0]}`);
         }
