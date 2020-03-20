@@ -219,7 +219,8 @@ class NodeTCPNetworkPipe extends NetworkPipe {
         return !!this.stashPool.length;
     }
 
-    private readFromPool(pool: PoolItem<ReadBufferItem>[], buf: IDataBuffer | ArrayBuffer, offset: number, length: number): number {
+    private readFromPool(pool: PoolItem<ReadBufferItem>[], buf: IDataBuffer | ArrayBuffer,
+                         offset: number, length: number): number {
         if (this.state !== State.Alive) {
             throw new Error(`Unable to read sockets in current state, ${this.state}`);
         }
@@ -273,7 +274,8 @@ class NodeTCPNetworkPipe extends NetworkPipe {
 
 // TODO: We only allow ipv4
 // we should create an opts
-export default function createTCPNetworkPipe(platform: IPlatform, options: ICreateTCPNetworkPipeOptions): Promise<NetworkPipe> {
+export default function createTCPNetworkPipe(platform: IPlatform,
+                                             options: ICreateTCPNetworkPipeOptions): Promise<NetworkPipe> {
     return new Promise((res, rej) => {
         const pipe = new NodeTCPNetworkPipe(
             platform,
