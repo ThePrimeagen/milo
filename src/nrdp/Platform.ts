@@ -118,9 +118,6 @@ export class NrdpPlatform implements IPlatform {
         return createNrdpSSLNetworkPipe(this, options);
     }
 
-    bufferSet = nrdp_platform.bufferSet;
-    bufferIndexOf = nrdp_platform.bufferIndexOf;
-    bufferLastIndexOf = nrdp_platform.bufferLastIndexOf;
     lookupDnsHost = nrdp.dns.lookupHost.bind(nrdp.dns);
 
     get UILanguages(): string[] { return nrdp.device.UILanguages; }

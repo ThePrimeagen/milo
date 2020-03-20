@@ -313,30 +313,6 @@ export interface IPlatform {
     createSSLNetworkPipe(options: ICreateSSLNetworkPipeOptions): Promise<NetworkPipe>;
     createSHA256Context(): ISHA256Context;
 
-    bufferIndexOf(haystack: Uint8Array | ArrayBuffer | string,
-                  haystackOffset: number,
-                  haystackLength: number | undefined,
-                  needle: Uint8Array | ArrayBuffer | string,
-                  needleOffset?: number,
-                  needleLength?: number | undefined,
-                  caseInsensitive?: boolean): number;
-    bufferLastIndexOf(haystack: Uint8Array | ArrayBuffer | string,
-                      haystackOffset: number,
-                      haystackLength: number | undefined,
-                      needle: Uint8Array | ArrayBuffer | string,
-                      needleOffset?: number,
-                      needleLength?: number | undefined,
-                      caseInsensitive?: boolean): number;
-    bufferSet(dest: Uint8Array | ArrayBuffer | IDataBuffer,
-              destOffset: number,
-              src: Uint8Array | ArrayBuffer | IDataBuffer,
-              srcOffset?: number,
-              srcLength?: number | undefined): void;
-
-    bufferSet(dest: Uint8Array | ArrayBuffer | IDataBuffer,
-              destOffset: number,
-              src: string): void;
-
     lookupDnsHost(host: string,
                   ipVersion: IpVersion,
                   timeout: number,

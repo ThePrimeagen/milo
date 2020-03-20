@@ -76,16 +76,6 @@ class NodePlatform implements IPlatform {
         return buf;
     }
 
-    // @ts-ignore
-    bufferSet(dest: Uint8Array | ArrayBuffer, destOffset: number,
-              src: Uint8Array | ArrayBuffer | string, srcOffset?: number, srcLength?: number): void {
-
-        const destBuf = toBuffer(dest);
-        const srcBuf = toBuffer(src);
-
-        srcBuf.copy(destBuf, destOffset, srcOffset, srcLength);
-    }
-
     createSHA256Context(): ISHA256Context {
         return new SC() as ISHA256Context;
     }
@@ -218,69 +208,6 @@ class NodePlatform implements IPlatform {
     createTCPNetworkPipe(options: ICreateTCPNetworkPipeOptions): Promise<NetworkPipe> {
         // @ts-ignore
         return createTCPNetworkPipe(this, options);
-    }
-
-    // "heremybigHHTTP string\r\n"
-    bufferIndexOf(haystack: Uint8Array | ArrayBuffer | string,
-                  haystackOffset: number, haystackLength: number | undefined,
-                  needle: Uint8Array | ArrayBuffer | string,
-                  needleOffset?: number, needleLength?: number | undefined): number {
-        haystackLength = haystackLength !== undefined ? haystackLength : normalizeLength(haystack);
-        needleLength = needleLength !== undefined ? needleLength : normalizeLength(needle);
-        needleOffset = needleOffset || 0;
-
-        const needleStr = typeof needle === 'string' ?
-            needle : bufferToString(needle);
-
-        if (typeof haystack === 'string') {
-            return haystack.
-                substr(haystackOffset, haystackLength).
-                indexOf(needleStr.substr(needleOffset, needleLength));
-        }
-
-        const buffer = Buffer.from(haystack).
-            slice(haystackOffset, haystackOffset + haystackLength);
-
-        if (typeof needle === 'string') {
-            return buffer.
-                indexOf(needle.substr(needleOffset, needleLength));
-        }
-
-        const needleBuf: Uint8Array = toUint8Array(needle).
-            subarray(needleOffset, needleOffset + needleLength);
-
-        return buffer.indexOf(needleBuf);
-    }
-
-    bufferLastIndexOf(haystack: Uint8Array | ArrayBuffer | string,
-                      haystackOffset: number, haystackLength: number | undefined,
-                      needle: Uint8Array | ArrayBuffer | string,
-                      needleOffset?: number, needleLength?: number | undefined): number {
-        haystackLength = haystackLength !== undefined ? haystackLength : normalizeLength(haystack);
-        needleLength = needleLength !== undefined ? needleLength : normalizeLength(needle);
-        needleOffset = needleOffset || 0;
-
-        const needleStr = typeof needle === 'string' ?
-            needle : bufferToString(needle);
-
-        if (typeof haystack === 'string') {
-            return haystack.
-                substr(haystackOffset, haystackLength).
-                lastIndexOf(needleStr.substr(needleOffset || 0, needleLength));
-        }
-
-        const buffer = Buffer.from(haystack).
-            slice(haystackOffset, haystackOffset + haystackLength);
-
-        if (typeof needle === 'string') {
-            return buffer.
-                lastIndexOf(needle.substr(needleOffset, needleLength));
-        }
-
-        const needleBuf: Uint8Array = toUint8Array(needle).
-            subarray(needleOffset, needleOffset + needleLength);
-
-        return buffer.lastIndexOf(needleBuf);
     }
 
     lookupDnsHost(host: string, ipVersion: IpVersion, timeout: number, callback: (result: IDnsResult) => void): void {
