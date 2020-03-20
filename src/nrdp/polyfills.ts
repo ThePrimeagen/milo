@@ -1,3 +1,4 @@
 import "symbol-es6";
 import "core-js/stable/weak-map";
-import "regenerator-runtime/runtime";
+import "core-js/stable/set";
+import "core-js/stable/map";
