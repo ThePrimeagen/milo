@@ -55,7 +55,7 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
     get ssl() { return false; }
 
     removeEventHandlers() {
-        this.clearListeners();
+        this.removeAllListeners();
         if (this.selectMode) {
             if (this.sock !== -1) {
                 N.clearFD(this.sock);

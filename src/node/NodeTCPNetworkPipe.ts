@@ -137,7 +137,7 @@ class NodeTCPNetworkPipe extends NetworkPipe {
     }
 
     removeEventHandlers() {
-        this.clearListeners();
+        this.removeAllListeners();
     }
 
     write(buf: IDataBuffer | ArrayBuffer | string, offset: number = 0, length?: number): void {

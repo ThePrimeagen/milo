@@ -1,4 +1,3 @@
-import Emittery from "emittery";
 import { IDataBuffer, IPlatform } from "./types";
 import EventEmitter from "./EventEmitter";
 import DataBuffer from "./DataBuffer";
@@ -12,7 +11,7 @@ export interface NetworkPipeDataEvents {
     error: Error;
 };
 
-export abstract class NetworkPipe extends Emittery.Typed<NetworkPipeDataEvents, "data" | "close"> {
+export abstract class NetworkPipe extends EventEmitter {
     protected platform: IPlatform;
     private buffer?: IDataBuffer;
 

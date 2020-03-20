@@ -119,7 +119,7 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
     get connectTime() { return this.pipe.connectTime; }
 
     removeEventHandlers() {
-        this.clearListeners();
+        this.removeAllListeners();
     }
 
     write(buf: IDataBuffer | string, offset?: number, length?: number): void {
