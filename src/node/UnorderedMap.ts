@@ -25,7 +25,7 @@ export default class UnorderedMap<Key, Value> implements IUnorderedMap<Key, Valu
     entries(): [Key, Value][] {
         return Array.from(this.map.entries());
     }
-    forEach(func: (key: Key, value: Value, that: UnorderedMap<Key, Value>) => boolean): void {
+    forEach(func: (key: Key, value: Value, that: UnorderedMap<Key, Value>) => boolean | void): void {
         for (const [key, value] of this.map) {
             const ret = func(key, value, this);
             if (typeof ret === "boolean" && !ret) {

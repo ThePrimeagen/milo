@@ -16,7 +16,7 @@ export interface IUnorderedMap<Key, Value> {
     clone(): IUnorderedMap<Key, Value>;
     delete(key: Key): boolean;
     entries(): [Key, Value][];
-    forEach(func: (key: Key, value: Value, that: IUnorderedMap<Key, Value>) => boolean): void;
+    forEach(func: (key: Key, value: Value, that: IUnorderedMap<Key, Value>) => boolean | void): void;
     get(key: Key): Value | undefined;
     has(key: Key): boolean;
     keys(): Key[];
