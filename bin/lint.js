@@ -18,6 +18,8 @@ child_process.execFile(path.join(__dirname, "../node_modules/.bin/tslint"),
                                    }
 
                                    if (!file) {
+                                       console.error("FAILED TO GROK LINE, no file", line);
+                                       process.exit(1);
                                        return undefined;
                                    }
 
@@ -25,7 +27,8 @@ child_process.execFile(path.join(__dirname, "../node_modules/.bin/tslint"),
                                    if (!error) {
                                        const warning = /^WARNING: ([0-9]+):([0-9]+) *(.*)$/.exec(line);
                                        if (!warning) {
-                                           return undefined;
+                                           console.error("FAILED TO GROK LINE, what is this?", line);
+                                           process.exit(1);
                                        }
                                        return `${file}:${warning[1]}:${warning[2]}: warning: ${warning[3]}`;
                                    }
