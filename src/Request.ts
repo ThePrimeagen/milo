@@ -205,18 +205,21 @@ export class Request {
             forbidReuse: this.requestData.forbidReuse
         } as ConnectionOptions;
 
+        let pendingConnection: PendingConnection;
         connectionPool.requestConnection(connectionOpts).then((conn: PendingConnection) => {
             Platform.trace(`got a pending connection ${conn.id}`);
             // conn is abortable
+            pendingConnection = conn;
             return conn.onNetworkPipe();
         }).then((pipe: NetworkPipe) => {
             Platform.trace("GOT OUR PIPE NOW");
             this.networkPipe = pipe;
-            if (pipe.dnsTime) {
-                this.requestResponse.dnsTime = pipe.dnsTime;
+            this.requestResponse.socket = pipe.socket;
+            if (pendingConnection.dnsTime) {
+                this.requestResponse.dnsTime = pendingConnection.dnsTime;
             }
-            if (pipe.connectTime) {
-                this.requestResponse.connectTime = pipe.connectTime;
+            if (pendingConnection.connectTime) {
+                this.requestResponse.connectTime = pendingConnection.connectTime;
             }
 
             this._transition(RequestState.Connected);
@@ -238,11 +241,11 @@ export class Request {
         case RequestState.Connected:
             assert(this.networkPipe);
             this.requestResponse.serverIp = this.networkPipe.ipAddress;
-            this.requestResponse.dns = this.networkPipe.dns;
-            if (this.networkPipe.dnsChannel)
-                this.requestResponse.dnsChannel = this.networkPipe.dnsChannel;
-            if (this.networkPipe.cname)
-                this.requestResponse.cname = this.networkPipe.cname;
+            // this.requestResponse.dns = this.networkPipe.dns;
+            // if (this.networkPipe.dnsChannel)
+            //     this.requestResponse.dnsChannel = this.networkPipe.dnsChannel;
+            // if (this.networkPipe.cname)
+            //     this.requestResponse.cname = this.networkPipe.cname;
             if (!this.requestData.headers)
                 this.requestData.headers = {};
 

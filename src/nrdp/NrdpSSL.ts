@@ -17,8 +17,7 @@ type X509Data = {
     notafter?: string;
 };
 
-export class NrdpSSL {
-
+export default class NrdpSSL {
     private platform: IPlatform;
     private trustStoreHash: string;
     private x509s: N.Struct[];

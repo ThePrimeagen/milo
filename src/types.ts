@@ -3,11 +3,10 @@ export type IpVersion = 4 | 6;
 export type IpConnectivityMode = 4 | 6 | 10 | 0; // 0 is invalid, 10 is dual
 export type HTTPMethod = "POST" | "HEAD" | "PUT" | "DELETE" | "PATCH" | "GET";
 export type HTTPRequestHeaders = { [key: string]: string };
-export type encodingType = "escaped" | "base32" | "base64" | "base64_urlsafe" | "base85" | "url" | "hex" | "utf8";
-export type hashType = "sha1" | "sha256" | "sha512" | "md5";
-export type compressionMethod = "zlib" | "zlibbase64" | "zlibgzip" | "lzham" | "lz4";
-export type dnsType = "lookup" | "cache" | "literal" | "hostsFile" | "unknown" | "preresolved";
-
+export type EncodingType = "escaped" | "base32" | "base64" | "base64_urlsafe" | "base85" | "url" | "hex" | "utf8";
+export type HashType = "sha1" | "sha256" | "sha512" | "md5";
+export type CompressionMethod = "zlib" | "zlibbase64" | "zlibgzip" | "lzham" | "lz4";
+export type DnsType = "lookup" | "cache" | "literal" | "hostsFile" | "unknown" | "preresolved";
 
 export enum ErrorCode {
     None = 0
@@ -63,52 +62,62 @@ export interface IDataBuffer {
     /**
      * Deep Copy
      */
-    compress(method: compressionMethod, offset?: number, length?: number): IDataBuffer;
+    compress(method: CompressionMethod, offset?: number, length?: number): IDataBuffer;
     /**
      * Deep Copy
      */
-    decode(enc: encodingType, offset?: number, length?: number): IDataBuffer;
+    decode(enc: EncodingType, offset?: number, length?: number): IDataBuffer;
     detach(): void;
-    encode(enc: encodingType, offset?: number, length?: number): IDataBuffer;
+    encode(enc: EncodingType, offset?: number, length?: number): IDataBuffer;
     equals(other: string | ArrayBuffer | IDataBuffer | Uint8Array | number | number[]): boolean;
-    every(func: (val: number, i: number, buffer: IDataBuffer) => boolean, thisValue?: any): boolean;
+    every(func: (value: number, i: number, buffer: IDataBuffer) => boolean, thisValue?: any): boolean;
     fill(data: string | ArrayBuffer | IDataBuffer | number | Uint8Array,
          offset?: number, length?: number): void;
 
     /**
      * Deep Copy
      */
-    filter(func: (val: number, i: number, buffer: IDataBuffer) => boolean, thisValue?: any): IDataBuffer;
-    find(func: (val: number, i: number, buffer: IDataBuffer) => boolean, thisValue?: any): number | undefined;
-    findIndex(func: (val: number, i: number, buffer: IDataBuffer) => boolean, thisValue?: any): number | undefined;
-    forEach(func: (val: number, i: number, buffer: IDataBuffer) => void, thisValue?: any): void;
+    filter(func: (value: number, i: number, buffer: IDataBuffer) => boolean, thisValue?: any): IDataBuffer;
+    find(func: (value: number, i: number, buffer: IDataBuffer) => boolean, thisValue?: any): number | undefined;
+    findIndex(func: (value: number, i: number, buffer: IDataBuffer) => boolean, thisValue?: any): number | undefined;
+    forEach(func: (value: number, i: number, buffer: IDataBuffer) => void, thisValue?: any): void;
 
     get(offset: number): number;
+    getFloat32(offset: number): number;
     getFloat32BE(offset: number): number;
     getFloat32LE(offset: number): number;
+    getFloat64(offset: number): number;
     getFloat64BE(offset: number): number;
     getFloat64LE(offset: number): number;
+    getInt(offset: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number;
+    getInt16(offset: number): number;
     getInt16BE(offset: number): number;
     getInt16LE(offset: number): number;
+    getInt32(offset: number): number;
     getInt32BE(offset: number): number;
     getInt32LE(offset: number): number;
+    getInt64(offset: number): number;
     getInt64BE(offset: number): number;
     getInt64LE(offset: number): number;
     getInt8(offset: number): number;
     getIntBE(offset: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number;
     getIntLE(offset: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number;
+    getUInt(offset: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number;
+    getUInt16(offset: number): number;
     getUInt16BE(offset: number): number;
     getUInt16LE(offset: number): number;
+    getUInt32(offset: number): number;
     getUInt32BE(offset: number): number;
     getUInt32LE(offset: number): number;
+    getUInt64(offset: number): number;
     getUInt64BE(offset: number): number;
     getUInt64LE(offset: number): number;
     getUInt8(offset: number): number;
     getUIntBE(offset: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number;
     getUIntLE(offset: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number;
 
-    hash(hash: hashType, offset?: number, length?: number): IDataBuffer;
-    hashToString(hash: hashType, offset?: number, length?: number): string;
+    hash(hash: HashType, offset?: number, length?: number): IDataBuffer;
+    hashToString(hash: HashType, offset?: number, length?: number): string;
 
     includes(needle: string | ArrayBuffer | IDataBuffer | number | Uint8Array | number[],
              offset?: number, length?: number, caseInsensitive?: boolean): boolean;
@@ -121,39 +130,49 @@ export interface IDataBuffer {
     lastIndexOf(needle: string | ArrayBuffer | IDataBuffer | number | Uint8Array | number[],
                 offset?: number, length?: number, caseInsensitive?: boolean): number;
 
-    map(func: (val: number, i: number, buffer: IDataBuffer) => number, thisValue?: any): IDataBuffer;
+    map(func: (value: number, i: number, buffer: IDataBuffer) => number, thisValue?: any): IDataBuffer;
     randomize(offset?: number, length?: number): void;
-    reduce(func: (previousValue: any, val: number, i: number,
+    reduce(func: (previousValue: any, value: number, i: number,
                   buffer: IDataBuffer) => any, previousValue?: any): any;
-    reduceRight(func: (previousValue: any, val: number, i: number,
+    reduceRight(func: (previousValue: any, value: number, i: number,
                        buffer: IDataBuffer) => any, previousValue?: any): any;
 
     reverse(offset?: number, length?: number): void;
 
     set(offset: number, src: string | ArrayBuffer | IDataBuffer | number | Uint8Array | number[],
         srcOffset?: number, srcLength?: number): void;
-    setFloat32BE(offset: number, val: number): number;
-    setFloat32LE(offset: number, val: number): number;
-    setFloat64BE(offset: number, val: number): number;
-    setFloat64LE(offset: number, val: number): number;
-    setInt16BE(offset: number, val: number): number;
-    setInt16LE(offset: number, val: number): number;
-    setInt32BE(offset: number, val: number): number;
-    setInt32LE(offset: number, val: number): number;
-    setInt64BE(offset: number, val: number): number;
-    setInt64LE(offset: number, val: number): number;
-    setInt8(offset: number, val: number): number;
-    setIntBE(offset: number, value: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number;
-    setIntLE(offset: number, value: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number;
-    setUInt16BE(offset: number, val: number): number;
-    setUInt16LE(offset: number, val: number): number;
-    setUInt32BE(offset: number, val: number): number;
-    setUInt32LE(offset: number, val: number): number;
-    setUInt64BE(offset: number, val: number): number;
-    setUInt64LE(offset: number, val: number): number;
-    setUInt8(offset: number, val: number): number;
-    setUIntBE(offset: number, value: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number;
-    setUIntLE(offset: number, value: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number;
+    setFloat32(offset: number, value: number): void;
+    setFloat32BE(offset: number, value: number): void;
+    setFloat32LE(offset: number, value: number): void;
+    setFloat64(offset: number, value: number): void;
+    setFloat64BE(offset: number, value: number): void;
+    setFloat64LE(offset: number, value: number): void;
+    setInt(offset: number, value: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): void;
+    setInt16(offset: number, value: number): void;
+    setInt16BE(offset: number, value: number): void;
+    setInt16LE(offset: number, value: number): void;
+    setInt32(offset: number, value: number): void;
+    setInt32BE(offset: number, value: number): void;
+    setInt32LE(offset: number, value: number): void;
+    setInt64(offset: number, value: number): void;
+    setInt64BE(offset: number, value: number): void;
+    setInt64LE(offset: number, value: number): void;
+    setInt8(offset: number, value: number): void;
+    setIntBE(offset: number, value: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): void;
+    setIntLE(offset: number, value: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): void;
+    setUInt(offset: number, value: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): void;
+    setUInt16(offset: number, value: number): void;
+    setUInt16BE(offset: number, value: number): void;
+    setUInt16LE(offset: number, value: number): void;
+    setUInt32(offset: number, value: number): void;
+    setUInt32BE(offset: number, value: number): void;
+    setUInt32LE(offset: number, value: number): void;
+    setUInt64(offset: number, value: number): void;
+    setUInt64BE(offset: number, value: number): void;
+    setUInt64LE(offset: number, value: number): void;
+    setUInt8(offset: number, value: number): void;
+    setUIntBE(offset: number, value: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): void;
+    setUIntLE(offset: number, value: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): void;
 
     setView(byteOffset: number, byteLength: number): void;
 
@@ -183,8 +202,8 @@ export interface IDataBuffer {
      */
     toArrayBuffer(offset?: number, length?: number): ArrayBuffer;
 
-    toString(enc?: encodingType, offset?: number, length?: number): string;
-    uncompress(method: compressionMethod, offset?: number, length?: number): string;
+    toString(enc?: EncodingType, offset?: number, length?: number): string;
+    uncompress(method: CompressionMethod, offset?: number, length?: number): string;
 }
 
 export interface IDnsResult {
@@ -202,7 +221,7 @@ export interface IDnsResult {
     ttl: number;
     lastTouched?: number;
     state?: string;
-    type: dnsType;
+    type: DnsType;
 };
 
 export interface IRequestTimeouts {
@@ -225,8 +244,17 @@ export interface ICreateTCPNetworkPipeOptions {
     ipVersion: IpVersion;
 };
 
-export interface ICreateSSLNetworkPipeOptions {
+export interface IPipeResult {
     pipe: NetworkPipe;
+    dnsTime: number;
+    dnsType: DnsType;
+    dnsChannel?: string;
+    cname: string;
+    connectTime: number;
+};
+
+export interface ICreateSSLNetworkPipeOptions extends IPipeResult {
+    tlsv13?: boolean;
 };
 
 export interface ISHA256Context {
@@ -311,8 +339,8 @@ export interface IPlatform {
 
     standardHeaders: { [key: string]: string };
 
-    createTCPNetworkPipe(options: ICreateTCPNetworkPipeOptions): Promise<NetworkPipe>;
-    createSSLNetworkPipe(options: ICreateSSLNetworkPipeOptions): Promise<NetworkPipe>;
+    createTCPNetworkPipe(options: ICreateTCPNetworkPipeOptions): Promise<IPipeResult>;
+    createSSLNetworkPipe(options: ICreateSSLNetworkPipeOptions): Promise<IPipeResult>;
     createSHA256Context(): ISHA256Context;
 
     lookupDnsHost(host: string,

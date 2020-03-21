@@ -1,5 +1,5 @@
 import Url from "url-parse";
-import { ICreateTCPNetworkPipeOptions, IUnorderedMap } from "./types";
+import { ICreateTCPNetworkPipeOptions, IUnorderedMap, IPipeResult, DnsType } from "./types";
 import Platform from "./Platform";
 import NetworkPipe from "./NetworkPipe";
 import UnorderedMap from "./UnorderedMap";
@@ -18,6 +18,12 @@ export interface PendingConnection {
 
     abort(): void;
     onNetworkPipe(): Promise<NetworkPipe>;
+
+    readonly cname?: string;
+    readonly connectTime?: number;
+    readonly dnsChannel?: string;
+    readonly dnsTime?: number;
+    readonly dnsType?: DnsType;
 }
 
 class PendingConnectionImpl implements PendingConnection {
@@ -32,6 +38,12 @@ class PendingConnectionImpl implements PendingConnection {
 
     public dnsTimeout: number;
     public connectTimeout: number;
+
+    public dnsTime?: number;
+    public connectTime?: number;
+    public dnsType?: DnsType;
+    public cname?: string;
+    public dnsChannel?: string;
 
     constructor(pool: ConnectionPool, id: number, hostname: string,
                 port: number, dnsTimeout: number, connectTimeout: number) {
@@ -238,16 +250,16 @@ export class ConnectionPool {
                     connectTimeout: pending.connectTimeout,
                     ipVersion: 4 // gotta do happy eyeballs and send off multiple tcp network pipe things
                 } as ICreateTCPNetworkPipeOptions;
-                Platform.createTCPNetworkPipe(tcpOpts).then((pipe: NetworkPipe) => {
-                    Platform.trace(`Got tcp connection for ${hostPort} with socket ${pipe.socket}`);
+                Platform.createTCPNetworkPipe(tcpOpts).then((pipeResult: IPipeResult) => {
+                    Platform.trace(`Got tcp connection for ${hostPort} with socket ${pipeResult.pipe.socket}`);
                     if (ssl) {
-                        Platform.trace(`Requesting ssl pipe for ${hostPort} with socket ${pipe.socket}`);
-                        return Platform.createSSLNetworkPipe({ pipe });
+                        Platform.trace(`Requesting ssl pipe for ${hostPort} with socket ${pipeResult.pipe.socket}`);
+                        return Platform.createSSLNetworkPipe(pipeResult);
                     } else {
-                        return pipe;
+                        return pipeResult;
                     }
-                }).then((pipe: NetworkPipe) => {
-                    pending.resolve(pipe);
+                }).then((pipeResult: IPipeResult) => {
+                    pending.resolve(pipeResult.pipe);
                 }).catch((error: Error) => {
                     pending.reject(error);
                 });
@@ -311,15 +323,17 @@ export class ConnectionPool {
 
             ++data.initializing;
             Platform.trace(`Requesting tcp connection for ${data.hostPort}`);
-            Platform.createTCPNetworkPipe(tcpOpts).then((pipe: NetworkPipe) => {
+            Platform.createTCPNetworkPipe(tcpOpts).then((pipeResult: IPipeResult) => {
+                const pipe = pipeResult.pipe;
                 Platform.trace(`Got tcp connection for ${data.hostPort} with socket ${pipe.socket}`);
                 if (data.ssl) {
                     Platform.trace(`Requesting ssl pipe for ${data.hostPort} with socket ${pipe.socket}`);
-                    return Platform.createSSLNetworkPipe({ pipe });
+                    return Platform.createSSLNetworkPipe(pipeResult);
                 } else {
-                    return pipe;
+                    return pipeResult;
                 }
-            }).then((pipe: NetworkPipe) => {
+            }).then((pipeResult: IPipeResult) => {
+                const pipe = pipeResult.pipe;
                 pipe.idle = false;
                 assert(data);
                 --data.initializing;

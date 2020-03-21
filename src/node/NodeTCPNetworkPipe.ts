@@ -2,7 +2,8 @@ import net from "net";
 
 import {
     IPlatform,
-    dnsType
+    IPipeResult,
+    DnsType
 } from "../types";
 
 import {
@@ -64,14 +65,8 @@ class NodeTCPNetworkPipe extends NetworkPipe {
     private state: State;
 
     public ipAddress: string = "the ip address!";
-    public dns: dnsType = "lookup";
-    public dnsChannel?: string;
     public hostname: string;
     public port: number;
-
-    public dnsTime: number;
-    public connectTime: number;
-    public cname?: string;
 
     get ssl() { return false; }
 
@@ -82,8 +77,6 @@ class NodeTCPNetworkPipe extends NetworkPipe {
 
     constructor(platform: IPlatform, host: string, port: number) {
         super(platform);
-        this.dnsTime = -1;
-        this.connectTime = -1;
         this.state = State.Connecting;
         this.bufferPool = [];
         this.stashPool = [];
@@ -277,13 +270,12 @@ class NodeTCPNetworkPipe extends NetworkPipe {
 // TODO: We only allow ipv4
 // we should create an opts
 export default function createTCPNetworkPipe(platform: IPlatform,
-                                             options: ICreateTCPNetworkPipeOptions): Promise<NetworkPipe> {
+                                             options: ICreateTCPNetworkPipeOptions): Promise<IPipeResult> {
     return new Promise((res, rej) => {
-        const pipe = new NodeTCPNetworkPipe(
-            platform,
-            options.hostname,
-            options.port);
-        pipe.connection.then(res).catch(rej);
+        const networkPipe = new NodeTCPNetworkPipe(platform, options.hostname, options.port);
+        networkPipe.connection.then((pipe: NetworkPipe) => {
+            res({ pipe, dnsType: "lookup", dnsTime: -1, connectTime: -1, cname: "" });
+        }).catch(rej);
     });
 };
 

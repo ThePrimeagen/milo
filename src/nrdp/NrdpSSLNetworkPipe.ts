@@ -1,5 +1,5 @@
 import {
-    ICreateSSLNetworkPipeOptions, IDataBuffer, IPlatform
+    ICreateSSLNetworkPipeOptions, IDataBuffer, IPlatform, IPipeResult
 } from "../types";
 import { NrdpPlatform } from "./Platform";
 import NetworkPipe from "../NetworkPipe";
@@ -108,16 +108,11 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
     }
 
     get ipAddress() { return this.pipe.ipAddress; }
-    get dns() { return this.pipe.dns; }
-    get dnsChannel() { return this.pipe.dnsChannel; }
     get closed() { return this.pipe.closed; }
     get hostname() { return this.pipe.hostname; }
     get port() { return this.pipe.port; }
     get ssl() { return true; }
     get socket() { return this.pipe.socket; }
-    get dnsTime() { return this.pipe.dnsTime; }
-    get connectTime() { return this.pipe.connectTime; }
-    get cname() { return this.pipe.cname; }
 
     removeEventHandlers() {
         this.removeAllListeners();
@@ -273,14 +268,15 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
 };
 
 export default function createSSLNetworkPipe(platform: NrdpPlatform,
-                                             options: ICreateSSLNetworkPipeOptions): Promise<NetworkPipe> {
-    return new Promise<NetworkPipe>((resolve, reject) => {
-        const sslPipe = new NrdpSSLNetworkPipe(platform, options, (error?: Error) => {
+                                             options: ICreateSSLNetworkPipeOptions): Promise<IPipeResult> {
+    return new Promise<IPipeResult>((resolve, reject) => {
+        const pipe = new NrdpSSLNetworkPipe(platform, options, (error?: Error) => {
             // platform.trace("connected or something", error);
             if (error) {
                 reject(error);
             } else {
-                resolve(sslPipe);
+                options.pipe = pipe;
+                resolve(options);
             }
         });
     });

@@ -1,4 +1,4 @@
-import { IDataBuffer, IPlatform, dnsType } from "./types";
+import { IDataBuffer, IPlatform, DnsType } from "./types";
 import EventEmitter from "./EventEmitter";
 import DataBuffer from "./DataBuffer";
 
@@ -26,19 +26,12 @@ export abstract class NetworkPipe extends EventEmitter {
 
     // abstract properties
     abstract hostname: string;
+    abstract readonly ipAddress: string;
     abstract port: number;
     abstract socket: number; // socket
 
     abstract readonly ssl: boolean;
     abstract readonly closed: boolean;
-
-    abstract readonly dnsTime: number;
-    abstract readonly connectTime: number;
-
-    abstract readonly ipAddress: string;
-    abstract readonly dns: dnsType;
-    abstract readonly dnsChannel?: string;
-    abstract readonly cname?: string;
 
     // abstract methods
     abstract removeEventHandlers(): void;

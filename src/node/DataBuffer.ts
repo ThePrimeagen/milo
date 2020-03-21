@@ -1,5 +1,7 @@
 import { toUint8Array, bufferToArrayBufferCopy } from "./utils";
-import { IDataBuffer, encodingType, hashType, compressionMethod } from "../types";
+import { IDataBuffer, EncodingType, HashType, CompressionMethod } from "../types";
+
+import os from "os";
 
 const tempAllocation = Buffer.alloc(1);
 
@@ -19,11 +21,116 @@ function toString(item: string | IDataBuffer | ArrayBuffer | Uint8Array | number
  * Probably should actually make an encoding table, but as of now we only have
  * one type.  Likely hex will be the next.
  */
-function convertEncodingType(str: encodingType): "utf8" {
+function convertEncodingType(str: EncodingType): "utf8" {
     return "utf8";
 }
 
-export default class DataBuffer implements IDataBuffer {
+abstract class DBGetterSetters {
+    abstract getFloat32(offset: number): number;
+    abstract getFloat32BE(offset: number): number;
+    abstract getFloat32LE(offset: number): number;
+    abstract getFloat64(offset: number): number;
+    abstract getFloat64BE(offset: number): number;
+    abstract getFloat64LE(offset: number): number;
+    abstract getInt(offset: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number;
+    abstract getInt16(offset: number): number;
+    abstract getInt16BE(offset: number): number;
+    abstract getInt16LE(offset: number): number;
+    abstract getInt32(offset: number): number;
+    abstract getInt32BE(offset: number): number;
+    abstract getInt32LE(offset: number): number;
+    abstract getInt64(offset: number): number;
+    abstract getInt64BE(offset: number): number;
+    abstract getInt64LE(offset: number): number;
+    abstract getIntBE(offset: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number;
+    abstract getIntLE(offset: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number;
+    abstract getUInt(offset: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number;
+    abstract getUInt16(offset: number): number;
+    abstract getUInt16BE(offset: number): number;
+    abstract getUInt16LE(offset: number): number;
+    abstract getUInt32(offset: number): number;
+    abstract getUInt32BE(offset: number): number;
+    abstract getUInt32LE(offset: number): number;
+    abstract getUInt64(offset: number): number;
+    abstract getUInt64BE(offset: number): number;
+    abstract getUInt64LE(offset: number): number;
+    abstract getUIntBE(offset: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number;
+    abstract getUIntLE(offset: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number;
+
+    abstract setFloat32(offset: number, value: number): void;
+    abstract setFloat32BE(offset: number, value: number): void;
+    abstract setFloat32LE(offset: number, value: number): void;
+    abstract setFloat64(offset: number, value: number): void;
+    abstract setFloat64BE(offset: number, value: number): void;
+    abstract setFloat64LE(offset: number, value: number): void;
+    abstract setInt(offset: number, value: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): void;
+    abstract setInt16(offset: number, value: number): void;
+    abstract setInt16BE(offset: number, value: number): void;
+    abstract setInt16LE(offset: number, value: number): void;
+    abstract setInt32(offset: number, value: number): void;
+    abstract setInt32BE(offset: number, value: number): void;
+    abstract setInt32LE(offset: number, value: number): void;
+    abstract setInt64(offset: number, value: number): void;
+    abstract setInt64BE(offset: number, value: number): void;
+    abstract setInt64LE(offset: number, value: number): void;
+    abstract setIntBE(offset: number, value: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): void;
+    abstract setIntLE(offset: number, value: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): void;
+    abstract setUInt(offset: number, value: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): void;
+    abstract setUInt16(offset: number, value: number): void;
+    abstract setUInt16BE(offset: number, value: number): void;
+    abstract setUInt16LE(offset: number, value: number): void;
+    abstract setUInt32(offset: number, value: number): void;
+    abstract setUInt32BE(offset: number, value: number): void;
+    abstract setUInt32LE(offset: number, value: number): void;
+    abstract setUInt64(offset: number, value: number): void;
+    abstract setUInt64BE(offset: number, value: number): void;
+    abstract setUInt64LE(offset: number, value: number): void;
+    abstract setUIntBE(offset: number, value: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): void;
+    abstract setUIntLE(offset: number, value: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): void;
+};
+
+abstract class LittleDBGetterSetters extends DBGetterSetters {
+    constructor() {
+        super();
+    }
+
+    getFloat32(offset: number) { return this.getFloat32LE(offset); }
+    getFloat64(offset: number): number { return this.getFloat64LE(offset); }
+    getInt(offset: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number {
+        return this.getIntLE(offset, byteLength);
+    }
+    getInt16(offset: number): number { return this.getInt16LE(offset); }
+    getInt32(offset: number): number { return this.getInt32LE(offset); }
+    getInt64(offset: number): number { return this.getInt64LE(offset); }
+    getUInt(offset: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number {
+        return this.getUIntLE(offset, byteLength);
+    }
+    getUInt16(offset: number): number { return this.getUInt16LE(offset); }
+    getUInt32(offset: number): number { return this.getUInt32LE(offset); }
+    getUInt64(offset: number): number { return this.getUInt64LE(offset); }
+
+    setFloat32(offset: number, val: number): void { this.setFloat32LE(offset, val); }
+    setFloat64(offset: number, val: number): void { this.setFloat64LE(offset, val); }
+    setInt(offset: number, val: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): void {
+        this.setIntLE(offset, val, byteLength);
+    }
+    setInt16(offset: number, val: number): void { this.setInt16LE(offset, val); }
+    setInt32(offset: number, val: number): void { this.setInt32LE(offset, val); }
+    setInt64(offset: number, val: number): void { this.setInt64LE(offset, val); }
+    setUInt(offset: number, val: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): void {
+        this.setUIntLE(offset, val, byteLength);
+    }
+    setUInt16(offset: number, val: number): void { this.setUInt16LE(offset, val); }
+    setUInt32(offset: number, val: number): void { this.setUInt32LE(offset, val); }
+    setUInt64(offset: number, val: number): void { this.setUInt64LE(offset, val); }
+};
+
+if (os.endianness() !== "LE") {
+    throw new Error("We're not prepared for this");
+}
+
+
+export default class DataBuffer extends LittleDBGetterSetters implements IDataBuffer {
     public buffer: Buffer;
 
     public byteLength: number;
@@ -47,7 +154,8 @@ export default class DataBuffer implements IDataBuffer {
     }
 
     constructor(byteCountOrBuf: number | IDataBuffer | Uint8Array | ArrayBuffer | string,
-                offsetOrEnc?: number | encodingType, length?: number) {
+                offsetOrEnc?: number | EncodingType, length?: number) {
+        super();
 
         // Node does not have this notion nor can we reproduce it easily.
         // Since node is meant to be a testing platform and not a performance
@@ -217,7 +325,7 @@ string value for the second parameter, offset.`);
         return this.buffer.toString() === toString(other);
     }
 
-    toString(enc?: encodingType, o?: number, l?: number): string {
+    toString(enc?: EncodingType, o?: number, l?: number): string {
         const [
             offset,
             length,
@@ -229,24 +337,24 @@ string value for the second parameter, offset.`);
                                     this.byteOffset + offset, length);
     }
 
-    encode(enc: encodingType, offset?: number, length?: number): IDataBuffer {
+    encode(enc: EncodingType, offset?: number, length?: number): IDataBuffer {
         throw new Error("Not Implement");
     }
 
-    decode(enc: encodingType, offset?: number, length?: number): IDataBuffer {
+    decode(enc: EncodingType, offset?: number, length?: number): IDataBuffer {
         throw new Error("Not Implement");
     }
 
-    hash(hash: hashType, offset?: number, length?: number): IDataBuffer {
+    hash(hash: HashType, offset?: number, length?: number): IDataBuffer {
         throw new Error("Not Implemented");
     }
-    hashToString(hash: hashType, offset?: number, length?: number): string {
+    hashToString(hash: HashType, offset?: number, length?: number): string {
         throw new Error("Not Implemented");
     }
-    compress(method: compressionMethod, offset?: number, length?: number): IDataBuffer {
+    compress(method: CompressionMethod, offset?: number, length?: number): IDataBuffer {
         throw new Error("Not Implemented");
     }
-    uncompress(method: compressionMethod, offset?: number, length?: number): string {
+    uncompress(method: CompressionMethod, offset?: number, length?: number): string {
         throw new Error("Not Implemented");
     }
 
@@ -394,45 +502,43 @@ string value for the second parameter, offset.`);
     getFloat64BE(offset: number): number { throw new Error("Not Implemented"); }
     getFloat64LE(offset: number): number { throw new Error("Not Implemented"); }
 
-    setUInt8(offset: number, value: number): number {
+    setUInt8(offset: number, value: number): void {
         this.buffer.writeUInt8(value, this.byteOffset + offset);
-        return offset;
     }
 
-    setInt8(offset: number, value: number): number {
+    setInt8(offset: number, value: number): void {
         this.buffer.writeInt8(value, this.byteOffset + offset);
-        return offset;
     }
 
-    setUInt16BE(offset: number, val: number): number {
-        return this.buffer.writeUInt16BE(val, this.byteOffset + offset);
+    setUInt16BE(offset: number, val: number): void {
+        this.buffer.writeUInt16BE(val, this.byteOffset + offset);
     }
 
-    setUInt16LE(offset: number, val: number): number {
-        return this.buffer.writeUInt16LE(val, this.byteOffset + offset);
+    setUInt16LE(offset: number, val: number): void {
+        this.buffer.writeUInt16LE(val, this.byteOffset + offset);
     }
 
-    setInt16BE(offset: number, val: number): number { throw new Error("Not Implemented"); }
-    setInt16LE(offset: number, val: number): number { throw new Error("Not Implemented"); }
+    setInt16BE(offset: number, val: number): void { throw new Error("Not Implemented"); }
+    setInt16LE(offset: number, val: number): void { throw new Error("Not Implemented"); }
 
-    setUInt32BE(offset: number, val: number): number {
-        return this.buffer.writeUInt32BE(val, this.byteOffset + offset);
+    setUInt32BE(offset: number, val: number): void {
+        this.buffer.writeUInt32BE(val, this.byteOffset + offset);
     }
 
-    setUInt32LE(offset: number, val: number): number { throw new Error("Not Implemented"); }
-    setInt32BE(offset: number, val: number): number { throw new Error("Not Implemented"); }
-    setInt32LE(offset: number, val: number): number { throw new Error("Not Implemented"); }
+    setUInt32LE(offset: number, val: number): void { throw new Error("Not Implemented"); }
+    setInt32BE(offset: number, val: number): void { throw new Error("Not Implemented"); }
+    setInt32LE(offset: number, val: number): void { throw new Error("Not Implemented"); }
 
-    setUInt64BE(offset: number, val: number): number { throw new Error("Not Implemented"); }
-    setUInt64LE(offset: number, val: number): number { throw new Error("Not Implemented"); }
-    setInt64BE(offset: number, val: number): number { throw new Error("Not Implemented"); }
-    setInt64LE(offset: number, val: number): number { throw new Error("Not Implemented"); }
+    setUInt64BE(offset: number, val: number): void { throw new Error("Not Implemented"); }
+    setUInt64LE(offset: number, val: number): void { throw new Error("Not Implemented"); }
+    setInt64BE(offset: number, val: number): void { throw new Error("Not Implemented"); }
+    setInt64LE(offset: number, val: number): void { throw new Error("Not Implemented"); }
 
-    setFloat32BE(offset: number, val: number): number { throw new Error("Not Implemented"); }
-    setFloat32LE(offset: number, val: number): number { throw new Error("Not Implemented"); }
+    setFloat32BE(offset: number, val: number): void { throw new Error("Not Implemented"); }
+    setFloat32LE(offset: number, val: number): void { throw new Error("Not Implemented"); }
 
-    setFloat64BE(offset: number, val: number): number { throw new Error("Not Implemented"); }
-    setFloat64LE(offset: number, val: number): number { throw new Error("Not Implemented"); }
+    setFloat64BE(offset: number, val: number): void { throw new Error("Not Implemented"); }
+    setFloat64LE(offset: number, val: number): void { throw new Error("Not Implemented"); }
 
     compare(other: string | ArrayBuffer | IDataBuffer | Uint8Array | number | number[],
             otherByteOffset?: number,
@@ -467,3 +573,4 @@ string value for the second parameter, offset.`);
         return new DataBuffer(normBuf);
     }
 }
+

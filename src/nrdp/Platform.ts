@@ -2,14 +2,13 @@ import "./polyfills";
 
 import {
     ICreateSSLNetworkPipeOptions, ICreateTCPNetworkPipeOptions, IpConnectivityMode,
-    IPlatform, IRequestTimeouts, ISHA256Context, IDataBuffer
+    IPlatform, IRequestTimeouts, ISHA256Context, IDataBuffer, IPipeResult
 } from "../types";
 import DataBuffer from "./DataBuffer";
 import createNrdpSSLNetworkPipe from "./NrdpSSLNetworkPipe";
 import createNrdpTCPNetworkPipe from "./NrdpTCPNetworkPipe";
-import { NrdpSSL } from "./NrdpSSL";
+import NrdpSSL from "./NrdpSSL";
 import N = nrdsocket;
-import NetworkPipe from "../NetworkPipe";
 
 export class NrdpPlatform implements IPlatform {
     constructor() {
@@ -111,10 +110,10 @@ export class NrdpPlatform implements IPlatform {
         return new nrdp_platform.Hasher("sha256");
     }
 
-    createTCPNetworkPipe(options: ICreateTCPNetworkPipeOptions): Promise<NetworkPipe> {
+    createTCPNetworkPipe(options: ICreateTCPNetworkPipeOptions): Promise<IPipeResult> {
         return createNrdpTCPNetworkPipe(this, options);
     }
-    createSSLNetworkPipe(options: ICreateSSLNetworkPipeOptions): Promise<NetworkPipe> {
+    createSSLNetworkPipe(options: ICreateSSLNetworkPipeOptions): Promise<IPipeResult> {
         return createNrdpSSLNetworkPipe(this, options);
     }
 
