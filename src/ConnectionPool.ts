@@ -152,7 +152,7 @@ export class ConnectionPool {
     }
 
     finish(pipe: NetworkPipe): void {
-        Platform.trace(`pipe returned to the nest ${pipe.hostname}:${pipe.port} forbidReuse ${pipe.forbidReuse} closed ${pipe.closed} fd ${pipe.fd}`);
+        Platform.trace(`pipe returned to the nest ${pipe.hostname}:${pipe.port} forbidReuse ${pipe.forbidReuse} closed ${pipe.closed} socket ${pipe.socket}`);
         if (pipe.forbidReuse) {
             if (!pipe.closed) {
                 pipe.close();
@@ -239,9 +239,9 @@ export class ConnectionPool {
                     ipVersion: 4 // gotta do happy eyeballs and send off multiple tcp network pipe things
                 } as ICreateTCPNetworkPipeOptions;
                 Platform.createTCPNetworkPipe(tcpOpts).then((pipe: NetworkPipe) => {
-                    Platform.trace(`Got tcp connection for ${hostPort} with fd ${pipe.fd}`);
+                    Platform.trace(`Got tcp connection for ${hostPort} with socket ${pipe.socket}`);
                     if (ssl) {
-                        Platform.trace(`Requesting ssl pipe for ${hostPort} with fd ${pipe.fd}`);
+                        Platform.trace(`Requesting ssl pipe for ${hostPort} with socket ${pipe.socket}`);
                         return Platform.createSSLNetworkPipe({ pipe });
                     } else {
                         return pipe;
@@ -292,7 +292,7 @@ export class ConnectionPool {
                 pipe.idle = false;
                 const pending = data.pending.shift();
                 assert(pending);
-                Platform.trace(`found idle connection for ${data.hostPort} fd: ${pipe.fd}`);
+                Platform.trace(`found idle connection for ${data.hostPort} socket: ${pipe.socket}`);
                 pending.resolve(pipe);
                 return;
             }
@@ -312,9 +312,9 @@ export class ConnectionPool {
             ++data.initializing;
             Platform.trace(`Requesting tcp connection for ${data.hostPort}`);
             Platform.createTCPNetworkPipe(tcpOpts).then((pipe: NetworkPipe) => {
-                Platform.trace(`Got tcp connection for ${data.hostPort} with fd ${pipe.fd}`);
+                Platform.trace(`Got tcp connection for ${data.hostPort} with socket ${pipe.socket}`);
                 if (data.ssl) {
-                    Platform.trace(`Requesting ssl pipe for ${data.hostPort} with fd ${pipe.fd}`);
+                    Platform.trace(`Requesting ssl pipe for ${data.hostPort} with socket ${pipe.socket}`);
                     return Platform.createSSLNetworkPipe({ pipe });
                 } else {
                     return pipe;

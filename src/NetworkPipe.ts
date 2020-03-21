@@ -27,7 +27,7 @@ export abstract class NetworkPipe extends EventEmitter {
     // abstract properties
     abstract hostname: string;
     abstract port: number;
-    abstract fd: number; // socket
+    abstract socket: number; // socket
 
     abstract readonly ssl: boolean;
     abstract readonly closed: boolean;

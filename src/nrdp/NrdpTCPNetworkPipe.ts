@@ -52,7 +52,7 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
         this.port = port;
     }
 
-    get fd() { return this.sock; }
+    get socket() { return this.sock; }
 
     get closed() { return this.sock === -1; }
     get ssl() { return false; }

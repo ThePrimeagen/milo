@@ -134,7 +134,7 @@ class NodeTCPNetworkPipe extends NetworkPipe {
         });
     }
 
-    get fd() {
+    get socket() {
         return -1; // called for logging reasons throw new Error("Not supported in Node.");
     }
 

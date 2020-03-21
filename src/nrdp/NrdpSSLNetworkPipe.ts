@@ -114,7 +114,7 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
     get hostname() { return this.pipe.hostname; }
     get port() { return this.pipe.port; }
     get ssl() { return true; }
-    get fd() { return this.pipe.fd; }
+    get socket() { return this.pipe.socket; }
     get dnsTime() { return this.pipe.dnsTime; }
     get connectTime() { return this.pipe.connectTime; }
     get cname() { return this.pipe.cname; }
@@ -162,7 +162,7 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
             return ret;
 
         const platform: NrdpPlatform = this.platform as NrdpPlatform;
-        platform.trace("someone's calling read on ", this.pipe.fd, length,
+        platform.trace("someone's calling read on ", this.pipe.socket, length,
                        platform.ssl.g.SSL_pending(this.sslInstance));
         const read = platform.ssl.g.SSL_read(this.sslInstance, buf, offset, length);
         if (read <= 0) {
