@@ -6,6 +6,8 @@ export type HTTPRequestHeaders = { [key: string]: string };
 export type encodingType = "escaped" | "base32" | "base64" | "base64_urlsafe" | "base85" | "url" | "hex" | "utf8";
 export type hashType = "sha1" | "sha256" | "sha512" | "md5";
 export type compressionMethod = "zlib" | "zlibbase64" | "zlibgzip" | "lzham" | "lz4";
+export type dnsType = "lookup" | "cache" | "literal" | "hostsFile" | "unknown" | "preresolved";
+
 
 export enum ErrorCode {
     None = 0
@@ -200,7 +202,7 @@ export interface IDnsResult {
     ttl: number;
     lastTouched?: number;
     state?: string;
-    type: string;
+    type: dnsType;
 };
 
 export interface IRequestTimeouts {

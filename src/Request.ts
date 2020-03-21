@@ -72,6 +72,7 @@ export class RequestResponse {
     id: number;
     state?: string;
     cacheKey?: ArrayBuffer;
+    cname?: string;
     statusCode?: number;
     reason?: number;
     errorcode?: ErrorCode;
@@ -240,7 +241,8 @@ export class Request {
             this.requestResponse.dns = this.networkPipe.dns;
             if (this.networkPipe.dnsChannel)
                 this.requestResponse.dnsChannel = this.networkPipe.dnsChannel;
-
+            if (this.networkPipe.cname)
+                this.requestResponse.cname = this.networkPipe.cname;
             if (!this.requestData.headers)
                 this.requestData.headers = {};
 

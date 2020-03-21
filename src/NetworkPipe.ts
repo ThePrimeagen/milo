@@ -1,4 +1,4 @@
-import { IDataBuffer, IPlatform } from "./types";
+import { IDataBuffer, IPlatform, dnsType } from "./types";
 import EventEmitter from "./EventEmitter";
 import DataBuffer from "./DataBuffer";
 
@@ -6,10 +6,6 @@ import DataBuffer from "./DataBuffer";
 function assert(platform: IPlatform, condition: any, msg?: string): asserts condition {
     platform.assert(condition, msg);
 }
-
-export interface NetworkPipeDataEvents {
-    error: Error;
-};
 
 export abstract class NetworkPipe extends EventEmitter {
     protected platform: IPlatform;
@@ -40,8 +36,9 @@ export abstract class NetworkPipe extends EventEmitter {
     abstract readonly connectTime: number;
 
     abstract readonly ipAddress: string;
-    abstract readonly dns: string; // dns type
+    abstract readonly dns: dnsType;
     abstract readonly dnsChannel?: string;
+    abstract readonly cname?: string;
 
     // abstract methods
     abstract removeEventHandlers(): void;

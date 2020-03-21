@@ -1,7 +1,8 @@
 import net from "net";
 
 import {
-    IPlatform
+    IPlatform,
+    dnsType
 } from "../types";
 
 import {
@@ -63,13 +64,14 @@ class NodeTCPNetworkPipe extends NetworkPipe {
     private state: State;
 
     public ipAddress: string = "the ip address!";
-    public dns: string = "the dns type!";
+    public dns: dnsType = "lookup";
     public dnsChannel?: string;
     public hostname: string;
     public port: number;
 
     public dnsTime: number;
     public connectTime: number;
+    public cname?: string;
 
     get ssl() { return false; }
 

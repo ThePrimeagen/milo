@@ -117,6 +117,7 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
     get fd() { return this.pipe.fd; }
     get dnsTime() { return this.pipe.dnsTime; }
     get connectTime() { return this.pipe.connectTime; }
+    get cname() { return this.pipe.cname; }
 
     removeEventHandlers() {
         this.removeAllListeners();

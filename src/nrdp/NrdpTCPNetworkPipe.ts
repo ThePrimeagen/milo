@@ -1,5 +1,5 @@
 import {
-    ICreateTCPNetworkPipeOptions, IDnsResult, IDataBuffer, IPlatform
+    dnsType, ICreateTCPNetworkPipeOptions, IDnsResult, IDataBuffer, IPlatform
 } from "../types";
 import NetworkPipe from "../NetworkPipe";
 import { NrdpPlatform } from "./Platform";
@@ -18,11 +18,12 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
     private selectMode: number;
 
     public dnsTime: number;
-    public dns: string;
+    public dns: dnsType;
     public dnsChannel?: string;
     public connectTime: number;
     public ipAddress: string;
     public hostname: string;
+    public cname?: string;
     public port: number;
 
     constructor(platform: NrdpPlatform,
@@ -32,7 +33,8 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
                 ipAddress: string,
                 connectTime: number,
                 dnsTime: number,
-                dns: string,
+                dns: dnsType,
+                cname?: string,
                 dnsChannel?: string) {
         super(platform);
         this.sock = socket;
@@ -43,6 +45,7 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
         this.selectMode = 0;
         this.dnsTime = dnsTime;
         this.dns = dns;
+        this.cname = cname;
         this.dnsChannel = dnsChannel;
         this.connectTime = connectTime;
         this.hostname = hostname;
@@ -172,8 +175,9 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
 export default function createTCPNetworkPipe(platform: NrdpPlatform,
                                              options: ICreateTCPNetworkPipeOptions): Promise<NetworkPipe> {
     let dnsStartTime = 0;
-    let dns: string | undefined;
-    let dnsChannel: string | undefined;
+    let dns: dnsType;
+    let dnsChannel: string;
+    let dnsName: string;
     return new Promise<NetworkPipe>((resolve, reject) => {
         new Promise<N.Sockaddr>(innerResolve => {
             let ipAddress = options.hostname;
@@ -204,6 +208,7 @@ export default function createTCPNetworkPipe(platform: NrdpPlatform,
                                             sockAddr = new N.Sockaddr(`${dnsResult.addresses[0]}:${options.port}`);
                                             dns = dnsResult.type;
                                             dnsChannel = dnsResult.channel;
+                                            dnsName = dnsResult.name;
                                             innerResolve(sockAddr);
                                         } catch (err) {
                                             reject(new Error("Failed to parse ip address " + err.toString()));
@@ -224,7 +229,7 @@ export default function createTCPNetworkPipe(platform: NrdpPlatform,
                     assert(platform, dns, "Must have dns here");
                     resolve(new NrdpTCPNetworkPipe(platform, sock, options.hostname, options.port,
                                                    sockAddr.ipAddress, platform.mono() - now,
-                                                   dnsTime, dns, dnsChannel));
+                                                   dnsTime, dns, dnsName, dnsChannel));
                 } else if (N.errno !== N.EINPROGRESS) {
                     throw new Error("Failed to connect " + N.errno + " " + N.strerror());
                 } else {
@@ -256,7 +261,7 @@ export default function createTCPNetworkPipe(platform: NrdpPlatform,
                             assert(platform, dns, "Must have dns here");
                             resolve(new NrdpTCPNetworkPipe(platform, sock, options.hostname, options.port,
                                                            sockAddr.ipAddress, platform.mono() - now,
-                                                           dnsTime, dns, dnsChannel));
+                                                           dnsTime, dns, dnsName, dnsChannel));
                             break;
                         default:
                             reject(new Error(`Failed to connect to host ${options.hostname}:${options.port} ${errno}`));

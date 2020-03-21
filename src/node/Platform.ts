@@ -228,7 +228,7 @@ class NodePlatform implements IPlatform {
             // @ts-ignore
             // we don't worry about ipv5
             res.ipVersion = family;
-            res.type = "i don't know.";
+            res.type = "lookup";
 
             callback(res);
         });
