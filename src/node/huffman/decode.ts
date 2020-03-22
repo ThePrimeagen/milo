@@ -1,5 +1,5 @@
 import DataBuffer from "../DataBuffer";
-import { IDataBuffer } from "../../types";
+import IDataBuffer from "../../IDataBuffer";
 import { StaticTreeNode, staticTree, pluckBit } from "./static";
 
 const scratchBuffer = Buffer.alloc(50000);

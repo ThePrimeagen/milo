@@ -1,12 +1,14 @@
-import {
-    IHTTP, HTTPMethod, HTTPTransferEncoding, IHTTPRequest,
-    IHTTPHeadersEvent, ErrorCode, IDataBuffer
-} from "../types";
-import Platform from "../Platform";
-import EventEmitter from "../EventEmitter";
 import ChunkyParser from "./ChunkyParser";
+import EventEmitter from "../EventEmitter";
+import IDataBuffer from "../IDataBuffer";
+import IHTTP from "../IHTTP";
+import IHTTPHeadersEvent from "../IHTTPHeadersEvent";
+import IHTTPRequest from "../IHTTPRequest";
 import NetworkPipe from "../NetworkPipe";
+import Platform from "../Platform";
+import { HTTPTransferEncoding } from "../types";
 import { assert } from "../utils";
+
 export default class HTTP1 extends EventEmitter implements IHTTP {
     private headerBuffer?: IDataBuffer;
     private connection?: string;
@@ -81,6 +83,7 @@ Host: ${request.url.host}\r\n`;
                     } else {
                         this.headerBuffer = scratch.slice(0, read);
                     }
+                    assert(this.headerBuffer);
                     const rnrn = this.headerBuffer.indexOf("\r\n\r\n");
                     if (rnrn !== -1) {
                         this._parseHeaders(rnrn);

@@ -1,8 +1,10 @@
-import { IDataBuffer, IUnorderedMap, IPlatform } from "../types";
 import DataBuffer from "./DataBuffer";
-import UnorderedMap from "./UnorderedMap";
+import IDataBuffer from "../IDataBuffer";
+import IPlatform from "../IPlatform";
+import IUnorderedMap from "../IUnorderedMap";
 import N = nrdsocket;
-import { NrdpSSLBoundFunctions } from "./NrdpSSLBoundFunctions";
+import NrdpSSLBoundFunctions from "./NrdpSSLBoundFunctions";
+import UnorderedMap from "./UnorderedMap";
 
 function assert(platform: IPlatform, condition: any, msg?: string): asserts condition {
     platform.assert(condition, msg);

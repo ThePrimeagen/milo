@@ -1,8 +1,8 @@
 import Platform from "../Platform";
 import DataBuffer from "../DataBuffer";
 import { assert, escapeData } from "../utils";
-import { IDataBuffer } from "../types";
 import EventEmitter from "../EventEmitter";
+import IDataBuffer from "../IDataBuffer";
 
 export default class ChunkyParser extends EventEmitter {
     private buffers: IDataBuffer[];

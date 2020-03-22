@@ -1,8 +1,9 @@
 import crypto from "crypto";
 
-import { IDataBuffer, ISHA256Context as ISC } from "../types";
 import DB from "./DataBuffer";
 import { bufferToArrayBufferCopy } from "./utils";
+import IDataBuffer from "../IDataBuffer";
+import ISHA256Context from "../ISHA256Context";
 
 /*
   const salt = 'abcdefghijklmnop!';
@@ -11,7 +12,7 @@ import { bufferToArrayBufferCopy } from "./utils";
   .digest('hex');
 */
 
-export class ISHA256Context implements ISC {
+export default class SHA256Context implements ISHA256Context {
     private salt: string;
     private hash: crypto.Hmac;
 

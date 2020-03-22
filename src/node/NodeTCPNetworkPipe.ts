@@ -1,26 +1,11 @@
-import net from "net";
-
-import {
-    IPlatform,
-    IPipeResult,
-    DnsType
-} from "../types";
-
-import {
-    Pool,
-    PoolItem,
-    PoolFreeFunction,
-} from '../pool';
-
-import NetworkPipe from "../NetworkPipe";
-
-import {
-    IDnsResult,
-    IDataBuffer,
-    ICreateTCPNetworkPipeOptions
-} from "../types";
-
 import DataBuffer from "./DataBuffer";
+import ICreateTCPNetworkPipeOptions from "../ICreateTCPNetworkPipeOptions";
+import IDataBuffer from "../IDataBuffer";
+import IPipeResult from "../IPipeResult";
+import IPlatform from "../IPlatform";
+import NetworkPipe from "../NetworkPipe";
+import net from "net";
+import { Pool, PoolItem, PoolFreeFunction, } from '../pool';
 
 enum State {
     Connecting = "Connecting",

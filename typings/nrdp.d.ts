@@ -1,7 +1,7 @@
 declare namespace nrdp {
-    type IDataBuffer = import("../src/types").IDataBuffer;
+    type IDataBuffer = import("../src/IDataBuffer").default;
     type IpVersion = import("../src/types").IpVersion;
-    type IDnsResult = import("../src/types").IDnsResult;
+    type IDnsResult = import("../src/IDnsResult").default;
 
     namespace dns {
         function lookupHost(host: string,

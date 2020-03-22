@@ -1,8 +1,7 @@
 import assert from "assert";
-
 import Platform from "../../Platform";
-import { IDataBuffer } from "../../types";
 import { HeaderTable } from "./internals/header-table";
+import IDataBuffer from "../../IDataBuffer";
 
 // NOTE: The state of the header parser is not reentrant (I believe) therefore
 // we can have a single state object, this may be a bad idea, but for now I am

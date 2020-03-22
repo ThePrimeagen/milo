@@ -1,4 +1,4 @@
-import { IDataBuffer } from "../types"
+import IDataBuffer from "../IDataBuffer";
 
 function mask(buf: IDataBuffer, offset: number, length: number, theMask: IDataBuffer) {
     for (let i = offset, j = 0; j < length; ++j, ++i) {

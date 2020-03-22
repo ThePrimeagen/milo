@@ -19,7 +19,8 @@
             "severity": "warning",
             "options": ["debug", "info", "log", "time", "timeEnd", "trace"]
         },
-        "max-classes-per-file": false
+        "max-classes-per-file": true,
+        "no-namespace": false
     },
     "jsRules": {
         "max-line-length": {

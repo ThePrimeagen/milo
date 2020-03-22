@@ -1,10 +1,10 @@
 import Platform from "../../Platform";
-import DataBuffer from "../../DataBuffer";
-import { IDataBuffer, } from '../../types';
-import NetworkPipe from "../../NetworkPipe";
-import FrameConstructor from "../frame/frame-constructor";
 import * as FrameUtils from "../frame/utils";
+import DataBuffer from "../../DataBuffer";
+import FrameConstructor from "../frame/frame-constructor";
+import NetworkPipe from "../../NetworkPipe";
 import SettingsFrame from "../frame/settings-frame";
+import IDataBuffer from "../../IDataBuffer";
 
 // 1.  Everytime a new connection request is made to  the same server, we need
 // to start a http2 stream with server and hand back a common

@@ -1,15 +1,14 @@
-import Url from "url-parse";
-import HTTP1 from "./HTTP1/HTTP1";
-import Platform from "./Platform";
 import DataBuffer from "./DataBuffer";
+import HTTP1 from "./HTTP1/HTTP1";
+import IDataBuffer from "./IDataBuffer";
+import IHTTP from "./IHTTP";
+import IHTTPHeadersEvent from "./IHTTPHeadersEvent";
+import IRequestTimeouts from "./IRequestTimeouts";
 import NetworkPipe from "./NetworkPipe";
+import Platform from "./Platform";
+import Url from "url-parse";
 import connectionPool, { ConnectionOptions, PendingConnection } from "./ConnectionPool";
-
-import {
-    ICreateTCPNetworkPipeOptions, IpConnectivityMode,
-    IRequestTimeouts, IHTTP, HTTPMethod, IHTTPHeadersEvent,
-    HTTPTransferEncoding, ErrorCode, IDataBuffer
-} from "./types";
+import { IpConnectivityMode, HTTPMethod, HTTPTransferEncoding, ErrorCode } from "./types";
 import { assert } from "./utils";
 
 let nextId = 0;

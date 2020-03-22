@@ -1,7 +1,7 @@
-import { toUint8Array, bufferToArrayBufferCopy } from "./utils";
-import { IDataBuffer, EncodingType, HashType, CompressionMethod } from "../types";
-
+import IDataBuffer from "../IDataBuffer";
 import os from "os";
+import { EncodingType, HashType, CompressionMethod } from "../types";
+import { toUint8Array, bufferToArrayBufferCopy } from "./utils";
 
 const tempAllocation = Buffer.alloc(1);
 

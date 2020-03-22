@@ -1,10 +1,13 @@
-import {
-    DnsType, ICreateTCPNetworkPipeOptions, IDnsResult, IDataBuffer, IPlatform, IPipeResult
-} from "../types";
-import NetworkPipe from "../NetworkPipe";
-import { NrdpPlatform } from "./Platform";
 import DataBuffer from "../DataBuffer";
+import ICreateTCPNetworkPipeOptions from "../ICreateTCPNetworkPipeOptions";
+import IDataBuffer from "../IDataBuffer";
+import IDnsResult from "../IDnsResult";
+import IPipeResult from "../IPipeResult";
+import IPlatform from "../IPlatform";
 import N = nrdsocket;
+import NetworkPipe from "../NetworkPipe";
+import { DnsType } from "../types";
+import { NrdpPlatform } from "./Platform";
 
 function assert(platform: IPlatform, condition: any, msg?: string): asserts condition {
     platform.assert(condition, msg);

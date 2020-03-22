@@ -1,5 +1,5 @@
 import Platform from "./Platform";
-import { IDataBuffer } from "./types";
+import IDataBuffer from "./IDataBuffer";
 
 export function headerValue(headers: string[], header: string): string {
     const lower = header.toLowerCase() + ": ";

@@ -1,5 +1,5 @@
 declare namespace nrdp_platform {
-    type IDataBuffer = import("../src/types").IDataBuffer;
+    type IDataBuffer = import("../src/IDataBuffer").default;
     function random(length: number): Uint8Array;
     class Hasher {
         constructor(type: "sha1" | "sha256" | "sha512" | "md5");

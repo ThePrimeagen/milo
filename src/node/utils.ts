@@ -1,5 +1,5 @@
-import DB from "./DataBuffer";
-import { IDataBuffer } from "../types";
+import DataBuffer from "./DataBuffer";
+import IDataBuffer from "../IDataBuffer";
 
 export function bufferToUint8Array(buf: Buffer) {
     return new Uint8Array(
@@ -82,6 +82,6 @@ export function createNonCopyBuffer(buf: ArrayBuffer | IDataBuffer, offset: numb
     }
 
     const adjOffset = buf.byteOffset + offset;
-    return (buf as DB).buffer.slice(adjOffset, adjOffset + length);
+    return (buf as DataBuffer).buffer.slice(adjOffset, adjOffset + length);
 };
 

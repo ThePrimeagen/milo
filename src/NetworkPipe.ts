@@ -1,6 +1,7 @@
-import { IDataBuffer, IPlatform, DnsType } from "./types";
 import EventEmitter from "./EventEmitter";
 import DataBuffer from "./DataBuffer";
+import IDataBuffer from "./IDataBuffer";
+import IPlatform from "./IPlatform";
 
 // have to redeclare assert since NrdpPlatform doesn't declare assert as asserting
 function assert(platform: IPlatform, condition: any, msg?: string): asserts condition {

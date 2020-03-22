@@ -1,8 +1,10 @@
 import UnorderedMap from "./#{target}/UnorderedMap";
-import { IUnorderedMap, IEventEmitter, EventListener } from "./types";
+import IUnorderedMap from "./IUnorderedMap";
+import IEventEmitter from "./IEventEmitter";
+import { EventListenerCallback } from "./types";
 
 interface EventConnection {
-    listener: EventListener;
+    listener: EventListenerCallback;
     once: boolean;
 };
 
@@ -11,25 +13,25 @@ export default class EventEmitter implements IEventEmitter {
         this.listenerMap = new UnorderedMap();
     }
 
-    addListener(event: string, listener: EventListener): this {
+    addListener(event: string, listener: EventListenerCallback): this {
         return this.on(event, listener);
     }
 
-    on(event: string, listener: EventListener): this {
+    on(event: string, listener: EventListenerCallback): this {
         this.eventArray(event).push({ listener, once: false });
         return this;
     }
 
-    once(event: string, listener: EventListener): this {
+    once(event: string, listener: EventListenerCallback): this {
         this.eventArray(event).push({ listener, once: true });
         return this;
     }
 
-    removeListener(event: string, listener: EventListener): this {
+    removeListener(event: string, listener: EventListenerCallback): this {
         return this.off(event, listener);
     }
 
-    off(event: string, listener: EventListener): this {
+    off(event: string, listener: EventListenerCallback): this {
         const connections = this.listenerMap.get(event);
         if (connections) {
             for (let idx = 0; idx < connections.length; ++idx) {
@@ -55,7 +57,7 @@ export default class EventEmitter implements IEventEmitter {
         return this;
     }
 
-    listeners(event: string): EventListener[] {
+    listeners(event: string): EventListenerCallback[] {
         const connections = this.listenerMap.get(event);
         if (connections) {
             return connections.map(l => l.listener);
@@ -98,12 +100,12 @@ export default class EventEmitter implements IEventEmitter {
         return connections.length;
     }
 
-    prependListener(event: string, listener: EventListener): this {
+    prependListener(event: string, listener: EventListenerCallback): this {
         this.eventArray(event).unshift({ listener, once: false });
         return this;
     }
 
-    prependOnceListener(event: string, listener: EventListener): this {
+    prependOnceListener(event: string, listener: EventListenerCallback): this {
         this.eventArray(event).unshift({ listener, once: true });
         return this;
     }

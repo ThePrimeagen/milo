@@ -1,21 +1,7 @@
-import DataBuffer from '../../DataBuffer'
-import Platform from '../../Platform';
-import maskFn from '../mask';
-
-import {
-    IDataBuffer,
-} from '../../types';
-
-import {
-    Opcodes
-} from '../types';
-
-import {
-    WSState,
-    FramerState,
-    MAX_HEADER_SIZE,
-    MASK_SIZE,
-} from './types';
+import DataBuffer from "../../DataBuffer";
+import IDataBuffer from "../../IDataBuffer";
+import { Opcodes } from "../types";
+import { WSState, FramerState, MAX_HEADER_SIZE, MASK_SIZE, } from "./types";
 
 /*
  *
@@ -94,7 +80,7 @@ export function constructFrameHeader(
         // NOTE: This should just never be an option.  It really is
         // insanity wolf to make a packet this big that would throttle the
         // whole ws pipeline.
-        throw new Error('Bad implementation, Prime');
+        throw new Error("Bad implementation, Prime");
     }
 
     buf.setUInt8(1, secondByte);

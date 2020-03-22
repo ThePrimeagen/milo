@@ -1,7 +1,7 @@
 import getStaticList from "./static-header-list";
 import Platform from "../../../Platform";
 import UnorderedMap from "../../../UnorderedMap";
-import { IUnorderedMap } from "../../../types";
+import IUnorderedMap from "../../../IUnorderedMap";
 
 export type Name = string;
 export type NameValue = { name: string, value: string };

@@ -1,14 +1,17 @@
 import "./polyfills";
-
-import {
-    ICreateSSLNetworkPipeOptions, ICreateTCPNetworkPipeOptions, IpConnectivityMode,
-    IPlatform, IRequestTimeouts, ISHA256Context, IDataBuffer, IPipeResult
-} from "../types";
 import DataBuffer from "./DataBuffer";
+import ICreateSSLNetworkPipeOptions from "../ICreateSSLNetworkPipeOptions";
+import ICreateTCPNetworkPipeOptions from "../ICreateTCPNetworkPipeOptions";
+import IDataBuffer from "../IDataBuffer";
+import IPipeResult from "../IPipeResult";
+import IPlatform from "../IPlatform";
+import IRequestTimeouts from "../IRequestTimeouts";
+import ISHA256Context from "../ISHA256Context";
+import N = nrdsocket;
+import NrdpSSL from "./NrdpSSL";
 import createNrdpSSLNetworkPipe from "./NrdpSSLNetworkPipe";
 import createNrdpTCPNetworkPipe from "./NrdpTCPNetworkPipe";
-import NrdpSSL from "./NrdpSSL";
-import N = nrdsocket;
+import { IpConnectivityMode } from "../types";
 
 export class NrdpPlatform implements IPlatform {
     constructor() {

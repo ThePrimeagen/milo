@@ -1,41 +1,12 @@
-import Platform from '../../Platform';
-import DataBuffer from '../../DataBuffer'
+import DataBuffer from "../../DataBuffer";
+import IDataBuffer from "../../IDataBuffer";
 import NetworkPipe from "../../NetworkPipe";
-
-import { createDefaultState } from './state';
-
-import {
-    isHeaderParsable,
-    parseHeader,
-    constructFrameHeader,
-    generateMask,
-} from './header';
-
-import {
-    FramerState,
-    WSState,
-    WSCallback,
-    MAX_HEADER_SIZE,
-} from './types';
-
-import {
-    BufferPool,
-    parse64BigInt,
-} from '../buffer';
-
-import {
-    IDataBuffer,
-} from '../../types';
-
-import {
-    assert
-} from '../../utils';
-
-import maskFn from '../mask';
-
-import {
-    Opcodes
-} from '../types';
+import maskFn from "../mask";
+import { FramerState, WSState, WSCallback, MAX_HEADER_SIZE, } from "./types";
+import { Opcodes } from "../types";
+import { assert } from "../../utils";
+import { createDefaultState } from "./state";
+import { isHeaderParsable, parseHeader, constructFrameHeader, generateMask, } from "./header";
 
 export default class WSFramer {
     private callbacks: WSCallback[];

@@ -1,20 +1,11 @@
-import Platform from "../Platform";
 import DataBuffer from "../DataBuffer";
+import IDataBuffer from "../IDataBuffer";
 import NetworkPipe from "../NetworkPipe";
+import Platform from "../Platform";
 import WSFramer from './framer';
+import { UrlObject, Opcodes, WSOptions, CloseValues, } from './types';
 import { WSState } from './framer/types';
 import { upgrade } from "./upgrade";
-
-import {
-    IDataBuffer,
-} from '../types';
-
-import {
-    UrlObject,
-    Opcodes,
-    WSOptions,
-    CloseValues,
-} from './types';
 
 const defaultOptions = {
     maxFrameSize: 8192,
@@ -180,9 +171,9 @@ export default class WS {
                 this.frame.send(buffer, 0, buffer.byteLength, Opcodes.Pong);
                 break;
 
-            // We are a client only framework.  We do not do pongs.
+                // We are a client only framework.  We do not do pongs.
             case Opcodes.Pong:
-                    break;
+                break;
 
             case Opcodes.TextFrame:
             case Opcodes.BinaryFrame:
@@ -204,18 +195,18 @@ export default class WS {
     }
 
 
-     private validateControlFrame(buffer: IDataBuffer, state: WSState): boolean {
+    private validateControlFrame(buffer: IDataBuffer, state: WSState): boolean {
 
-         // TODO: There is message deflate that I believe is used as part
-         // of these reserved bits, but not for autobahn tests 3.* series.
-         const rsv = state.rsv1 + state.rsv2 + state.rsv3;
+        // TODO: There is message deflate that I believe is used as part
+        // of these reserved bits, but not for autobahn tests 3.* series.
+        const rsv = state.rsv1 + state.rsv2 + state.rsv3;
 
-         // A control frame is considered a bad if the payload length is greater
-         // than 125.
-         if (state.isControlFrame && state.payloadLength > 125 || rsv) {
-             this.frame.send(CLOSE_1002_BUFFER, 0, 2, Opcodes.CloseConnection);
-             return false;
-         }
+        // A control frame is considered a bad if the payload length is greater
+        // than 125.
+        if (state.isControlFrame && state.payloadLength > 125 || rsv) {
+            this.frame.send(CLOSE_1002_BUFFER, 0, 2, Opcodes.CloseConnection);
+            return false;
+        }
 
         return true;
     }

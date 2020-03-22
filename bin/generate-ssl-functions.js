@@ -27,7 +27,9 @@ if (statOutput > statGenerate && statOutput > statJson) {
     process.exit(0);
 }
 
-let ts = `import { IDataBuffer, IUnorderedMap, IPlatform } from "../types";
+let ts = `import IDataBuffer from "../IDataBuffer";
+import IPlatform from "../IPlatform";
+import IUnorderedMap from "../IUnorderedMap";
 import N = nrdsocket;
 
 `;
@@ -61,7 +63,7 @@ data.functions.forEach((func) => {
 
 ts += `
 
-export class NrdpSSLBoundFunctions {
+export default class NrdpSSLBoundFunctions {
     /* tslint:disable:variable-name */
 `;
 

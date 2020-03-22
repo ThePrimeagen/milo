@@ -1,4 +1,4 @@
-import { IUnorderedMap } from "../types";
+import IUnorderedMap from "../IUnorderedMap";
 
 export default class UnorderedMap<Key, Value> implements IUnorderedMap<Key, Value> {
     private map: Map<Key, Value>;

@@ -1,6 +1,4 @@
-import {
-    IDataBuffer,
-} from '../../types';
+import IDataBuffer from "../../IDataBuffer";
 
 export enum FramerState {
     ParsingHeader = 1,

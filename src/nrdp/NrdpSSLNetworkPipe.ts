@@ -1,9 +1,11 @@
-import {
-    ICreateSSLNetworkPipeOptions, IDataBuffer, IPlatform, IPipeResult
-} from "../types";
-import { NrdpPlatform } from "./Platform";
-import NetworkPipe from "../NetworkPipe";
+import ICreateSSLNetworkPipeOptions from "../ICreateSSLNetworkPipeOptions";
+import IDataBuffer from "../IDataBuffer";
+import IPipeResult from "../IPipeResult";
+import IPlatform from "../IPlatform";
 import N = nrdsocket;
+import NetworkPipe from "../NetworkPipe";
+import { NrdpPlatform } from "./Platform";
+// ### could probably just import Platform as well as NrdpPlatform here
 
 // have to redeclare assert since NrdpPlatform doesn't declare assert as asserting
 function assert(platform: IPlatform, condition: any, msg?: string): asserts condition {

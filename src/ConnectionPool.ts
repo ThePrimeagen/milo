@@ -1,8 +1,11 @@
-import Url from "url-parse";
-import { ICreateTCPNetworkPipeOptions, IUnorderedMap, IPipeResult, DnsType } from "./types";
-import Platform from "./Platform";
+import ICreateTCPNetworkPipeOptions from "./ICreateTCPNetworkPipeOptions";
+import IPipeResult from "./IPipeResult";
+import IUnorderedMap from "./IUnorderedMap";
 import NetworkPipe from "./NetworkPipe";
+import Platform from "./Platform";
 import UnorderedMap from "./UnorderedMap";
+import Url from "url-parse";
+import { DnsType } from "./types";
 import { assert } from "./utils";
 
 export interface ConnectionOptions {

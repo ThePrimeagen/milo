@@ -1,28 +1,20 @@
-import fs from "fs";
-import dns from "dns";
-
-import { toUint8Array } from "./utils";
-import {
-    IDnsResult,
-    IpVersion,
-    IPlatform,
-    ICreateTCPNetworkPipeOptions,
-    ICreateSSLNetworkPipeOptions,
-    ISHA256Context,
-    IPipeResult,
-    HTTPRequestHeaders,
-    IpConnectivityMode
-} from "../types";
-
-import NetworkPipe from "../NetworkPipe";
-import createTCPNetworkPipe from "./NodeTCPNetworkPipe";
-
-import sha1 from "sha1";
-import btoa from "btoa";
-import atob from "atob";
-import { IDataBuffer } from "../types";
 import DataBuffer from "./DataBuffer";
-import { ISHA256Context as SC } from "./SHA256Context";
+import ICreateSSLNetworkPipeOptions from "../ICreateSSLNetworkPipeOptions";
+import ICreateTCPNetworkPipeOptions from "../ICreateTCPNetworkPipeOptions";
+import IDataBuffer from "../IDataBuffer";
+import IDnsResult from "../IDnsResult";
+import IPipeResult from "../IPipeResult";
+import IPlatform from "../IPlatform";
+import ISHA256Context from "../ISHA256Context";
+import atob from "atob";
+import btoa from "btoa";
+import createTCPNetworkPipe from "./NodeTCPNetworkPipe";
+import dns from "dns";
+import fs from "fs";
+import sha1 from "sha1";
+import SHA256Context from "./SHA256Context";
+import { IpVersion, HTTPRequestHeaders, IpConnectivityMode } from "../types";
+import { toUint8Array } from "./utils";
 
 function toBuffer(buf: Uint8Array | ArrayBuffer | string) {
     // @ts-ignore
@@ -78,11 +70,15 @@ class NodePlatform implements IPlatform {
     }
 
     createSHA256Context(): ISHA256Context {
-        return new SC() as ISHA256Context;
+        return new SHA256Context() as ISHA256Context;
     }
 
     writeFile(fileName: string, contents: Uint8Array | ArrayBuffer | string): boolean {
-        fs.writeFileSync(fileName, contents);
+        try {
+            fs.writeFileSync(fileName, contents);
+        } catch (err) {
+            return false;
+        }
         return true;
     }
 
