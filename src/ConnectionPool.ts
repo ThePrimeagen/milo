@@ -1,36 +1,15 @@
+import IConnectionOptions from "./IConnectionOptions";
 import ICreateTCPNetworkPipeOptions from "./ICreateTCPNetworkPipeOptions";
 import IPipeResult from "./IPipeResult";
 import IUnorderedMap from "./IUnorderedMap";
 import NetworkPipe from "./NetworkPipe";
 import Platform from "./Platform";
 import UnorderedMap from "./UnorderedMap";
-import Url from "url-parse";
 import { DnsType } from "./types";
 import { assert } from "./utils";
+import IPendingConnection from "./IPendingConnection";
 
-export interface ConnectionOptions {
-    url: Url;
-    freshConnect?: boolean;
-    forbidReuse?: boolean;
-    connectTimeout: number;
-    dnsTimeout: number;
-};
-
-export interface PendingConnection {
-    readonly id: number;
-
-    abort(): void;
-    onNetworkPipe(): Promise<NetworkPipe>;
-
-    readonly cname?: string;
-    readonly connectTime?: number;
-    readonly dnsChannel?: string;
-    readonly dnsTime?: number;
-    readonly dnsType?: DnsType;
-    readonly dnsWireTime?: number;
-}
-
-class PendingConnectionImpl implements PendingConnection {
+class PendingConnectionImpl implements IPendingConnection {
     private pool: ConnectionPool;
     private error?: Error;
     private pipe?: NetworkPipe;
@@ -43,12 +22,13 @@ class PendingConnectionImpl implements PendingConnection {
     public dnsTimeout: number;
     public connectTimeout: number;
 
-    public dnsTime?: number;
-    public connectTime?: number;
-    public dnsType?: DnsType;
-    public dnsWireTime?: number;
-    public cname?: string;
-    public dnsChannel?: string;
+    public dnsTime: number;
+    public connectTime: number;
+    public dnsType: DnsType;
+    public dnsWireTime: number;
+    public cname: string;
+    public dnsChannel: string;
+    public socketReused: boolean;
 
     constructor(pool: ConnectionPool, id: number, hostname: string,
                 port: number, dnsTimeout: number, connectTimeout: number) {
@@ -58,6 +38,13 @@ class PendingConnectionImpl implements PendingConnection {
         this.port = port;
         this.dnsTimeout = dnsTimeout;
         this.connectTimeout = connectTimeout;
+        this.cname = "";
+        this.dnsChannel = "";
+        this.dnsType = "unknown";
+        this.connectTime = 0;
+        this.dnsWireTime = 0;
+        this.dnsTime = 0;
+        this.socketReused = false;
     }
 
     readonly id: number;
@@ -112,7 +99,7 @@ class PendingConnectionImpl implements PendingConnection {
 
 interface HostData {
     hostPort: string;
-    pipes: NetworkPipe[];
+    pipes: NetworkPipe[]; // ### TODO might need to keep some data for dns wire time and such
     initializing: number;
     pending: PendingConnectionImpl[];
     ssl: boolean;
@@ -123,7 +110,7 @@ export class ConnectionPool {
     private _maxPoolSize: number;
     private _maxConnectionsPerHost: number;
     private _hosts: IUnorderedMap<string, HostData>;
-    private _pendingFreshConnects?: PendingConnection[];
+    private _pendingFreshConnects?: IPendingConnection[];
 
     constructor() {
         this._id = 0;
@@ -201,7 +188,7 @@ export class ConnectionPool {
     }
 
     // what to do for people who need to wait?, need an id
-    requestConnection(options: ConnectionOptions): Promise<PendingConnection> {
+    requestConnection(options: IConnectionOptions): Promise<IPendingConnection> {
         return new Promise((resolve, reject) => {
             let port: number = 0;
             if (options.url.port) {
@@ -311,6 +298,7 @@ export class ConnectionPool {
                 const pending = data.pending.shift();
                 assert(pending);
                 Platform.trace(`found idle connection for ${data.hostPort} socket: ${pipe.socket}`);
+                pending.socketReused = true;
                 pending.resolve(pipe);
                 return;
             }
@@ -346,6 +334,7 @@ export class ConnectionPool {
                 pending.dnsTime = pipeResult.dnsTime;
                 pending.dnsType = pipeResult.dnsType;
                 pending.dnsWireTime = pipeResult.dnsWireTime;
+                pending.socketReused = pipeResult.socketReused;
                 pipe.idle = false;
                 assert(data);
                 --data.initializing;

@@ -234,6 +234,7 @@ export default function createTCPNetworkPipe(platform: NrdpPlatform,
                 assert(platform, dnsType, "Must have dns here");
                 resolve({
                     pipe: new NrdpTCPNetworkPipe(platform, sock, options.hostname, options.port, sockAddr.ipAddress),
+                    socketReused: false,
                     connectTime: platform.mono() - now,
                     dnsWireTime,
                     dnsTime,

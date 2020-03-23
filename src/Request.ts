@@ -8,9 +8,11 @@ import NetworkPipe from "./NetworkPipe";
 import Platform from "./Platform";
 import RequestResponse from "./RequestResponse";
 import Url from "url-parse";
-import connectionPool, { ConnectionOptions, PendingConnection } from "./ConnectionPool";
+import connectionPool from "./ConnectionPool";
 import { HTTPTransferEncoding } from "./types";
 import { assert } from "./utils";
+import IPendingConnection from "./IPendingConnection";
+import IConnectionOptions from "./IConnectionOptions";
 
 let nextId = 0;
 
@@ -112,10 +114,10 @@ export default class Request {
             connectTimeout: timeouts && timeouts.connectTimeout,
             freshConnect: this.requestData.freshConnect,
             forbidReuse: this.requestData.forbidReuse
-        } as ConnectionOptions;
+        } as IConnectionOptions;
 
-        let pendingConnection: PendingConnection;
-        connectionPool.requestConnection(connectionOpts).then((conn: PendingConnection) => {
+        let pendingConnection: IPendingConnection;
+        connectionPool.requestConnection(connectionOpts).then((conn: IPendingConnection) => {
             Platform.trace(`got a pending connection ${conn.id}`);
             // conn is abortable
             pendingConnection = conn;
@@ -124,18 +126,13 @@ export default class Request {
             Platform.trace("GOT OUR PIPE NOW", Object.keys(pendingConnection));
             this.networkPipe = pipe;
             this.requestResponse.socket = pipe.socket;
-            if (pendingConnection.cname)
-                this.requestResponse.cname = pendingConnection.cname;
-            if (pendingConnection.connectTime)
-                this.requestResponse.connectTime = pendingConnection.connectTime;
-            if (pendingConnection.dnsChannel)
-                this.requestResponse.dnsChannel = pendingConnection.dnsChannel;
-            if (pendingConnection.dnsTime)
-                this.requestResponse.dnsTime = pendingConnection.dnsTime;
-            if (pendingConnection.dnsType)
-                this.requestResponse.dns = pendingConnection.dnsType;
-            if (pendingConnection.dnsWireTime)
-                this.requestResponse.dnsWireTime = pendingConnection.dnsWireTime;
+            this.requestResponse.cname = pendingConnection.cname;
+            this.requestResponse.connectTime = pendingConnection.connectTime;
+            this.requestResponse.dnsChannel = pendingConnection.dnsChannel;
+            this.requestResponse.dnsTime = pendingConnection.dnsTime;
+            this.requestResponse.dns = pendingConnection.dnsType;
+            this.requestResponse.dnsWireTime = pendingConnection.dnsWireTime;
+            this.requestResponse.socketReused = pendingConnection.socketReused;
 
             this._transition(RequestState.Connected);
         }).catch((err: Error) => {
