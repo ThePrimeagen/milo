@@ -20,11 +20,11 @@ jest.doMock("../header", () => {
     }
 });
 
-import { IDataBuffer } from "../../../types";
 import WSFramer from "../index";
 import { Opcodes } from "../../types";
 import maskFn from "../../mask";
 import NetworkPipe from "../../../NetworkPipe";
+import IDataBuffer from "../../../IDataBuffer";
 
 // @ts-ignore
 const pipe = {

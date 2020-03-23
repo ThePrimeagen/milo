@@ -7,7 +7,7 @@ export default interface IEventEmitter {
     removeListener(event: string, listener: EventListenerCallback): this;
     off(event: string, listener: EventListenerCallback): this;
     removeAllListeners(event?: string): this;
-    listeners(event: string): EventListenerCallback[];
+    listeners(event: string): EventListenerCallback[] | undefined;
     emit(event: string, ...args: any[]): boolean;
     listenerCount(event: string): number;
     prependListener(event: string, listener: EventListenerCallback): this;

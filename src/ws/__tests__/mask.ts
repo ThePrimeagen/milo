@@ -1,6 +1,6 @@
 import maskFn from "../mask";
-import { IDataBuffer } from "../../types";
 import DataBuffer from "../../DataBuffer";
+import IDataBuffer from "../../IDataBuffer";
 
 // FOR YOU JELMEGA
 // LittleEndian is going to be BBAABBAA
