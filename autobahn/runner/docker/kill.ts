@@ -1,6 +1,6 @@
 import { exec } from 'shelljs';
 import { getDockers } from './docker-ps';
-import Platform from "../../../Platform";
+import Platform from "../../../src/Platform";
 
 
 export async function killDocker() {

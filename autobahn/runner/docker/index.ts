@@ -6,7 +6,7 @@ import { readyConfig } from './config';
 import { killDocker } from './kill';
 import { launch } from './launch';
 import { stop } from './stop';
-import Platform from "../../../Platform";
+import Platform from "../../../src/Platform";
 
 export {
     stop

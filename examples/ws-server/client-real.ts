@@ -1,5 +1,5 @@
 import WebSocket from "ws";
-import Platform from "../../Platform";
+import Platform from "../../src/Platform";
 
 const ws = new WebSocket("ws://mpaulson.netflix.com:8080");
 

@@ -5,7 +5,7 @@ import {
     // @ts-ignore
 } from '../../dist/milo.node.js';
 
-import Platform from "../../Platform";
+import Platform from "../../src/Platform";
 
 async function run() {
     let dataCount = 0;

@@ -19,7 +19,7 @@
     "build:node": "tsc -p tsconfig.node.json && rollup -c rollup.node.js",
     "lint": "node bin/lint.js",
     "nrdp-generate-ssl-functions": "node bin/generate-ssl-functions.js",
-    "build:all": "npm run build:nrdp && npm run build:node && npm run lint",
+    "build:all": "node bin/build-all.js",
     "build": "npm run build:all",
     "nrdp": "npm run run build:nrdp",
     "node": "npm run build:node",

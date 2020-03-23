@@ -1,9 +1,9 @@
-import ws from "ws";
-import Platform from "../../Platform";
+import WebSocket from "ws";
+import Platform from "../../src/Platform";
 
 
 Platform.log("We are about to server.", 1337);
-const wss = new ws.Server({
+const wss = new WebSocket.Server({
     port: 1337
 });
 
