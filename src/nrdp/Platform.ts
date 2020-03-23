@@ -91,7 +91,7 @@ export class NrdpPlatform implements IPlatform {
     randomBytes = nrdp_platform.random;
     stacktrace = nrdp.stacktrace;
 
-    utf8Length(str: string): number { return nrdp_platform.utf8Length(str); }
+    utf8Length = nrdp_platform.utf8Length;
 
     writeFile(fileName: string, contents: Uint8Array | IDataBuffer | ArrayBuffer | string): boolean {
         const fd = N.open(fileName, N.O_CREAT | N.O_WRONLY, 0o0664);
