@@ -1,6 +1,5 @@
 import UnorderedMap from "./#{target}/UnorderedMap";
 import IUnorderedMap from "./IUnorderedMap";
-import IEventEmitter from "./IEventEmitter";
 import { EventListenerCallback } from "./types";
 
 interface EventConnection {
@@ -10,13 +9,17 @@ interface EventConnection {
 
 type EventConnectionType = EventConnection | EventListenerCallback;
 
-export default class EventEmitter implements IEventEmitter {
+export default class EventEmitter {
     constructor() {
         this.listenerMap = new UnorderedMap();
     }
 
     addListener(event: string, listener: EventListenerCallback): this {
         return this.add(event, listener, false);
+    }
+
+    addOnceListener(event: string, listener: EventListenerCallback): this {
+        return this.add(event, { listener, once: true }, false);
     }
 
     on(event: string, listener: EventListenerCallback): this {
