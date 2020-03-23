@@ -125,22 +125,18 @@ export default class Request {
             Platform.trace("GOT OUR PIPE NOW", Object.keys(pendingConnection));
             this.networkPipe = pipe;
             this.requestResponse.socket = pipe.socket;
-            if (pendingConnection.cname) {
+            if (pendingConnection.cname)
                 this.requestResponse.cname = pendingConnection.cname;
-            }
-            if (pendingConnection.connectTime) {
+            if (pendingConnection.connectTime)
                 this.requestResponse.connectTime = pendingConnection.connectTime;
-            }
-            if (pendingConnection.dnsChannel) {
+            if (pendingConnection.dnsChannel)
                 this.requestResponse.dnsChannel = pendingConnection.dnsChannel;
-            }
-
-            if (pendingConnection.dnsTime) {
+            if (pendingConnection.dnsTime)
                 this.requestResponse.dnsTime = pendingConnection.dnsTime;
-            }
-            if (pendingConnection.dnsType) {
+            if (pendingConnection.dnsType)
                 this.requestResponse.dns = pendingConnection.dnsType;
-            }
+            if (pendingConnection.dnsWireTime)
+                this.requestResponse.dnsWireTime = pendingConnection.dnsWireTime;
 
             this._transition(RequestState.Connected);
         }).catch((err: Error) => {

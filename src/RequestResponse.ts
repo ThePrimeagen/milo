@@ -19,6 +19,7 @@ export default class RequestResponse {
     headersSize?: number;
     errorString?: string;
     dnsTime?: number;
+    dnsWireTime?: number;
     connectTime?: number;
     transactionTime?: number;
     duration?: number;

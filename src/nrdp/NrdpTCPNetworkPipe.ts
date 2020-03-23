@@ -184,6 +184,7 @@ export default function createTCPNetworkPipe(platform: NrdpPlatform,
     let dnsType: DnsType;
     let dnsChannel: string;
     let cname: string;
+    let dnsWireTime: number;
     return new Promise<IPipeResult>((resolve, reject) => {
         new Promise<N.Sockaddr>(innerResolve => {
             let ipAddress = options.hostname;
@@ -206,15 +207,18 @@ export default function createTCPNetworkPipe(platform: NrdpPlatform,
                 dnsStartTime = platform.mono();
                 nrdp.dns.lookupHost(options.hostname, options.ipVersion,
                                     options.dnsTimeout, (dnsResult: IDnsResult) => {
+                                        // platform.log("got dns result", dnsResult);
                                         if (!dnsResult.addresses.length) {
                                             reject(new Error("Failed to lookup host"));
                                             return;
                                         }
                                         try {
+                                            // ### gotta do happy eyeballing, racing of tcp connections etc
                                             sockAddr = new N.Sockaddr(`${dnsResult.addresses[0]}:${options.port}`);
                                             dnsType = dnsResult.type;
                                             dnsChannel = dnsResult.channel;
                                             cname = dnsResult.name;
+                                            dnsWireTime = dnsResult.time;
                                             innerResolve(sockAddr);
                                         } catch (err) {
                                             reject(new Error("Failed to parse ip address " + err.toString()));
@@ -231,6 +235,7 @@ export default function createTCPNetworkPipe(platform: NrdpPlatform,
                 resolve({
                     pipe: new NrdpTCPNetworkPipe(platform, sock, options.hostname, options.port, sockAddr.ipAddress),
                     connectTime: platform.mono() - now,
+                    dnsWireTime,
                     dnsTime,
                     dnsChannel,
                     dnsType,

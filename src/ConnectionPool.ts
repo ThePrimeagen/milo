@@ -27,6 +27,7 @@ export interface PendingConnection {
     readonly dnsChannel?: string;
     readonly dnsTime?: number;
     readonly dnsType?: DnsType;
+    readonly dnsWireTime?: number;
 }
 
 class PendingConnectionImpl implements PendingConnection {
@@ -45,6 +46,7 @@ class PendingConnectionImpl implements PendingConnection {
     public dnsTime?: number;
     public connectTime?: number;
     public dnsType?: DnsType;
+    public dnsWireTime?: number;
     public cname?: string;
     public dnsChannel?: string;
 
@@ -343,6 +345,7 @@ export class ConnectionPool {
                 pending.dnsChannel = pipeResult.dnsChannel;
                 pending.dnsTime = pipeResult.dnsTime;
                 pending.dnsType = pipeResult.dnsType;
+                pending.dnsWireTime = pipeResult.dnsWireTime;
                 pipe.idle = false;
                 assert(data);
                 --data.initializing;

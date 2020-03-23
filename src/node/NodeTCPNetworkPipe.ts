@@ -268,7 +268,7 @@ export default function createTCPNetworkPipe(platform: IPlatform,
     return new Promise((res, rej) => {
         const networkPipe = new NodeTCPNetworkPipe(platform, options.hostname, options.port);
         networkPipe.connection.then((pipe: NetworkPipe) => {
-            res({ pipe, dnsType: "lookup", dnsTime: -1, connectTime: -1, cname: "" });
+            res({ pipe, dnsType: "lookup", dnsTime: -1, connectTime: -1, cname: "", dnsChannel: "", dnsWireTime: -1 });
         }).catch(rej);
     });
 };
