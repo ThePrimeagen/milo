@@ -29,6 +29,9 @@ class PendingConnectionImpl implements IPendingConnection {
     public cname: string;
     public dnsChannel: string;
     public socketReused: boolean;
+    public sslVersion?: string;
+    public sslSessionResumed?: boolean;
+    public sslHandshakeTime?: number;
 
     constructor(pool: ConnectionPool, id: number, hostname: string,
                 port: number, dnsTimeout: number, connectTimeout: number) {
@@ -177,7 +180,7 @@ export class ConnectionPool {
 
         if (pipe.closed) {
             const idx = data.pipes.indexOf(pipe);
-            assert(idx !== -1);
+            assert(idx !== -1, "where the pipe?");
             data.pipes.splice(idx, 1);
         } else {
             pipe.idle = true;
@@ -296,7 +299,7 @@ export class ConnectionPool {
             if (pipe.idle) {
                 pipe.idle = false;
                 const pending = data.pending.shift();
-                assert(pending);
+                assert(pending, "must have pending");
                 Platform.trace(`found idle connection for ${data.hostPort} socket: ${pipe.socket}`);
                 pending.socketReused = true;
                 pending.resolve(pipe);
@@ -306,7 +309,7 @@ export class ConnectionPool {
 
         if (data.pipes.length + data.initializing < this._maxConnectionsPerHost) {
             const pending = data.pending.shift();
-            assert(pending);
+            assert(pending, "must have pending");
             const tcpOpts = {
                 hostname: pending.hostname,
                 port: pending.port,
@@ -335,8 +338,15 @@ export class ConnectionPool {
                 pending.dnsType = pipeResult.dnsType;
                 pending.dnsWireTime = pipeResult.dnsWireTime;
                 pending.socketReused = pipeResult.socketReused;
+                if (pipeResult.sslVersion) {
+                    pending.sslVersion = pipeResult.sslVersion;
+                    Platform.assert(typeof pipeResult.sslSessionResumed !== "undefined", "must have sslSessionResumed");
+                    pending.sslSessionResumed = pipeResult.sslSessionResumed;
+                    Platform.assert(typeof pipeResult.sslHandshakeTime !== "undefined", "must have sslHandshakeTime");
+                    pending.sslHandshakeTime = pipeResult.sslHandshakeTime;
+                }
                 pipe.idle = false;
-                assert(data);
+                assert(data, "must have data");
                 --data.initializing;
                 data.pipes.push(pipe);
                 pending.resolve(pipe);

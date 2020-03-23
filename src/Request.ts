@@ -105,7 +105,7 @@ export default class Request {
         });
 
         // Platform.trace("Request#send creating TCP pipe");
-        assert(this.requestData.timeouts);
+        assert(this.requestData.timeouts, "must have timeouts by now");
         const timeouts = this.requestData.timeouts;
 
         const connectionOpts = {
@@ -133,6 +133,11 @@ export default class Request {
             this.requestResponse.dns = pendingConnection.dnsType;
             this.requestResponse.dnsWireTime = pendingConnection.dnsWireTime;
             this.requestResponse.socketReused = pendingConnection.socketReused;
+            if (pendingConnection.sslVersion) {
+                this.requestResponse.sslVersion = pendingConnection.sslVersion;
+                this.requestResponse.sslSessionResumed = pendingConnection.sslSessionResumed;
+                this.requestResponse.sslHandshakeTime = pendingConnection.sslHandshakeTime;
+            }
 
             this._transition(RequestState.Connected);
         }).catch((err: Error) => {
@@ -151,7 +156,7 @@ export default class Request {
         case RequestState.Initial:
             throw new Error("Invalid state transition to Initial");
         case RequestState.Connected:
-            assert(this.networkPipe);
+            assert(this.networkPipe, "must have networkPipe");
             this.requestResponse.serverIp = this.networkPipe.ipAddress;
             // this.requestResponse.dns = this.networkPipe.dns;
             // if (this.networkPipe.dnsChannel)
@@ -255,7 +260,7 @@ export default class Request {
             this.requestResponse.duration = Platform.mono() - this.requestResponse.networkStartTime;
             this.requestResponse.size = this.responseDataLength;
             this.requestResponse.state = "network";
-            assert(this.networkPipe);
+            assert(this.networkPipe, "must have networkPipe");
             this.requestResponse.bytesRead = this.networkPipe.bytesRead;
 
             switch (this.requestData.format) {
@@ -283,7 +288,7 @@ export default class Request {
             }
             assert(this.resolve, "Must have resolve");
             this.resolve(this.requestResponse);
-            assert(this.networkPipe);
+            assert(this.networkPipe, "must have networkpipe");
             Platform.trace("got to finished, pipe is closed?", this.networkPipe.closed);
             if (!this.networkPipe.closed) {
                 this.networkPipe.removeEventHandlers();

@@ -9,7 +9,7 @@ import NetworkPipe from "../NetworkPipe";
 import { DnsType } from "../types";
 import { NrdpPlatform } from "./Platform";
 
-function assert(platform: IPlatform, condition: any, msg?: string): asserts condition {
+function assert(platform: IPlatform, condition: any, msg: string): asserts condition {
     platform.assert(condition, msg);
 }
 
@@ -88,7 +88,7 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
         if (this.writeBuffers.length === 1) { // don't really need these arrays when writebuffers is empty
             this._write();
         } else {
-            assert(this.platform, this.selectMode === N.READWRITE);
+            assert(this.platform, this.selectMode === N.READWRITE, "select mode must be readwrite");
         }
     }
 
@@ -118,7 +118,7 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
     }
 
     close(): void {
-        assert(this.platform, this.sock !== -1);
+        assert(this.platform, this.sock !== -1, "must have socket");
         N.close(this.sock); // ### error checking?
         this.sock = -1;
         this.emit("close");

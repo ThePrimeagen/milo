@@ -76,7 +76,7 @@ Host: ${request.url.host}\r\n`;
                     } else {
                         this.headerBuffer = scratch.slice(0, read);
                     }
-                    assert(this.headerBuffer);
+                    assert(this.headerBuffer, "must have headerBuffer");
                     const rnrn = this.headerBuffer.indexOf("\r\n\r\n");
                     if (rnrn !== -1) {
                         this._parseHeaders(rnrn);

@@ -136,6 +136,11 @@
             "type": "() => number"
         },
         {
+            "signature": "const char *SSL_get_version(const SSL *);",
+            "name": "SSL_get_version",
+            "type": "(ssl: N.Struct) => N.ConstDataPointer"
+        },
+        {
             "signature": "SSL_CTX *SSL_get_SSL_CTX(const SSL *ssl);",
             "name": "SSL_get_SSL_CTX",
             "type": "(ssl: N.Struct) => N.Struct | undefined"
@@ -154,6 +159,11 @@
             "signature": "int SSL_read(SSL *ssl, Buffer *buf);",
             "name": "SSL_read",
             "type": "(ssl: N.Struct, buf: ArrayBuffer | Uint8Array | IDataBuffer, offset: number, length: number) => number"
+        },
+        {
+            "signature": "int SSL_session_reused(SSL *ssl);",
+            "name": "SSL_session_reused",
+            "type": "(ssl: N.Struct) => number"
         },
         {
             "signature": "void SSL_set_bio(SSL *ssl, BIO *rbio, BIO *wbio);",

@@ -103,7 +103,7 @@ export default class ChunkyParser extends EventEmitter {
                 const wanted = bytes - consumed;
                 this.offset += wanted;
                 consumed += wanted;
-                Platform.assert(consumed === bytes);
+                Platform.assert(consumed === bytes, "consumed should === bytes");
                 break;
             }
         }

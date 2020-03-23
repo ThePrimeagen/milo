@@ -42,14 +42,14 @@ declare namespace nrdp {
     function exit(exitCode: number): void;
     function stacktrace(): string;
     function now(): number;
-    let trustStoreHash: string;
+    const trustStoreHash: string;
     let trustStore: ArrayBuffer;
 
     let cipherList: string;
 
     function mono(): number;
 
-    function assert(cond: any, message?: string): void;
+    function assert(cond: any, message: string): void;
     function atoutf8(input: Uint8Array | ArrayBuffer | IDataBuffer | string): Uint8Array;
     function utf8toa(input: Uint8Array | ArrayBuffer | IDataBuffer | string, offset?: number, length?: number): string;
     function hash(type: string, data: Uint8Array | ArrayBuffer | IDataBuffer | string): Uint8Array;

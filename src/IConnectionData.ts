@@ -1,6 +1,7 @@
+import IConnectionDataSSL from "./IConnectionDataSSL";
 import { DnsType } from "./types";
 
-export default interface IConnectionData {
+export default interface IConnectionData extends IConnectionDataSSL {
     cname: string;
     connectTime: number;
     dnsChannel: string;

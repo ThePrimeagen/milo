@@ -4,7 +4,7 @@ import IDataBuffer from "./IDataBuffer";
 import IPlatform from "./IPlatform";
 
 // have to redeclare assert since NrdpPlatform doesn't declare assert as asserting
-function assert(platform: IPlatform, condition: any, msg?: string): asserts condition {
+function assert(platform: IPlatform, condition: any, msg: string): asserts condition {
     platform.assert(condition, msg);
 }
 

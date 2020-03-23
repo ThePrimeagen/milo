@@ -32,7 +32,7 @@ export default interface IPlatform {
 
     stacktrace(): string;
 
-    assert(cond: any, message?: string): void;
+    assert(cond: any, message: string): void;
 
     trace(...args: any[]): void;
     log(...args: any[]): void;

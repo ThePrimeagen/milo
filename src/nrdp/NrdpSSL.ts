@@ -6,7 +6,7 @@ import N = nrdsocket;
 import NrdpSSLBoundFunctions from "./NrdpSSLBoundFunctions";
 import UnorderedMap from "./UnorderedMap";
 
-function assert(platform: IPlatform, condition: any, msg?: string): asserts condition {
+function assert(platform: IPlatform, condition: any, msg: string): asserts condition {
     platform.assert(condition, msg);
 }
 

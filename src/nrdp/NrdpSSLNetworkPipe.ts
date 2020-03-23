@@ -5,10 +5,11 @@ import IPlatform from "../IPlatform";
 import N = nrdsocket;
 import NetworkPipe from "../NetworkPipe";
 import { NrdpPlatform } from "./Platform";
+import IConnectionDataSSL from "../IConnectionDataSSL";
 // ### could probably just import Platform as well as NrdpPlatform here
 
 // have to redeclare assert since NrdpPlatform doesn't declare assert as asserting
-function assert(platform: IPlatform, condition: any, msg?: string): asserts condition {
+function assert(platform: IPlatform, condition: any, msg: string): asserts condition {
     platform.assert(condition, msg);
 }
 
@@ -21,9 +22,11 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
     private writeBuffers: (Uint8Array | ArrayBuffer | string | IDataBuffer)[];
     private writeBufferOffsets: number[];
     private writeBufferLengths: number[];
-    private connectedCallback?: (error?: Error) => void;
+    private connectedCallback?: (error?: Error, connData?: IConnectionDataSSL) => void;
+    private connectStartTime: number;
 
-    constructor(platform: NrdpPlatform, options: ICreateSSLNetworkPipeOptions, callback: (error?: Error) => void) {
+    constructor(platform: NrdpPlatform, options: ICreateSSLNetworkPipeOptions,
+                callback: (error?: Error, connData?: IConnectionDataSSL) => void) {
         super(platform);
 
         this.connectedCallback = callback;
@@ -103,6 +106,7 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
         });
 
         platform.ssl.g.SSL_set_bio(this.sslInstance, this.inputBio, this.outputBio);
+        this.connectStartTime = this.platform.mono();
         this._connect();
     }
 
@@ -243,7 +247,7 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
         const platform: NrdpPlatform = this.platform as NrdpPlatform;
 
         // ### connectedCallback?
-        assert(platform, this.connectedCallback);
+        assert(platform, this.connectedCallback, "must have connectedCallback");
         const ret = platform.ssl.g.SSL_connect(this.sslInstance);
         // platform.trace("CALLED CONNECT", ret);
         if (ret <= 0) {
@@ -260,8 +264,13 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
             assert(this.platform, ret === 1, "This should be 1");
             // this.platform.trace("we're connected");
             this.connected = true;
-            assert(this.platform, this.connectedCallback);
-            this.connectedCallback();
+            const version = platform.ssl.g.SSL_get_version(this.sslInstance);
+            const data = {
+                sslHandshakeTime: this.platform.mono() - this.connectStartTime,
+                sslVersion: version ? version.stringify() : "",
+                sslSessionResumed: platform.ssl.g.SSL_session_reused(this.sslInstance) !== 0
+            } as IConnectionDataSSL;
+            this.connectedCallback(undefined, data);
             this.connectedCallback = undefined;
         }
     }
@@ -275,11 +284,19 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
 export default function createSSLNetworkPipe(platform: NrdpPlatform,
                                              options: ICreateSSLNetworkPipeOptions): Promise<IPipeResult> {
     return new Promise<IPipeResult>((resolve, reject) => {
-        const pipe = new NrdpSSLNetworkPipe(platform, options, (error?: Error) => {
+        const pipe = new NrdpSSLNetworkPipe(platform, options, (error?: Error, connData?: IConnectionDataSSL) => {
             // platform.trace("connected or something", error);
             if (error) {
                 reject(error);
             } else {
+                if (connData) {
+                    assert(platform, typeof connData.sslHandshakeTime !== "undefined", "must have ssl hand shake time");
+                    assert(platform, connData.sslVersion, "must have ssl version");
+                    assert(platform, typeof connData.sslSessionResumed !== "undefined", "must have ssl session resumedness");
+                    options.sslHandshakeTime = connData.sslHandshakeTime;
+                    options.sslVersion = connData.sslVersion;
+                    options.sslSessionResumed = connData.sslSessionResumed;
+                }
                 options.pipe = pipe;
                 resolve(options);
             }
