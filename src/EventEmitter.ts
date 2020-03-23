@@ -74,10 +74,10 @@ export default class EventEmitter {
         return this;
     }
 
-    listeners(event: string): EventListenerCallback[] | undefined {
+    listeners(event: string): EventListenerCallback[] {
         const connections = this.listenerMap.get(event);
         if (!connections)
-            return undefined;
+            return [];
         if (Array.isArray(connections)) {
             return connections.map(l => {
                 if (typeof l === "function")
@@ -172,7 +172,7 @@ export default class EventEmitter {
         case 0:
             this.listenerMap.delete(event);
             break;
-        case 2:
+        case 1:
             this.listenerMap.set(event, conns[0]);
             break;
         default:
