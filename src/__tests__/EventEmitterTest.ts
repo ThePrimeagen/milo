@@ -122,7 +122,7 @@ describe("test", () => {
             expect(emitter.listenerCount("foo")).toEqual(4);
             expect(emitter.hasListener("foo")).toEqual(true);
 
-            let expectedHandlers = [handler2, handler, handler3, handler];
+            const expectedHandlers = [handler2, handler, handler3, handler];
             if (typeof removeFunc === "function") {
                 removeFunc.call(emitter, "foo", handler);
                 expectedHandlers.splice(1, 1);
