@@ -211,14 +211,24 @@ export class Request {
             pendingConnection = conn;
             return conn.onNetworkPipe();
         }).then((pipe: NetworkPipe) => {
-            Platform.trace("GOT OUR PIPE NOW");
+            Platform.trace("GOT OUR PIPE NOW", Object.keys(pendingConnection));
             this.networkPipe = pipe;
             this.requestResponse.socket = pipe.socket;
-            if (pendingConnection.dnsTime) {
-                this.requestResponse.dnsTime = pendingConnection.dnsTime;
+            if (pendingConnection.cname) {
+                this.requestResponse.cname = pendingConnection.cname;
             }
             if (pendingConnection.connectTime) {
                 this.requestResponse.connectTime = pendingConnection.connectTime;
+            }
+            if (pendingConnection.dnsChannel) {
+                this.requestResponse.dnsChannel = pendingConnection.dnsChannel;
+            }
+
+            if (pendingConnection.dnsTime) {
+                this.requestResponse.dnsTime = pendingConnection.dnsTime;
+            }
+            if (pendingConnection.dnsType) {
+                this.requestResponse.dns = pendingConnection.dnsType;
             }
 
             this._transition(RequestState.Connected);

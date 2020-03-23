@@ -337,6 +337,11 @@ export class ConnectionPool {
                 }
             }).then((pipeResult: IPipeResult) => {
                 const pipe = pipeResult.pipe;
+                pending.cname = pipeResult.cname;
+                pending.connectTime = pipeResult.connectTime;
+                pending.dnsChannel = pipeResult.dnsChannel;
+                pending.dnsTime = pipeResult.dnsTime;
+                pending.dnsType = pipeResult.dnsType;
                 pipe.idle = false;
                 assert(data);
                 --data.initializing;
