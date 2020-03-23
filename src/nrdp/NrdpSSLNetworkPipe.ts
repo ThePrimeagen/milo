@@ -56,19 +56,16 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
             return preverifyOk;
         });
 
-        function checkedStruct(arg: N.Struct | undefined) {
-            assert(platform, arg, "gotta have struct");
-            return arg;
-        }
-
         const memMethod = platform.ssl.g.BIO_s_mem();
         assert(platform, memMethod, "gotta have memMethod");
-        this.inputBio = checkedStruct(platform.ssl.g.BIO_new(memMethod));
-        assert(platform, this.inputBio, "gotta have inputBio");
+        let bio = platform.ssl.g.BIO_new(memMethod);
+        assert(platform, bio, "gotta have inputBio");
+        this.inputBio = bio;
         platform.ssl.g.BIO_ctrl(this.inputBio, platform.ssl.g.BIO_C_SET_BUF_MEM_EOF_RETURN, -1, undefined);
 
-        this.outputBio = checkedStruct(platform.ssl.g.BIO_new(memMethod));
-        assert(this.platform, this.outputBio, "gotta have outputBio");
+        bio = platform.ssl.g.BIO_new(memMethod);
+        assert(platform, bio, "gotta have outputBio");
+        this.outputBio = bio;
 
         platform.ssl.g.BIO_ctrl(this.outputBio, platform.ssl.g.BIO_C_SET_BUF_MEM_EOF_RETURN, -1, undefined);
         this.pipe.on("data", () => {
