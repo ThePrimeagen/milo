@@ -126,7 +126,6 @@ Host: ${request.url.host}\r\n`;
         const split = str.split("\r\n");
         // Platform.trace("got string\n", split);
         const statusLine = split[0];
-        // Platform.trace("got status", statusLine);
         if (statusLine.lastIndexOf("HTTP/1.", 0) !== 0) {
             this.emit("error", new Error("Bad status line " + statusLine));
             return false;
@@ -159,7 +158,6 @@ Host: ${request.url.host}\r\n`;
         } as IHTTPHeadersEvent;
 
         const space = statusLine.indexOf(' ', 9);
-        // Platform.trace("got status", space, statusLine.substring(9, space))
         event.statusCode = parseInt(statusLine.substring(9, space), 10);
         if (isNaN(event.statusCode) || event.statusCode < 0) {
             this.emit("error", new Error("Bad status line " + statusLine));
