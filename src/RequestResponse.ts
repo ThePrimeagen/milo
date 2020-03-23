@@ -2,47 +2,61 @@ import { ErrorCode } from "./types";
 import IDataBuffer from "./IDataBuffer";
 
 export default class RequestResponse {
-    constructor(id: number) {
+    constructor(id: number, url: string) {
         this.id = id;
+        this.url = url;
         this.headers = [];
     }
-    id: number;
-    state?: string;
-    cacheKey?: ArrayBuffer;
     bytesRead?: number;
+    cacheKey?: ArrayBuffer;
     cname?: string;
-    statusCode?: number;
-    reason?: number;
-    errorcode?: ErrorCode;
-    errorgroup?: number;
-    nativeErrorCode?: number;
-    headersSize?: number;
-    errorString?: string;
-    dnsTime?: number;
-    dnsWireTime?: number;
     connectTime?: number;
-    transactionTime?: number;
-    duration?: number;
-    timeToFirstByteRead?: number;
-    timeToFirstByteWritten?: number;
-    networkStartTime?: number;
-    metricsPrecision?: "us" | "ms" | "none";
-    requestSize?: number;
-    serverIp?: string;
-    sslSessionResumed?: boolean;
-    sslHandshakeTime?: number;
-    sslVersion?: string;
+    data?: string | ArrayBuffer | Uint8Array | IDataBuffer;
     dns?: string;
     dnsChannel?: string;
+    dnsTime?: number;
+    dnsWireTime?: number;
+    duration?: number;
+    errorString?: string;
+    errorcode?: ErrorCode;
+    errorgroup?: number;
+    headers: string[];
+    headersSize?: number;
+    httpVersion?: string;
+    id: number;
+    metricsPrecision?: "us" | "ms" | "none";
+    nativeErrorCode?: number;
+    networkStartTime?: number;
+    reason?: number;
+    requestSize?: number;
+    serverIp?: string;
+    size?: number;
     socket?: number;
     socketReused?: boolean;
-    data?: string | ArrayBuffer | Uint8Array | IDataBuffer;
-    size?: number;
-    urls?: string[];
-    headers: string[];
-    httpVersion?: string;
+    sslHandshakeTime?: number;
+    sslSessionResumed?: boolean;
+    sslVersion?: string;
+    state?: string;
+    statusCode?: number;
+    timeToFirstByteRead?: number;
+    timeToFirstByteWritten?: number;
+    transactionTime?: number;
+    url: string;
+
+    get urls() {
+        if (this._urls)
+            return this._urls;
+        return [this.url];
+    }
+
+    get finalURL() {
+        return this._urls ? this._urls[this._urls.length - 1] : this.url;
+    }
 
     get responseDataLength() {
         return this.size || 0;
     }
+
+
+    private _urls?: string[];
 };

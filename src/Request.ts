@@ -52,10 +52,13 @@ export default class Request {
     private http: IHTTP;
 
     constructor(data: IRequestData | string) {
+        if (typeof data === "string") {
+            data = { url: data };
+        }
+        this.id = ++nextId;
+        this.requestResponse = new RequestResponse(this.id, data.url);
         this.transferEncoding = 0;
         this.responseDataLength = 0;
-        this.id = ++nextId;
-        this.requestResponse = new RequestResponse(this.id);
 
         this.http = new HTTP1();
         this.http.on("headers", this._onHeaders.bind(this));
@@ -64,10 +67,6 @@ export default class Request {
         this.http.on("finished", () => {
             this._transition(RequestState.Finished);
         });
-
-        if (typeof data === "string") {
-            data = { url: data };
-        }
 
         if (!data.timeouts) {
             data.timeouts = Platform.defaultRequestTimeouts;
