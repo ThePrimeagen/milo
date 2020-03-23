@@ -15,18 +15,14 @@ export default class HTTP1 extends EventEmitter implements IHTTP {
     private headersFinished: boolean;
     private chunkyParser?: ChunkyParser;
     private contentLength?: number;
-    private requestSize?: number;
 
-    public httpVersion: string;
     public networkPipe?: NetworkPipe;
     public request?: IHTTPRequest;
-    public timeToFirstByteRead?: number;
-    public timeToFirstByteWritten?: number;
+
     public upgrade: boolean;
     constructor() {
         super();
         this.headersFinished = false;
-        this.httpVersion = "";
         this.upgrade = false;
     }
 
@@ -53,16 +49,13 @@ Host: ${request.url.host}\r\n`;
         }
         str += "\r\n";
         this.networkPipe.write(str);
-        this.requestSize = str.length; // headers are latin1
 
         switch (typeof request.body) {
         case "string":
             this.networkPipe.write(request.body);
-            this.requestSize += request.body.length; // if this has utf8 this would be wrong
             break;
         case "object":
             this.networkPipe.write(request.body, 0, request.body.byteLength);
-            this.requestSize += request.body.byteLength;
             break;
         }
 
@@ -128,13 +121,6 @@ Host: ${request.url.host}\r\n`;
         assert(this.networkPipe, "Gotta have a pipe");
         assert(this.request, "Gotta have a pipe");
 
-        if (this.networkPipe.firstByteRead) {
-            this.timeToFirstByteRead = this.networkPipe.firstByteRead - this.request.networkStartTime;
-        }
-        if (this.networkPipe.firstByteWritten) {
-            this.timeToFirstByteWritten = this.networkPipe.firstByteWritten - this.request.networkStartTime;
-        }
-
         assert(this.headerBuffer, "Must have headerBuffer");
         const str = Platform.utf8toa(this.headerBuffer, 0, rnrn);
         const split = str.split("\r\n");
@@ -145,11 +131,15 @@ Host: ${request.url.host}\r\n`;
             this.emit("error", new Error("Bad status line " + statusLine));
             return false;
         }
-        if (statusLine[7] === "1") {
-            this.httpVersion = "1.1";
-        } else if (statusLine[7] === "0") {
-            this.httpVersion = "1.0";
-        } else {
+        let httpVersion;
+        switch (statusLine.charCodeAt(7)) {
+        case 49: // 1
+            httpVersion = "1.1";
+            break;
+        case 48: // 0
+            httpVersion = "1.0";
+            break;
+        default:
             this.emit("error", new Error("Bad status line " + statusLine));
             return false;
         }
@@ -160,9 +150,12 @@ Host: ${request.url.host}\r\n`;
             headers: [],
             headersSize: rnrn + 4,
             method: this.request.method,
-            requestSize: this.requestSize,
+            requestSize: this.networkPipe.bytesWritten,
             statusCode: -1,
-            transferEncoding: 0
+            transferEncoding: 0,
+            httpVersion,
+            timeToFirstByteRead: this.networkPipe.firstByteRead - this.request.networkStartTime,
+            timeToFirstByteWritten: this.networkPipe.firstByteWritten - this.request.networkStartTime
         } as IHTTPHeadersEvent;
 
         const space = statusLine.indexOf(' ', 9);

@@ -3,105 +3,16 @@ import HTTP1 from "./HTTP1/HTTP1";
 import IDataBuffer from "./IDataBuffer";
 import IHTTP from "./IHTTP";
 import IHTTPHeadersEvent from "./IHTTPHeadersEvent";
-import IRequestTimeouts from "./IRequestTimeouts";
+import IRequestData from "./IRequestData";
 import NetworkPipe from "./NetworkPipe";
 import Platform from "./Platform";
+import RequestResponse from "./RequestResponse";
 import Url from "url-parse";
 import connectionPool, { ConnectionOptions, PendingConnection } from "./ConnectionPool";
-import { IpConnectivityMode, HTTPMethod, HTTPTransferEncoding, ErrorCode } from "./types";
+import { HTTPTransferEncoding } from "./types";
 import { assert } from "./utils";
 
 let nextId = 0;
-
-export enum DnsType {
-    DNS_Unknown = 0,
-    DNS_Literal = 1,
-    DNS_HostsFile = 2,
-    DNS_Lookup = 3,
-    DNS_CacheHit = 4,
-    DNS_Preresolved = 5
-};
-
-export interface OnHeadersData {
-    statusCode: number;
-    headers: string[];
-};
-
-export interface RequestData {
-    async?: boolean;
-    baseUrl?: string;
-    body?: string | ArrayBuffer | Uint8Array;
-    cache?: string;
-    debugThroughput?: boolean;
-    dependsOn?: string | ArrayBuffer | Uint8Array | number;
-    dnsChannel?: string;
-    dnsTime?: number;
-    dnsType?: DnsType;
-    exclusiveDepends?: boolean;
-    forbidReuse?: boolean;
-    format?: "xml" | "json" | "jsonstream" | "arraybuffer" | "uint8array" | "databuffer" | "none";
-    freshConnect?: boolean;
-    headers?: { [key: string]: string };
-    http2?: boolean;
-    ipAddresses?: string[];
-    ipConnectivityMode?: IpConnectivityMode;
-    maxRecvSpeed?: number;
-    maxSendSpeed?: number;
-    method?: HTTPMethod;
-    networkMetricsPrecision?: "us" | "ms" | "none";
-    noProxy?: boolean;
-    onChunk?: (chunk: ArrayBuffer) => void;
-    onData?: (data: ArrayBuffer) => void;
-    onHeaders?: (data: OnHeadersData) => void;
-    pipeWait?: boolean;
-    receiveBufferSize?: number;
-    secure?: boolean;
-    tcpNoDelay?: boolean;
-    timeouts?: IRequestTimeouts;
-    tlsv13?: boolean;
-    url: string;
-    weight?: number;
-};
-
-export class RequestResponse {
-    constructor(id: number) {
-        this.id = id;
-        this.headers = [];
-    }
-    id: number;
-    state?: string;
-    cacheKey?: ArrayBuffer;
-    cname?: string;
-    statusCode?: number;
-    reason?: number;
-    errorcode?: ErrorCode;
-    errorgroup?: number;
-    nativeErrorCode?: number;
-    headersSize?: number;
-    errorString?: string;
-    dnsTime?: number;
-    connectTime?: number;
-    transactionTime?: number;
-    duration?: number;
-    timeToFirstByteRead?: number;
-    timeToFirstByteWritten?: number;
-    networkStartTime?: number;
-    metricsPrecision?: "us" | "ms" | "none";
-    requestSize?: number;
-    serverIp?: string;
-    sslSessionResumed?: boolean;
-    sslHandshakeTime?: number;
-    sslVersion?: string;
-    dns?: string;
-    dnsChannel?: string;
-    socket?: number;
-    socketReused?: boolean;
-    data?: string | ArrayBuffer | Uint8Array | IDataBuffer;
-    size?: number;
-    urls?: string[];
-    headers: string[];
-    httpVersion?: string;
-};
 
 enum RequestState {
     Initial = 0,
@@ -123,9 +34,9 @@ function requestStateToString(state: RequestState): string {
     }
 }
 
-export class Request {
+export default class Request {
     state: RequestState;
-    requestData: RequestData;
+    requestData: IRequestData;
     url: Url;
     id: number;
     networkPipe?: NetworkPipe;
@@ -140,7 +51,7 @@ export class Request {
     private transferEncoding: HTTPTransferEncoding;
     private http: IHTTP;
 
-    constructor(data: RequestData | string) {
+    constructor(data: IRequestData | string) {
         this.transferEncoding = 0;
         this.responseDataLength = 0;
         this.id = ++nextId;
@@ -351,8 +262,9 @@ export class Request {
             assert(this.requestResponse.networkStartTime, "Gotta have a requestResponse.networkStartTime");
             this.requestResponse.duration = Platform.mono() - this.requestResponse.networkStartTime;
             this.requestResponse.size = this.responseDataLength;
-            this.requestResponse.httpVersion = this.http.httpVersion;
             this.requestResponse.state = "network";
+            assert(this.networkPipe);
+            this.requestResponse.bytesRead = this.networkPipe.bytesRead;
 
             switch (this.requestData.format) {
             case "xml":
@@ -397,9 +309,10 @@ export class Request {
         this.requestResponse.headers = event.headers;
         this.transferEncoding = event.transferEncoding;
         this.requestResponse.requestSize = event.requestSize;
-        this.requestResponse.timeToFirstByteWritten = this.http.timeToFirstByteWritten;
-        this.requestResponse.timeToFirstByteRead = this.http.timeToFirstByteRead;
+        this.requestResponse.timeToFirstByteWritten = event.timeToFirstByteWritten;
+        this.requestResponse.timeToFirstByteRead = event.timeToFirstByteRead;
         this.requestResponse.headersSize = event.headersSize;
+        this.requestResponse.httpVersion = event.httpVersion;
 
         if (!(this.transferEncoding & HTTPTransferEncoding.Chunked)) {
             this.requestData.onChunk = undefined;

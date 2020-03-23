@@ -1,8 +1,7 @@
-import http2 from "http2";
-
-import { Request } from "../../Request";
-import { createRawConnection } from "../index";
+import Request from "../../Request";
 import StreamManager, { SMState } from "../stream/stream-manager";
+import http2 from "http2";
+import { createRawConnection } from "../index";
 
 describe("HTTP2 integration test", () => {
 

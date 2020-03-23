@@ -23,6 +23,10 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
     public ipAddress: string;
     public hostname: string;
     public port: number;
+    public bytesRead: number;
+    public bytesWritten: number;
+    public firstByteRead: number;
+    public firstByteWritten: number;
 
     constructor(platform: NrdpPlatform,
                 socket: number,
@@ -38,6 +42,10 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
         this.selectMode = 0;
         this.hostname = hostname;
         this.port = port;
+        this.bytesRead = 0;
+        this.bytesWritten = 0;
+        this.firstByteRead = 0;
+        this.firstByteWritten = 0;
     }
 
     get socket() { return this.sock; }
@@ -53,6 +61,13 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
             }
             this.selectMode = 0;
         }
+    }
+
+    clearStats() {
+        this.bytesRead = 0;
+        this.bytesWritten = 0;
+        this.firstByteRead = 0;
+        this.firstByteWritten = 0;
     }
 
     write(buf: IDataBuffer | string, offset?: number, length?: number): void {
@@ -79,24 +94,26 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
 
     read(buf: IDataBuffer, offset: number, length: number): number {
         let read = this.unstash(buf, offset, length);
-        if (read !== -1)
-            return read;
-        read = N.read(this.sock, buf, offset, length);
-        switch (read) {
-        case 0:
-            N.close(this.sock);
-            this.sock = -1;
-            this.emit("close");
-            break;
-        case -1:
-            if (N.errno !== N.EWOULDBLOCK)
-                this._error(new Error(`read error, errno: ${N.errno} ${N.strerror()}`));
-            return -1; //
-        default:
-            if (!this.firstByteRead)
-                this.firstByteRead = this.platform.mono();
-            break;
+        if (read === -1) {
+            read = N.read(this.sock, buf, offset, length);
+            switch (read) {
+            case 0:
+                N.close(this.sock);
+                this.sock = -1;
+                this.emit("close");
+                break;
+            case -1:
+                if (N.errno !== N.EWOULDBLOCK)
+                    this._error(new Error(`read error, errno: ${N.errno} ${N.strerror()}`));
+                return -1; //
+            default:
+                if (!this.firstByteRead)
+                    this.firstByteRead = this.platform.mono();
+                break;
+            }
         }
+        assert(this.platform, read >= 0, "Should not be negative");
+        this.bytesRead += read;
         return read;
     }
 
@@ -121,6 +138,7 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
             if (written > 0) {
                 if (!this.firstByteWritten)
                     this.firstByteWritten = this.platform.mono();
+                this.bytesWritten += written;
                 this.writeBufferOffsets[0] += written;
                 this.writeBufferLengths[0] -= written;
                 if (!this.writeBufferLengths[0]) {

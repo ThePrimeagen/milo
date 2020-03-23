@@ -115,6 +115,14 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
     get port() { return this.pipe.port; }
     get ssl() { return true; }
     get socket() { return this.pipe.socket; }
+    get bytesRead() { return this.pipe.bytesRead; }
+    get bytesWritten() { return this.pipe.bytesWritten; }
+    get firstByteRead() { return this.pipe.firstByteRead; }
+    get firstByteWritten() { return this.pipe.firstByteWritten; }
+
+    clearStats() {
+        this.pipe.clearStats();
+    }
 
     removeEventHandlers() {
         this.removeAllListeners();
@@ -255,8 +263,6 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
             assert(this.platform, ret === 1, "This should be 1");
             // this.platform.trace("we're connected");
             this.connected = true;
-            this.firstByteWritten = this.pipe.firstByteWritten;
-            this.firstByteRead = this.pipe.firstByteRead;
             assert(this.platform, this.connectedCallback);
             this.connectedCallback();
             this.connectedCallback = undefined;

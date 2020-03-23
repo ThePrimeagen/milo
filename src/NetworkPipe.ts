@@ -22,14 +22,16 @@ export abstract class NetworkPipe extends EventEmitter {
     // concrete properties
     idle: boolean;
     forbidReuse: boolean;
-    firstByteWritten?: number;
-    firstByteRead?: number;
 
     // abstract properties
+    abstract bytesRead: number;
+    abstract bytesWritten: number;
     abstract hostname: string;
-    abstract readonly ipAddress: string;
     abstract port: number;
+    abstract readonly ipAddress: string;
     abstract socket: number; // socket
+    abstract firstByteWritten: number;
+    abstract firstByteRead: number;
 
     abstract readonly ssl: boolean;
     abstract readonly closed: boolean;
@@ -41,6 +43,7 @@ export abstract class NetworkPipe extends EventEmitter {
     abstract read(buf: ArrayBuffer | IDataBuffer, offset: number, length: number): number;
 
     abstract close(): void;
+    abstract clearStats(): void;
 
     // concrete methods
     stash(buf: ArrayBuffer | Uint8Array | IDataBuffer, offset: number, length?: number): void {

@@ -192,6 +192,7 @@ export class ConnectionPool {
             data.pipes.splice(idx, 1);
         } else {
             pipe.idle = true;
+            pipe.clearStats();
             data.pipes.push(pipe);
         }
         this.processHost(data);

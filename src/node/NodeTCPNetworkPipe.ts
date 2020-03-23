@@ -57,6 +57,10 @@ class NodeTCPNetworkPipe extends NetworkPipe {
 
     // FIXME
     public readonly closed: boolean = false;
+    public readonly bytesRead: number = 0;
+    public readonly bytesWritten: number = 0;
+    public readonly firstByteRead: number = 0;
+    public readonly firstByteWritten: number = 0;
 
     public connection: Promise<NodeTCPNetworkPipe>;
 
@@ -118,6 +122,11 @@ class NodeTCPNetworkPipe extends NetworkPipe {
 
     removeEventHandlers() {
         this.removeAllListeners();
+    }
+
+    clearStats() {
+        // FIXME
+        // clear out the firstByteWritten, firstByteRead, bytesWritten, bytesRead
     }
 
     write(buf: IDataBuffer | ArrayBuffer | string, offset: number = 0, length?: number): void {

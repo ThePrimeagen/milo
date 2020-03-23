@@ -1,7 +1,9 @@
-import { Request, RequestData, RequestResponse } from "./Request";
-import Platform from "./Platform";
-import WS, { WSState } from "./ws";
 import IDataBuffer from "./IDataBuffer";
+import IRequestData from "./IRequestData";
+import Platform from "./Platform";
+import Request from "./Request";
+import RequestResponse from "./RequestResponse";
+import WS, { WSState } from "./ws";
 
 export {
     WS,
@@ -9,7 +11,7 @@ export {
     Platform,
 };
 
-export function _load(data: RequestData, callback: (response: RequestResponse) => void): number {
+export function _load(data: IRequestData, callback: (response: RequestResponse) => void): number {
     const req = new Request(data);
     req.send().then(response => {
         // if (response.data) {

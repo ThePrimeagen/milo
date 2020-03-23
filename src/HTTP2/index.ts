@@ -1,19 +1,20 @@
+import IRequestData from "../IRequestData";
 import Platform from "../Platform";
-import { VersionIdentification } from "./consts";
-import { RequestData, Request } from "../Request";
+import Request from "../Request";
 import { NetworkPipe } from "../NetworkPipe";
+import { VersionIdentification } from "./consts";
 
 // RFC: 3.4 Starting a request with prior knowledge.
 // This requires a special connection frame with a octet string of
 // "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 // Then a settings frame directly after.
-export async function createRawConnection(data: RequestData | string): Promise<NetworkPipe> {
+export async function createRawConnection(data: IRequestData | string): Promise<NetworkPipe> {
     // TODO: YOU MUST CHANGE THIS.
     // @ts-ignore
     return await Request.connect(data);
 }
 
-export async function http2Upgrade(data: RequestData): Promise<NetworkPipe> {
+export async function http2Upgrade(data: IRequestData): Promise<NetworkPipe> {
     Platform.log("HTTP2 Got some data headers or something.", data);
 
     if (!data.headers) {

@@ -21,3 +21,12 @@ export enum HTTPTransferEncoding {
     Gzip = 0x08,
     Identity = 0x10
 };
+
+export enum RequestResponseDnsType {
+    DNS_Unknown = 0,
+    DNS_Literal = 1,
+    DNS_HostsFile = 2,
+    DNS_Lookup = 3,
+    DNS_CacheHit = 4,
+    DNS_Preresolved = 5
+};

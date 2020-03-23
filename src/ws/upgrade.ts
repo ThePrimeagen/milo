@@ -1,11 +1,9 @@
-import NetworkPipe from "../NetworkPipe";
-import {
-    UrlObject,
-} from './types';
-
-import { Request, RequestData, RequestResponse } from "../Request";
-import Platform from "../Platform";
 import DataBuffer from "../DataBuffer";
+import IRequestData from "../IRequestData";
+import NetworkPipe from "../NetworkPipe";
+import Platform from "../Platform";
+import Request from "../Request";
+import { UrlObject, } from './types';
 import { headerValue } from "../utils";
 
 export function upgrade(u: string | UrlObject): Promise<NetworkPipe> {
@@ -15,7 +13,7 @@ export function upgrade(u: string | UrlObject): Promise<NetworkPipe> {
         url = `ws://${url.host}:${url.port}`;
     }
 
-    const data: RequestData = { forbidReuse: true, url, format: "databuffer" };
+    const data: IRequestData = { forbidReuse: true, url, format: "databuffer" };
 
     return new Promise((resolve, reject) => {
         if (!data.headers) {
