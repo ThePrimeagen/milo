@@ -69,14 +69,17 @@ export default class NrdpSSL {
             this.sslCtx.free = "SSL_CTX_free";
             this.g.SSL_CTX_set_verify(this.sslCtx, this.g.SSL_VERIFY_PEER, this.sslCtxVerifyCallback);
             this.platform.trace("cipher", nrdp.cipherList);
-            this.g.SSL_CTX_set_cipher_list(this.sslCtx, nrdp.cipherList);
-            // ### TODO should check return value
+            if (!this.g.SSL_CTX_set_cipher_list(this.sslCtx, nrdp.cipherList)) {
+                this.platform.error(`Failure: SSL_CTX_set_cipher_list(${nrdp.cipherList})`);
+            }
             this.g.SSL_CTX_ctrl(this.sslCtx, this.g.SSL_CTRL_MODE,
                                 this.g.SSL_MODE_RELEASE_BUFFERS | this.g.SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER,
                                 // | this.g.SSL_MODE_AUTO_RETRY,
                                 undefined);
-            let retVal = this.g.SSL_CTX_ctrl(this.sslCtx, this.g.SSL_CTRL_SET_MAX_PROTO_VERSION,
-                                             maxProtoVersion, undefined);
+            if (!this.g.SSL_CTX_ctrl(this.sslCtx, this.g.SSL_CTRL_SET_MAX_PROTO_VERSION,
+                                     maxProtoVersion, undefined)) {
+                this.platform.error(`Failure: SSL_CTX_set_max_proto_version(${maxProtoVersion})`);
+            }
 
             const ctxOptions = (this.g.SSL_OP_ALL |
                                 this.g.SSL_OP_NO_TLSv1 |
@@ -84,8 +87,7 @@ export default class NrdpSSL {
                                 this.g.SSL_OP_NO_SSLv3 |
                                 this.g.SSL_OP_CIPHER_SERVER_PREFERENCE);
 
-            retVal = this.g.SSL_CTX_set_options(this.sslCtx, ctxOptions);
-
+            this.g.SSL_CTX_set_options(this.sslCtx, ctxOptions);
 
             const certStore = this.g.SSL_CTX_get_cert_store(this.sslCtx);
             assert(this.platform, certStore, "gotta have certStore");
@@ -107,7 +109,9 @@ export default class NrdpSSL {
         const param = this.g.X509_VERIFY_PARAM_new();
         assert(this.platform, param, "gotta have param");
         this.g.X509_VERIFY_PARAM_set_time(param, Math.round(nrdp.now() / 1000));
-        this.g.SSL_CTX_set1_param(this.sslCtx, param);
+        if (!this.g.SSL_CTX_set1_param(this.sslCtx, param)) {
+            this.platform.error("Failure: SSL_CTX_set1_param(param)");
+        }
         this.g.X509_VERIFY_PARAM_free(param);
 
         const ret = this.g.SSL_new(this.sslCtx);
