@@ -1,5 +1,7 @@
 import IConnectionOptions from "./IConnectionOptions";
+import ICreateSSLNetworkPipeOptions from "./ICreateSSLNetworkPipeOptions";
 import ICreateTCPNetworkPipeOptions from "./ICreateTCPNetworkPipeOptions";
+import IPendingConnection from "./IPendingConnection";
 import IPipeResult from "./IPipeResult";
 import IUnorderedMap from "./IUnorderedMap";
 import NetworkPipe from "./NetworkPipe";
@@ -7,7 +9,6 @@ import Platform from "./Platform";
 import UnorderedMap from "./UnorderedMap";
 import { DnsType } from "./types";
 import { assert } from "./utils";
-import IPendingConnection from "./IPendingConnection";
 
 class PendingConnectionImpl implements IPendingConnection {
     private pool: ConnectionPool;
@@ -19,9 +20,7 @@ class PendingConnectionImpl implements IPendingConnection {
     public hostname: string;
     public port: number;
 
-    public dnsTimeout: number;
-    public connectTimeout: number;
-
+    public connectionOptions: IConnectionOptions;
     public dnsTime: number;
     public connectTime: number;
     public dnsType: DnsType;
@@ -33,14 +32,12 @@ class PendingConnectionImpl implements IPendingConnection {
     public sslSessionResumed?: boolean;
     public sslHandshakeTime?: number;
 
-    constructor(pool: ConnectionPool, id: number, hostname: string,
-                port: number, dnsTimeout: number, connectTimeout: number) {
+    constructor(pool: ConnectionPool, id: number, hostname: string, port: number, options: IConnectionOptions) {
         this.id = id;
         this.pool = pool;
         this.hostname = hostname;
         this.port = port;
-        this.dnsTimeout = dnsTimeout;
-        this.connectTimeout = connectTimeout;
+        this.connectionOptions = options;
         this.cname = "";
         this.dnsChannel = "";
         this.dnsType = "unknown";
@@ -59,7 +56,6 @@ class PendingConnectionImpl implements IPendingConnection {
         this.pool.abort(this.id);
     }
     onNetworkPipe(): Promise<NetworkPipe> {
-        Platform.log("onNetworkPipe called", typeof this.pipe, typeof this.error);
         assert(!this.resolveFunction, "must not have resolve");
         assert(!this.rejectFunction, "must not have reject");
         return new Promise((resolve, reject) => {
@@ -231,8 +227,7 @@ export class ConnectionPool {
                 options.forbidReuse = true;
             }
 
-            const pending = new PendingConnectionImpl(this, ++this._id, hostname, port,
-                                                      options.dnsTimeout, options.connectTimeout);
+            const pending = new PendingConnectionImpl(this, ++this._id, hostname, port, options);
             resolve(pending);
             if (this._id === Number.MAX_SAFE_INTEGER) {
                 this._id = 0;
@@ -242,15 +237,17 @@ export class ConnectionPool {
                 const tcpOpts = {
                     hostname: pending.hostname,
                     port: pending.port,
-                    dnsTimeout: pending.dnsTimeout,
-                    connectTimeout: pending.connectTimeout,
+                    dnsTimeout: options.dnsTimeout,
+                    connectTimeout: options.connectTimeout,
                     ipVersion: 4 // gotta do happy eyeballs and send off multiple tcp network pipe things
                 } as ICreateTCPNetworkPipeOptions;
                 Platform.createTCPNetworkPipe(tcpOpts).then((pipeResult: IPipeResult) => {
                     Platform.trace(`Got tcp connection for ${hostPort} with socket ${pipeResult.pipe.socket}`);
                     if (ssl) {
                         Platform.trace(`Requesting ssl pipe for ${hostPort} with socket ${pipeResult.pipe.socket}`);
-                        return Platform.createSSLNetworkPipe(pipeResult);
+                        const opts = pipeResult as ICreateSSLNetworkPipeOptions;
+                        opts.tlsv13 = options.tlsv13;
+                        return Platform.createSSLNetworkPipe(opts);
                     } else {
                         return pipeResult;
                     }
@@ -313,8 +310,8 @@ export class ConnectionPool {
             const tcpOpts = {
                 hostname: pending.hostname,
                 port: pending.port,
-                dnsTimeout: pending.dnsTimeout,
-                connectTimeout: pending.connectTimeout,
+                dnsTimeout: pending.connectionOptions.dnsTimeout,
+                connectTimeout: pending.connectionOptions.connectTimeout,
                 ipVersion: 4 // gotta do happy eyeballs and send off multiple tcp network pipe things
             } as ICreateTCPNetworkPipeOptions;
 
@@ -325,6 +322,8 @@ export class ConnectionPool {
                 Platform.trace(`Got tcp connection for ${data.hostPort} with socket ${pipe.socket}`);
                 if (data.ssl) {
                     Platform.trace(`Requesting ssl pipe for ${data.hostPort} with socket ${pipe.socket}`);
+                    const sslOpts = pipeResult as ICreateSSLNetworkPipeOptions;
+                    sslOpts.tlsv13 = pending.connectionOptions.tlsv13;
                     return Platform.createSSLNetworkPipe(pipeResult);
                 } else {
                     return pipeResult;

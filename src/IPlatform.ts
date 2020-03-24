@@ -44,6 +44,8 @@ export default interface IPlatform {
 
     standardHeaders: { [key: string]: string };
 
+    readonly tlsv13SmallAssetsEnabled: boolean;
+    readonly tlsv13StreamingEnabled: boolean;
     createTCPNetworkPipe(options: ICreateTCPNetworkPipeOptions): Promise<IPipeResult>;
     createSSLNetworkPipe(options: ICreateSSLNetworkPipeOptions): Promise<IPipeResult>;
     createSHA256Context(): ISHA256Context;

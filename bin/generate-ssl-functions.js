@@ -72,7 +72,7 @@ data.functions.forEach((func) => {
 });
 
 ts += "\n";
-data.constants.forEach((constant) => {
+data.constants.filter(x => !x.disabled).forEach((constant) => {
     if (typeof constant.value === "number") {
         ts += layout(`    public readonly ${constant.name} = ${constant.value};`);
     } else {

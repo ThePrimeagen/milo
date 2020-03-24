@@ -33,8 +33,8 @@ export class NrdpPlatform implements IPlatform {
         nrdp.l.error.apply(nrdp.l, args);
     }
     trace(...args: any[]): void {
-        args.unshift({ traceArea: "MILO" });
-        nrdp.l.trace.apply(nrdp.l, args);
+        // args.unshift({ traceArea: "MILO" });
+        // nrdp.l.trace.apply(nrdp.l, args);
     }
 
     get ipConnectivityMode(): IpConnectivityMode {
@@ -49,6 +49,13 @@ export class NrdpPlatform implements IPlatform {
             return 0;
         }
         return 4;
+    }
+
+    get tlsv13SmallAssetsEnabled(): boolean {
+        return nrdp.device.tlsv13SmallAssetsEnabled;
+    }
+    get tlsv13StreamingEnabled(): boolean {
+        return nrdp.device.tlsv13StreamingEnabled;
     }
 
     private cachedStandardHeaders?: { [key: string]: string };
@@ -83,7 +90,7 @@ export class NrdpPlatform implements IPlatform {
     }
 
     mono = nrdp.mono;
-    assert = nrdp.assert;
+    assert = (cond: any, message: string) => { /* */ }; // nrdp.assert;
     btoa = nrdp.btoa;
     atob = nrdp.atob;
     atoutf8 = nrdp.atoutf8;

@@ -113,7 +113,8 @@ export default class Request {
             dnsTimeout: timeouts && timeouts.dnsTimeout,
             connectTimeout: timeouts && timeouts.connectTimeout,
             freshConnect: this.requestData.freshConnect,
-            forbidReuse: this.requestData.forbidReuse
+            forbidReuse: this.requestData.forbidReuse,
+            tlsv13: this.requestData.tlsv13
         } as IConnectionOptions;
 
         let pendingConnection: IPendingConnection;

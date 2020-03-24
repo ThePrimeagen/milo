@@ -46,6 +46,8 @@ class NodePlatform implements IPlatform {
     public scratch: IDataBuffer;
     public UILanguages: string[] = ['en'];
     public ipConnectivityMode: IpConnectivityMode;
+    public tlsv13SmallAssetsEnabled: boolean = true;
+    public tlsv13StreamingEnabled: boolean = true;
 
     constructor() {
         this.scratch = new DataBuffer(1024 * 32);

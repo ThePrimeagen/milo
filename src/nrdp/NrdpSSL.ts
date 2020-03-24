@@ -5,6 +5,7 @@ import IUnorderedMap from "../IUnorderedMap";
 import N = nrdsocket;
 import NrdpSSLBoundFunctions from "./NrdpSSLBoundFunctions";
 import UnorderedMap from "./UnorderedMap";
+import ICreateSSLNetworkPipeOptions from "../ICreateSSLNetworkPipeOptions";
 
 function assert(platform: IPlatform, condition: any, msg: string): asserts condition {
     platform.assert(condition, msg);
@@ -22,6 +23,7 @@ type X509Data = {
 export default class NrdpSSL {
     private platform: IPlatform;
     private trustStoreHash: string;
+    private maxProtoVersion: number;
     private x509s: N.Struct[];
     private sslCtx?: N.Struct;
     private ERRstringBuf: IDataBuffer;
@@ -35,6 +37,7 @@ export default class NrdpSSL {
         this.platform = platform;
         this.ERRstringBuf = new DataBuffer(128);
         this.trustStoreHash = "";
+        this.maxProtoVersion = 0;
         this.x509s = [];
         this.g = new NrdpSSLBoundFunctions();
 
@@ -51,8 +54,14 @@ export default class NrdpSSL {
         this.verifyCallbackSSLs = new UnorderedMap();
     }
 
-    public createSSL(verifyCallback?: SSL_CTX_verify_callback_type) {
-        if (!this.sslCtx || this.trustStoreHash !== nrdp.trustStoreHash) {
+    public createSSL(options: ICreateSSLNetworkPipeOptions, verifyCallback?: SSL_CTX_verify_callback_type) {
+        let maxProtoVersion;
+        if (typeof options.tlsv13 !== "undefined") {
+            maxProtoVersion = options.tlsv13 ? this.g.TLS1_3_VERSION : this.g.TLS1_2_VERSION
+        } else {
+            maxProtoVersion = this.platform.tlsv13SmallAssetsEnabled ? this.g.TLS1_3_VERSION : this.g.TLS1_2_VERSION
+        }
+        if (!this.sslCtx || this.trustStoreHash !== nrdp.trustStoreHash || maxProtoVersion !== this.maxProtoVersion) {
             const meth = this.g.TLS_client_method();
             assert(this.platform, meth, "gotta have meth");
             this.sslCtx = this.g.SSL_CTX_new(meth);
@@ -61,18 +70,22 @@ export default class NrdpSSL {
             this.g.SSL_CTX_set_verify(this.sslCtx, this.g.SSL_VERIFY_PEER, this.sslCtxVerifyCallback);
             this.platform.trace("cipher", nrdp.cipherList);
             this.g.SSL_CTX_set_cipher_list(this.sslCtx, nrdp.cipherList);
-            // ### should check return value
+            // ### TODO should check return value
             this.g.SSL_CTX_ctrl(this.sslCtx, this.g.SSL_CTRL_MODE,
                                 this.g.SSL_MODE_RELEASE_BUFFERS | this.g.SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER,
                                 // | this.g.SSL_MODE_AUTO_RETRY,
                                 undefined);
+            let retVal = this.g.SSL_CTX_ctrl(this.sslCtx, this.g.SSL_CTRL_SET_MAX_PROTO_VERSION,
+                                             maxProtoVersion, undefined);
+
             const ctxOptions = (this.g.SSL_OP_ALL |
                                 this.g.SSL_OP_NO_TLSv1 |
                                 this.g.SSL_OP_NO_SSLv2 |
                                 this.g.SSL_OP_NO_SSLv3 |
                                 this.g.SSL_OP_CIPHER_SERVER_PREFERENCE);
 
-            const retVal = this.g.SSL_CTX_set_options(this.sslCtx, ctxOptions);
+            retVal = this.g.SSL_CTX_set_options(this.sslCtx, ctxOptions);
+
 
             const certStore = this.g.SSL_CTX_get_cert_store(this.sslCtx);
             assert(this.platform, certStore, "gotta have certStore");
@@ -88,6 +101,7 @@ export default class NrdpSSL {
             }
             this.g.BIO_free(trustBIO);
             this.trustStoreHash = nrdp.trustStoreHash;
+            this.maxProtoVersion = maxProtoVersion;
         }
 
         const param = this.g.X509_VERIFY_PARAM_new();

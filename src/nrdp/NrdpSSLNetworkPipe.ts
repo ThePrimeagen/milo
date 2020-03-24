@@ -36,7 +36,7 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
         this.writeBufferLengths = [];
 
         this.pipe = options.pipe;
-        this.sslInstance = platform.ssl.createSSL((preverifyOk: number, x509StoreContext: N.Struct) => {
+        this.sslInstance = platform.ssl.createSSL(options, (preverifyOk: number, x509StoreContext: N.Struct) => {
             if (preverifyOk !== 1) {
                 const message = {
                     tags: {

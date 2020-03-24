@@ -13,6 +13,8 @@ declare namespace nrdp {
     namespace device {
         let UILanguages: string[];
         let ipConnectivityMode: "4" | "6" | "dual" | "invalid";
+        let tlsv13SmallAssetsEnabled: boolean;
+        let tlsv13StreamingEnabled: boolean;
     }
 
     namespace gibbon {

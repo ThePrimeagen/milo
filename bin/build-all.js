@@ -4,7 +4,7 @@ const child_process = require("child_process");
 
 function execFile(path, args) {
     return new Promise((resolve, reject) => {
-        console.log("invoking", path, args);
+        console.log(`invoking ${path} ${args.join(" ")}`);
         child_process.execFile(path, args, (error, stdout, stderr) => {
             // console.log(path, args, "finished");
             if (stdout) {
