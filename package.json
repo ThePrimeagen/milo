@@ -24,6 +24,9 @@
     "nrdp": "npm run run build:nrdp",
     "node": "npm run build:node",
     "all": "npm run build:all",
+    "test:autobahn": "ts-node ./autobahn/test-harness.ts",
+    "test:autobahn:debug": "node --inspect-brk ./node_modules/.bin/ts-node ./autobahn/test-harness.ts",
+    "test:all": "npm run test && npm run test:autobahn",
     "test": "jest",
     "clean": "del-cli build/ dist/"
   },

@@ -442,7 +442,7 @@ string value for the second parameter, offset.`);
         if (src instanceof DataBuffer) {
             srcLength = srcLength || src.byteLength;
             for (let i = 0, idx = srcOffset; i < srcLength; ++i, ++idx) {
-                this.buffer[o + i] = src.getUInt8(idx);
+                this.buffer[offset + i] = src.getUInt8(idx);
             }
             return;
         }

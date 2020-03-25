@@ -1,9 +1,8 @@
-import fs from 'fs';
-import path from 'path';
 
 import WebSocket from 'ws';
 
 import { root } from './paths';
+import getAgent from './get-agent';
 
 // @ts-ignore
 import { Platform } from '../../dist/milo.node';
@@ -13,9 +12,7 @@ export async function runAutobahnTests(WebSocketClass: WebSocket, {
     port = 9001,
 }) {
 
-    const packageJson = JSON.parse(fs.
-                                   readFileSync(path.join(root, "package.json")).toString());
-    const agent = `Milo_${packageJson.version}`;
+    const agent = getAgent();
     const wsuri = `ws://localhost:${port}`;
     let currentCaseId: number;
     let caseCount: number;

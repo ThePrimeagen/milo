@@ -13,13 +13,14 @@ death(async () => {
     process.exit();
 });
 
-async function run() {
+export default async function run() {
     await systemReq();
     await killDocker();
     await readyConfig()
     await launch();
+};
+
+if (require.main === module) {
+    run();
 }
-
-run();
-
 
