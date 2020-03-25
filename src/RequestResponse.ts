@@ -24,6 +24,8 @@ export default class RequestResponse {
     headersSize?: number;
     httpVersion?: string;
     id: number;
+    json?: any;
+    jsonError?: boolean;
     metricsPrecision?: "us" | "ms" | "none";
     nativeErrorCode?: number;
     networkStartTime?: number;
@@ -42,6 +44,7 @@ export default class RequestResponse {
     timeToFirstByteWritten?: number;
     transactionTime?: number;
     url: string;
+    xml?: any;
 
     get urls() {
         if (this._urls)
