@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // @ts-ignore
-import {WS} from '../dist/milo.node';
+import { WS } from '../dist/milo.node';
 
 import autobahn from './runner';
 import getAgent, { setAgent, getVersion } from './runner/get-agent';
@@ -17,6 +17,7 @@ async function wait(ms: number) {
 
 async function run() {
     const agent = `test_harness_${getVersion()}`;
+    /* tslint:disable:no-console */
     console.log("Testing Autobahn with", process.env.CASES);
     console.log("Agent", agent);
     console.log("If this is wrong, please edit your .env file.");
