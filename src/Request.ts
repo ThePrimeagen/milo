@@ -246,16 +246,6 @@ export default class Request {
         case RequestState.Error:
             break;
         case RequestState.Finished:
-            let responseDataBuffer: IDataBuffer;
-            if (this.responseDataArray) {
-                // Platform.trace("GOT HERE 1", this.responseDataArray);
-                responseDataBuffer = DataBuffer.concat.apply(undefined, this.responseDataArray);
-            } else if (this.responseData) {
-                // Platform.trace("GOT HERE 2", this.responseData);
-                responseDataBuffer = this.responseData;
-            } else {
-                responseDataBuffer = new DataBuffer(0);
-            }
             assert(this.requestResponse, "Gotta have a requestResponse");
             assert(this.requestResponse.networkStartTime, "Gotta have a requestResponse.networkStartTime");
             this.requestResponse.duration = Platform.mono() - this.requestResponse.networkStartTime;
@@ -263,40 +253,72 @@ export default class Request {
             this.requestResponse.state = "network";
             assert(this.networkPipe, "must have networkPipe");
             this.requestResponse.bytesRead = this.networkPipe.bytesRead;
+            if (this.requestData.format !== "none") {
+                let responseDataBuffer: IDataBuffer;
+                if (this.responseDataArray) {
+                    // Platform.trace("GOT HERE 1", this.responseDataArray);
+                    responseDataBuffer = DataBuffer.concat.apply(undefined, this.responseDataArray);
+                } else if (this.responseData) {
+                    // Platform.trace("GOT HERE 2", this.responseData);
+                    responseDataBuffer = this.responseData;
+                } else {
+                    responseDataBuffer = new DataBuffer(0);
+                }
 
-            switch (this.requestData.format) {
-            case "xml":
-            case "json":
-            case "jsonstream":
-            case "none":
-                throw new Error("Not implemented " + this.requestData.format);
-            case "arraybuffer":
-                this.requestResponse.data = responseDataBuffer.toArrayBuffer();
-                break;
-            case "uint8array":
-                if (responseDataBuffer)
+                let handled = false;
+                switch (this.requestData.format) {
+                case "xml":
+                    const xml = Platform.parseXML(responseDataBuffer);
+                    if (xml) {
+                        handled = true;
+                        this.requestResponse.xml = xml;
+                    }
+                    break;
+                case "json":
+                    const json = Platform.parseJSON(responseDataBuffer);
+                    if (!json) {
+                        this.requestResponse.jsonError = true;
+                    } else {
+                        handled = true;
+                        this.requestResponse.json = json;
+                    }
+                    break;
+                case "jsonstream":
+                    const jsonstream = Platform.parseJSONStream(responseDataBuffer);
+                    if (!jsonstream) {
+                        this.requestResponse.jsonError = true;
+                    } else {
+                        handled = true;
+                        this.requestResponse.json = jsonstream;
+                    }
+                    break;
+                case "arraybuffer":
+                    this.requestResponse.data = responseDataBuffer.toArrayBuffer();
+                    handled = true;
+                    break;
+                case "uint8array":
                     this.requestResponse.data = new Uint8Array(responseDataBuffer.toArrayBuffer());
-                break;
-            case "databuffer":
-                if (responseDataBuffer)
+                    handled = true;
+                    break;
+                case "databuffer":
                     this.requestResponse.data = responseDataBuffer;
-                break;
-            default:
-                if (responseDataBuffer) {
+                    handled = true;
+                    break;
+                default:
+                    break;
+                }
+                if (!handled) {
                     this.requestResponse.data = responseDataBuffer.toString();
                 }
-                break;
             }
             assert(this.resolve, "Must have resolve");
             this.resolve(this.requestResponse);
             assert(this.networkPipe, "must have networkpipe");
             Platform.trace("got to finished, pipe is closed?", this.networkPipe.closed);
-            if (!this.networkPipe.closed) {
-                this.networkPipe.removeEventHandlers();
-                if (!this.http.upgrade) {
-                    connectionPool.finish(this.networkPipe);
-                    this.networkPipe = undefined;
-                }
+            this.networkPipe.removeEventHandlers();
+            if (!this.http.upgrade) {
+                connectionPool.finish(this.networkPipe);
+                this.networkPipe = undefined;
             }
             break;
         }
@@ -316,8 +338,7 @@ export default class Request {
             this.requestData.onChunk = undefined;
         }
 
-        if (!this.requestData.onData && !this.requestData.onChunk) {
-
+        if (!this.requestData.onData && !this.requestData.onChunk && this.requestData.format !== "none") {
             if (typeof event.contentLength === "undefined") {
                 this.responseDataArray = [];
             } else if (event.contentLength && event.contentLength > 0) {
@@ -357,7 +378,7 @@ export default class Request {
             } else {
                 this.responseDataArray.push(data.slice(offset, offset + length));
             }
-        }
+        } // else format === "none"
     }
 
     private _onError(error: Error) {
