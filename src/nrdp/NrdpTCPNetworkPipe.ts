@@ -93,6 +93,7 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
     }
 
     read(buf: IDataBuffer, offset: number, length: number): number {
+        assert(this.platform, this.sock !== -1, "Noone should call read if the socket is closed");
         let read = this.unstash(buf, offset, length);
         if (read === -1) {
             read = N.read(this.sock, buf, offset, length);
