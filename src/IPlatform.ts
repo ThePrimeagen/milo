@@ -62,4 +62,8 @@ export default interface IPlatform {
     defaultRequestTimeouts: IRequestTimeouts;
 
     quit(exitCode?: number): void;
+
+    parseXML(data: string | IDataBuffer): any;
+    parseJSONStream(data: string | IDataBuffer): any[] | undefined;
+    parseJSON(data: string | IDataBuffer): any | undefined;
 };

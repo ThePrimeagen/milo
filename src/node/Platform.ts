@@ -233,6 +233,32 @@ class NodePlatform implements IPlatform {
         });
     }
 
+    parseXML(data: string | IDataBuffer): any {
+        throw new Error("FIX CRAZY XML PARSING FROM NRDP");
+    }
+    parseJSONStream(data: string | IDataBuffer): any[] | undefined {
+        if (typeof data !== "string")
+            data = data.toString();
+
+        try {
+            const parsed = JSON.parse(data);
+            return [parsed];
+        } catch (err) {
+            // need to handle json streams but it's gonna suck
+        }
+        return undefined;
+    }
+    parseJSON(data: string | IDataBuffer): any | undefined {
+        if (typeof data !== "string")
+            data = data.toString();
+        try {
+            const parsed = JSON.parse(data);
+            return parsed;
+        } catch (err) {
+            /**/
+        }
+        return undefined;
+    }
 }
 
 export default new NodePlatform();

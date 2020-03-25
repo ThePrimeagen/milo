@@ -133,6 +133,18 @@ export class NrdpPlatform implements IPlatform {
     get location(): string { return nrdp.gibbon.location; }
 
     quit(exitCode: number = 0): void { nrdp.exit(exitCode); }
+
+    parseXML(data: string | IDataBuffer): any { return nrdp_platform.parseXML(data); }
+    parseJSONStream(data: string | IDataBuffer): any[] | undefined {
+        return nrdp_platform.parseJSON(data);
+    }
+    parseJSON(data: string | IDataBuffer): any | undefined {
+        const ret = nrdp_platform.parseJSON(data);
+        if (ret)
+            return ret[0];
+        return undefined;
+    }
+
 };
 
 export default new NrdpPlatform();

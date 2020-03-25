@@ -10,4 +10,8 @@ declare namespace nrdp_platform {
     }
 
     function utf8Length(str: string): number;
+
+    function parseXML(data: string | IDataBuffer): any;
+    function parseJSONStream(data: string | IDataBuffer): any[] | undefined;
+    function parseJSON(data: string | IDataBuffer): any | undefined;
 }
