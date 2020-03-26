@@ -72,28 +72,30 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
 
         platform.ssl.g.BIO_ctrl(this.outputBio, platform.ssl.g.BIO_C_SET_BUF_MEM_EOF_RETURN, -1, undefined);
         this.pipe.on("data", () => {
-            const read = this.pipe.read(platform.scratch, 0, platform.scratch.byteLength);
-            if (read === -1) {
-                assert(platform,
-                       N.errno === N.EWOULDBLOCK || N.errno === N.EAGAIN || this.pipe.closed,
-                       "Should be closed already");
-                return;
-            }
+            while (true) {
+                const read = this.pipe.read(platform.scratch, 0, platform.scratch.byteLength);
+                if (read === -1) {
+                    assert(platform,
+                           N.errno === N.EWOULDBLOCK || N.errno === N.EAGAIN || this.pipe.closed,
+                           "Should be closed already");
+                    return;
+                }
 
-            if (read === 0) {
-                assert(platform, this.pipe.closed, "Should be closed already");
-                return;
-            }
-            platform.trace("got data", read);
-            const written = platform.ssl.g.BIO_write(this.inputBio, platform.scratch, 0, read);
-            platform.trace("wrote", read, "bytes to inputBio =>", written);
-            if (!this.connected) {
-                this._connect();
-            }
-            if (this.connected) {
-                const pending = platform.ssl.g.BIO_ctrl_pending(this.inputBio);
-                if (pending) {
-                    this.emit("data");
+                if (read === 0) {
+                    assert(platform, this.pipe.closed, "Should be closed already");
+                    return;
+                }
+                platform.trace("got data", read);
+                const written = platform.ssl.g.BIO_write(this.inputBio, platform.scratch, 0, read);
+                platform.trace("wrote", read, "bytes to inputBio =>", written);
+                if (!this.connected) {
+                    this._connect();
+                }
+                if (this.connected) {
+                    const pending = platform.ssl.g.BIO_ctrl_pending(this.inputBio);
+                    if (pending) {
+                        this.emit("data");
+                    }
                 }
             }
         });
