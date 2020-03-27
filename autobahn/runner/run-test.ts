@@ -1,18 +1,22 @@
+export type IPlatform = {
+    log(...args: any[]): void;
+    trace(...args: any[]): void;
+}
 
-import WebSocket from 'ws';
+export type AutobahnOpts = {
+    updateReport?: boolean;
+    port?: number;
+    Platform: IPlatform;
+    agent: string;
+};
 
-import { root } from './paths';
-import getAgent from './get-agent';
-
-// @ts-ignore
-import { Platform } from '../../dist/milo.node';
-
-export async function runAutobahnTests(WebSocketClass: WebSocket, {
+export async function runAutobahnTests(WebSocketClass: any, {
     updateReport = true,
     port = 9001,
-}) {
+    agent,
+    Platform
+}: AutobahnOpts) {
 
-    const agent = getAgent();
     const wsuri = `ws://localhost:${port}`;
     let currentCaseId: number;
     let caseCount: number;
