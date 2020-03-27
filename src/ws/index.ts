@@ -79,7 +79,8 @@ export default class WS {
 
         let payload: string | IDataBuffer = msg;
         if (state && state.opcode === Opcodes.TextFrame) {
-            payload = Platform.utf8toa(msg);
+            payload = Platform.utf8toa(msg) || "";
+            Platform.log("payload after utf8", msg, payload.length);
         }
 
         // TODO: What other dumb things do I need to add to this?
@@ -178,6 +179,7 @@ export default class WS {
             case Opcodes.TextFrame:
             case Opcodes.BinaryFrame:
                 const out = this.readyEvent(buffer, state);
+                Platform.log("TEXT AND BINARY", out, state);
                 this.callCallback(message, this.onmessage, out);
                 break;
 
@@ -188,6 +190,7 @@ export default class WS {
 
         this.callCallback(open, this.onopen);
         readData(true);
+        readData();
     }
 
     ping() {

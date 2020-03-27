@@ -16,6 +16,7 @@
   "main": "build/node/src/milo.js",
   "scripts": {
     "build:nrdp": "npm run nrdp-generate-ssl-functions && tsc -p tsconfig.nrdp.json && rollup -c rollup.nrdp.js",
+    "build:nrdp:test": "npm run nrdp-generate-ssl-functions && tsc -p tsconfig.nrdp.json && rollup -c rollup.nrdp.test.js",
     "build:node": "tsc -p tsconfig.node.json && rollup -c rollup.node.js",
     "lint": "node bin/lint.js",
     "nrdp-generate-ssl-functions": "node bin/generate-ssl-functions.js",

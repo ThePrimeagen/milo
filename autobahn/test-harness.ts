@@ -2,12 +2,14 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // @ts-ignore
-import { WS } from '../dist/milo.node';
+import {WS, Platform} from '../dist/milo.node';
 
 import autobahn from './runner';
 import getAgent, { setAgent, getVersion } from './runner/get-agent';
 import autobahnTestSuite from './start';
 import { getReports, testPass, getId } from './autobahn-reports';
+import getNrdpAgent from './runner/nrdp/agent';
+import testNrdp from './runner/nrdp';
 
 async function wait(ms: number) {
     return new Promise(res => {
@@ -16,8 +18,7 @@ async function wait(ms: number) {
 }
 
 async function run() {
-    const agent = `test_harness_${getVersion()}`;
-    /* tslint:disable:no-console */
+    let agent = `test_harness_${getVersion()}`;
     console.log("Testing Autobahn with", process.env.CASES);
     console.log("Agent", agent);
     console.log("If this is wrong, please edit your .env file.");
@@ -25,11 +26,22 @@ async function run() {
     setAgent(agent);
 
     await wait(1000);
-    await autobahnTestSuite();
-    await autobahn(WS, {
-        updateReport: true,
-        port: 9001,
-    });
+    if (process.env.SELF_MANAGED_AUTOBAHN !== 'true') {
+        await autobahnTestSuite();
+    }
+
+    if (process.env.NRDP) {
+        agent = getNrdpAgent();
+        await testNrdp(Platform);
+    }
+    else {
+        await autobahn(WS, {
+            updateReport: true,
+            port: 9001,
+            Platform,
+            agent,
+        });
+    }
 
     const reports = await getReports(agent);
     const fails = reports.map(r => {

@@ -4,7 +4,7 @@ import commonjs from "@rollup/plugin-commonjs";
 import target from "./rollup-target-plugin";
 
 export default {
-    input: 'build/node/milo.js',
+    input: 'build/node/src/milo.js',
     output: {
         file: 'dist/milo.node.js',
         format: 'cjs',

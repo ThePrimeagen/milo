@@ -5,9 +5,9 @@ import babel from "rollup-plugin-babel";
 import target from "./rollup-target-plugin";
 
 export default {
-    input: "build/nrdp/milo.js",
+    input: "build/nrdp/src/milo.js",
     output: {
-        dir: "dist/",
+        file: 'dist/milo.nrdp.js',
         format: "iife",
         name: "milo",
         exports: "named"
@@ -21,8 +21,8 @@ export default {
             babelrc: false,
 		    presets: [
                 [
-                    '@babel/preset-env', 
-                    { 
+                    '@babel/preset-env',
+                    {
                         loose: true,
                         targets: {
                             safari: '6'
