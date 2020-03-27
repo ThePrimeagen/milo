@@ -84,7 +84,6 @@ export default class WS {
         let payload: string | IDataBuffer = msg;
         if (state && state.opcode === Opcodes.TextFrame) {
             payload = Platform.utf8toa(msg) || "";
-            Platform.log("payload after utf8", msg, payload.length);
         }
 
         // TODO: What other dumb things do I need to add to this?
@@ -114,7 +113,6 @@ export default class WS {
         });
 
         pipe.on("close", () => {
-            Platform.log("WS:close", this.id);
             if (this.state === ConnectionState.Closed) {
                 return;
             }
@@ -126,11 +124,10 @@ export default class WS {
 
         // The pipe is ready to read.
         const readData = (fromStash: boolean = false) => {
-            Platform.log("WS:readData", this.id, fromStash);
             let bytesRead;
             while (1) {
+                Platform.log("WS:readData", fromStash, this.id, this.pipe.closed);
                 if (this.pipe.closed) {
-                    Platform.log("WS:readData Prevent read due to closed pipe.", this.id);
                     return;
                 }
 
@@ -140,11 +137,11 @@ export default class WS {
                     bytesRead = pipe.read(readView, 0, readView.byteLength);
                 }
 
+                Platform.log("WS:readData Finished", bytesRead);
                 if (bytesRead <= 0) {
                     break;
                 }
 
-                Platform.log("WS:readData", bytesRead, readView.slice(0, bytesRead));
                 this.frame.processStreamData(readView, 0, bytesRead);
             }
         }
@@ -190,7 +187,6 @@ export default class WS {
             case Opcodes.TextFrame:
             case Opcodes.BinaryFrame:
                 const out = this.readyEvent(buffer, state);
-                Platform.log("TEXT AND BINARY", out, state);
                 this.callCallback(message, this.onmessage, out);
                 break;
 
@@ -201,9 +197,7 @@ export default class WS {
 
         this.callCallback(open, this.onopen);
 
-        Platform.log("WS: Open::readData(true)", this.id);
         readData(true);
-        Platform.log("WS: Open::readData()", this.id);
         readData();
     }
 

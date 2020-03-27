@@ -1,3 +1,4 @@
+import Platform from "../../Platform";
 import DataBuffer from "../../DataBuffer";
 import IDataBuffer from "../../IDataBuffer";
 import NetworkPipe from "../../NetworkPipe";
@@ -150,6 +151,13 @@ export default class WSFramer {
 
             const remainingPacket = state.payloadLength - state.payloadPtr;
             const subEndIdx = Math.min(ptr + remainingPacket, endIdx);
+
+            Platform.log("WS:processStreamData", remainingPacket, subEndIdx);
+            Platform.log("WS:processStreamData", remainingPacket, subEndIdx);
+            Platform.log("WS:processStreamData", remainingPacket, subEndIdx);
+            Platform.log("WS:processStreamData", remainingPacket, subEndIdx);
+            Platform.log("WS:processStreamData", remainingPacket, subEndIdx);
+            //Platform.log("WS:processStreamData", remainingPacket, subEndIdx);
 
             ptr += this.parseBody(state, packet, ptr, subEndIdx);
             this.tryFinishFrame(state);
