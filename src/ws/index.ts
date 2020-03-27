@@ -44,7 +44,10 @@ export enum ConnectionState {
     Closed = 3,
 };
 
+let debugId = 0;
 export default class WS {
+    private id: number;
+
     // @ts-ignore
     private frame: WSFramer;
     // @ts-ignore
@@ -61,6 +64,7 @@ export default class WS {
     constructor(url: string | UrlObject, opts: WSOptions = defaultOptions) {
         this.state = ConnectionState.Connecting;
         this.opts = opts;
+        this.id = debugId++;
 
         this.callbacks = {
             message: [],
@@ -110,6 +114,7 @@ export default class WS {
         });
 
         pipe.on("close", () => {
+            Platform.log("WS:close", this.id);
             if (this.state === ConnectionState.Closed) {
                 return;
             }
@@ -121,8 +126,13 @@ export default class WS {
 
         // The pipe is ready to read.
         const readData = (fromStash: boolean = false) => {
+            Platform.log("WS:readData", this.id, fromStash);
             let bytesRead;
             while (1) {
+                if (this.pipe.closed) {
+                    Platform.log("WS:readData Prevent read due to closed pipe.", this.id);
+                    return;
+                }
 
                 if (fromStash) {
                     bytesRead = pipe.unstash(readView, 0, readView.byteLength);
@@ -134,6 +144,7 @@ export default class WS {
                     break;
                 }
 
+                Platform.log("WS:readData", bytesRead, readView.slice(0, bytesRead));
                 this.frame.processStreamData(readView, 0, bytesRead);
             }
         }
@@ -189,7 +200,10 @@ export default class WS {
         });
 
         this.callCallback(open, this.onopen);
+
+        Platform.log("WS: Open::readData(true)", this.id);
         readData(true);
+        Platform.log("WS: Open::readData()", this.id);
         readData();
     }
 
