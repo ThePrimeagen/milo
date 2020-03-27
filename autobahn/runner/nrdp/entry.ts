@@ -8,6 +8,7 @@ import { runAutobahnTests, AutobahnOpts } from '../run-test';
 import getAgent from './agent';
 
 async function run() {
+    Platform.log("NRDP Test Started");
     await runAutobahnTests(WS, {
         Platform,
         agent: getAgent(),

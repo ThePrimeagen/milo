@@ -46,20 +46,19 @@ export abstract class NetworkPipe extends EventEmitter {
     abstract clearStats(): void;
 
     // concrete methods
-    stash(buf: ArrayBuffer | Uint8Array | IDataBuffer, offset: number, length?: number): void {
+    stash(buf: ArrayBuffer | Uint8Array | IDataBuffer, offset: number, length: number): void {
         if (length === undefined) {
             length = buf.byteLength - offset;
         }
         assert(this.platform, length > 0, "Must have length");
         if (this.buffer) {
-            this.buffer.bufferLength = this.buffer.bufferLength + buf.byteLength;
-            this.buffer.set(this.buffer.bufferLength - buf.byteLength, buf);
+            this.buffer.bufferLength = this.buffer.bufferLength + length;
+            this.buffer.set(this.buffer.bufferLength - length, buf, offset, length);
         } else if (buf instanceof DataBuffer) {
-            this.buffer = buf;
+            this.buffer = buf.subarray(offset, length);
         } else {
-            this.buffer = new DataBuffer(buf);
+            this.buffer = new DataBuffer(buf, offset, length);
         }
-        this.emit("data");
     }
 
     unstash(buf: IDataBuffer, offset: number, length: number): number {
@@ -72,6 +71,8 @@ export abstract class NetworkPipe extends EventEmitter {
             }
 
             buf.set(offset, this.buffer, 0, length);
+            // TODO: is this right?
+            // TODO: Anders?
             this.buffer.setView(this.buffer.byteOffset + length, this.buffer.byteLength - length);
             return length;
         }

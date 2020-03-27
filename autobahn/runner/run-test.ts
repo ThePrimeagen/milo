@@ -45,6 +45,12 @@ export async function runAutobahnTests(WebSocketClass: any, {
             const webSocket = openWebSocket(wsUri);
 
             // @ts-ignore
+            webSocket.onopen = () => {
+                Platform.log("getCaseCount#onopen");
+            }
+            webSocket.onerror = () => {
+                Platform.log("getCaseCount#onerror");
+            }
             webSocket.onmessage = (e: { data: any }) => {
                 caseCount = JSON.parse(e.data);
                 Platform.log("getCaseCount#onmessage", caseCount);
