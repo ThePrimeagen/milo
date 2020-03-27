@@ -51,6 +51,7 @@ export abstract class NetworkPipe extends EventEmitter {
             length = buf.byteLength - offset;
         }
         assert(this.platform, length > 0, "Must have length");
+        this.platform.log("NetworkPipe#stash", buf.slice(offset, length));
         if (this.buffer) {
             this.buffer.bufferLength = this.buffer.bufferLength + length;
             this.buffer.set(this.buffer.bufferLength - length, buf, offset, length);
@@ -63,6 +64,7 @@ export abstract class NetworkPipe extends EventEmitter {
 
     unstash(buf: IDataBuffer, offset: number, length: number): number {
         if (this.buffer) {
+            this.platform.log("NetworkPipe#unstash", this.buffer);
             const byteLength = this.buffer.byteLength;
             if (length >= byteLength) {
                 buf.set(offset, this.buffer, 0, byteLength);

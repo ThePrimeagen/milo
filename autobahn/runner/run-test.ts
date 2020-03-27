@@ -48,8 +48,8 @@ export async function runAutobahnTests(WebSocketClass: any, {
             webSocket.onopen = () => {
                 Platform.log("getCaseCount#onopen");
             }
-            webSocket.onerror = () => {
-                Platform.log("getCaseCount#onerror");
+            webSocket.onerror = (e: any) => {
+                Platform.log("getCaseCount#onerror", e);
             }
             webSocket.onmessage = (e: { data: any }) => {
                 caseCount = JSON.parse(e.data);
@@ -98,6 +98,10 @@ export async function runAutobahnTests(WebSocketClass: any, {
             webSocket.binaryType = "arraybuffer";
             webSocket.onopen = (e: { data: any }) => {
                 updateStatus("Executing test case " + currentCaseId + "/" + caseCount);
+            }
+
+            webSocket.onerror = (e: any) => {
+                Platform.log("getCaseCount#onerror", e);
             }
 
             webSocket.onclose = () => {

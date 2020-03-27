@@ -11,6 +11,8 @@ import { getReports, testPass, getId } from './autobahn-reports';
 import getNrdpAgent from './runner/nrdp/agent';
 import testNrdp from './runner/nrdp';
 
+const isNrdpRun = process.argv[2] === 'nrdp';
+
 async function wait(ms: number) {
     return new Promise(res => {
         setTimeout(res, ms);
@@ -30,7 +32,7 @@ async function run() {
         await autobahnTestSuite();
     }
 
-    if (process.env.NRDP) {
+    if (isNrdpRun) {
         agent = getNrdpAgent();
         await testNrdp(Platform);
     }
