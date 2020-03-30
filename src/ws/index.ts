@@ -151,7 +151,6 @@ export default class WS {
                     bytesRead = pipe.read(readView, 0, readView.byteLength);
                 }
 
-                Platform.log("WS:readData Finished", bytesRead);
                 if (bytesRead <= 0) {
                     break;
                 }
