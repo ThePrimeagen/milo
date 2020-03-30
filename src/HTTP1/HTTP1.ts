@@ -84,6 +84,7 @@ Host: ${request.url.host}\r\n`;
 
                         let remaining = this.headerBuffer.byteLength - (rnrn + 4);
                         const hOffset = this.headerBuffer.byteLength - remaining;
+                        Platform.log("End Header", this.connection, remaining, hOffset);
                         if (this.connection === "Upgrade") {
 
                             if (remaining) {

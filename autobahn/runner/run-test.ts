@@ -1,3 +1,5 @@
+import {LocalContext} from '../context';
+
 export type IPlatform = {
     log(...args: any[]): void;
     trace(...args: any[]): void;
@@ -8,13 +10,15 @@ export type AutobahnOpts = {
     port?: number;
     Platform: IPlatform;
     agent: string;
+    context: LocalContext;
 };
 
 export async function runAutobahnTests(WebSocketClass: any, {
     updateReport = true,
     port = 9001,
     agent,
-    Platform
+    Platform,
+    context,
 }: AutobahnOpts) {
 
     const wsuri = `ws://localhost:${port}`;

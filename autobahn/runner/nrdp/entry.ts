@@ -9,10 +9,20 @@ import getAgent from './agent';
 
 async function run() {
     Platform.log("NRDP Test Started");
-    await runAutobahnTests(WS, {
-        Platform,
-        agent: getAgent(),
-    });
+    const context = {};
+
+    try {
+        Platform.error("NRDP ABout to run tests.");
+        await runAutobahnTests(WS, {
+            context,
+            Platform,
+            agent: getAgent(),
+        });
+        Platform.error("NRDP Finish Tests");
+    } catch (e) {
+        Platform.error("NRDPs autobahn tests have failed:");
+        Platform.error(e);
+    }
 
     Platform.log("NRDP Test Finished");
 }

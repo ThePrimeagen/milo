@@ -97,6 +97,8 @@ export default class WS {
     }
 
     private async connect(url: string | UrlObject) {
+        try {
+
         const pipe = await upgrade(url)
         const {
             message,
@@ -146,7 +148,10 @@ export default class WS {
             }
         }
 
-        pipe.on("data", readData);
+        pipe.on("data", () => {
+            readData();
+            setTimeout(readData, 0);
+        });
 
         this.frame.onFrame((buffer: IDataBuffer, state: WSState) => {
 
@@ -199,6 +204,7 @@ export default class WS {
 
         readData(true);
         readData();
+        setTimeout(readData, 32);
     }
 
     ping() {
