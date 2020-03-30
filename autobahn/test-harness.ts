@@ -1,6 +1,8 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+import death from 'death';
+
 // @ts-ignore
 import {WS, Platform} from '../dist/milo.node';
 
@@ -11,11 +13,26 @@ import autobahn from './runner';
 import getAgent, { setAgent, getVersion } from './runner/get-agent';
 import autobahnTestSuite from './start';
 import { killContext, GlobalContext } from './context';
+import { killDocker } from './runner/docker/kill';
 import { getReports, testPass, getId } from './autobahn-reports';
 import getNrdpAgent from './runner/nrdp/agent';
 import testNrdp from './runner/nrdp';
 
 const isNrdpRun = process.argv[2] === 'nrdp';
+
+const ON_DEATH = death({ uncaughtException: true });
+
+// Attempts to kill all autobahn testsuites
+ON_DEATH((...args: any[]) => {
+    if (process.env.SELF_MANAGED_AUTOBAHN !== 'true') {
+        killDocker();
+    }
+
+    killContext(GlobalContext);
+
+    process.exit();
+});
+
 
 async function wait(ms: number) {
     return new Promise(res => {

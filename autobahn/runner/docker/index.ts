@@ -1,7 +1,7 @@
 import shell, { exec } from 'shelljs';
-import death from 'death';
 
 import { GlobalContext, killContext } from '../../context';
+import { IPlatform } from '../../types';
 import { autobahnDocker } from '../paths';
 import { readyConfig } from './config';
 import { killDocker } from './kill';
@@ -12,20 +12,7 @@ export {
     stop
 };
 
-const ON_DEATH = death({ uncaughtException: true });
-
-// Attempts to kill all autobahn testsuites
-ON_DEATH((...args: any[]) => {
-    if (process.env.SELF_MANAGED_AUTOBAHN !== 'true') {
-        killDocker();
-    }
-
-    killContext(GlobalContext);
-
-    process.exit();
-});
-
-export async function start() {
+export async function start(Platform: IPlatform) {
 
     return new Promise(async (res, rej) => {
 
@@ -36,7 +23,7 @@ export async function start() {
         shell.pushd(autobahnDocker);
 
         readyConfig();
-        await launch();
+        await launch(Platform);
 
         shell.popd();
 

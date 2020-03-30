@@ -12,9 +12,9 @@ export default async function runNRDP(Platform: IPlatform): Promise<number> {
     ].join(' ');
 
     shell.pushd(root);
-    shell.exec(cmd, {async: true});
     let casesRan = -1;
     await runAsync({
+        Platform,
         onData: (lines: string[]) => {
             lines.forEach(l => {
                 if (~l.indexOf("Will run")) {

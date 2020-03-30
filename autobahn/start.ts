@@ -26,7 +26,7 @@ export default async function run() {
     await systemReq();
     await killDocker();
     await readyConfig()
-    await launch();
+    await launch(Platform);
 };
 
 async function runner() {

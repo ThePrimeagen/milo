@@ -1,7 +1,8 @@
-import shell, {exec} from 'shelljs';
+import shell, {exec} from "shelljs";
 
-import { autobahnDocker } from '../paths';
-import runAsync from '../../run-async';
+import { autobahnDocker } from "../paths";
+import { IPlatform } from "../../types";
+import runAsync from "../../run-async";
 
 // docker run -it --rm \
 // -v "${PWD}/config:/config" \
@@ -19,11 +20,12 @@ const cmds = [
     "--name fuzzingserver",
     "crossbario/autobahn-testsuite",
 ];
-const dockerCmd = `docker run ${cmds.join(' ')}`;
+const dockerCmd = `docker run ${cmds.join(" ")}`;
 
-export async function launch() {
+export async function launch(Platform: IPlatform) {
     await runAsync({
         cmd: dockerCmd,
+        Platform,
         doneString: "Ok, will run"
     });
 };
