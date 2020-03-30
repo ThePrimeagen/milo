@@ -4,7 +4,7 @@ dotenv.config();
 import death from 'death';
 
 // @ts-ignore
-import {WS, Platform} from '../dist/milo.node';
+import { WS, Platform } from '../dist/milo.node';
 
 import mergeCustomConfig from './merge-custom-config';
 mergeCustomConfig(Platform);
@@ -33,7 +33,6 @@ ON_DEATH((...args: any[]) => {
     process.exit();
 });
 
-
 async function wait(ms: number) {
     return new Promise(res => {
         setTimeout(res, ms);
@@ -48,6 +47,7 @@ async function run() {
 
     setAgent(agent);
 
+    console.error("XXX starting test");
     await wait(1000);
     if (process.env.SELF_MANAGED_AUTOBAHN !== 'true') {
         await autobahnTestSuite();
@@ -67,6 +67,7 @@ async function run() {
         });
     }
 
+    console.error("XXX examining reports");
     const reports = await getReports(agent);
 
     if (reports.length < cases) {
@@ -82,6 +83,7 @@ async function run() {
         return false;
     }).filter(x => x) as string[];
 
+    Platform.error("XXX examining reports finished, failures are ", fails);
     if (fails.length) {
         Platform.log(fails.length, "Test cases have failed:", fails.join(', '));
         process.exit(1);

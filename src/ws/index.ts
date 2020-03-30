@@ -97,7 +97,22 @@ export default class WS {
     }
 
     private async connect(url: string | UrlObject) {
-        const pipe = await upgrade(url)
+        let pipe: NetworkPipe;
+        try {
+            pipe = await upgrade(url)
+        } catch (e) {
+            // TODO: Handle this exception that can happen here and forward on
+            // the alert.
+            if (this.callbacks.error) {
+                this.callbacks.error.forEach(cb => cb(e));
+            } else {
+                Platform.error("WebSocket Connection Error", e);
+            }
+            this.state = ConnectionState.Closed;
+
+            return;
+        }
+
         const {
             message,
             close,
@@ -136,6 +151,7 @@ export default class WS {
                     bytesRead = pipe.read(readView, 0, readView.byteLength);
                 }
 
+                Platform.log("WS:readData Finished", bytesRead);
                 if (bytesRead <= 0) {
                     break;
                 }

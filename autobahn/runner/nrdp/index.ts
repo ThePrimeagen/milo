@@ -12,6 +12,5 @@ export default async function testNrdp(Platform: IPlatform): Promise<number> {
     await sysRequirements(Platform);
     await createArtifact(Platform);
 
-    // run NRDP
     return await runNRDP(Platform);
 };

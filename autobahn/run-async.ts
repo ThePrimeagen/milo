@@ -10,7 +10,7 @@ export type AsyncRunOpts = {
     ignoreOnErr?: boolean;
     Platform: IPlatform;
     onData?: (line: string[]) => void;
-};
+}
 
 export default async function runAsync(opts: AsyncRunOpts) {
     return new Promise((res, rej) => {
@@ -24,7 +24,6 @@ export default async function runAsync(opts: AsyncRunOpts) {
         }
 
         function onOut(data: string) {
-
             const lines = data.split('\n');
             if (opts.onData) {
                 opts.onData(lines);
@@ -50,7 +49,6 @@ export default async function runAsync(opts: AsyncRunOpts) {
             }
             rej(data);
         }
-
 
         e.stdout.on("data", onOut);
         e.stderr.on("data", onErr);

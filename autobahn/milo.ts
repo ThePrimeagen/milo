@@ -15,7 +15,6 @@ import getAgent from './runner/get-agent';
 const updateReport = process.env.UPDATE_REPORT === 'true';
 const Class = process.env.MILO === 'true' ? WS : WebSocket
 
-
 autobahn(Class, {
     updateReport,
     port: 9001,
