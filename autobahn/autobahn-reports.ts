@@ -6,7 +6,7 @@ import { root } from './runner/paths';
 export const reportsDir = path.join(root, 'autobahn-testsuite/docker/reports/clients');
 export function getReports(agentName: string): Promise<string[]> {
     return new Promise((res, rej) => {
-        fs.readdir(reportsDir, function(err, items) {
+        fs.readdir(reportsDir, (err, items) => {
             if (err) {
                 rej(err);
                 return;

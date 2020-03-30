@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // @ts-ignore
-import {WS, Platform} from '../dist/milo.node';
+import { WS, Platform } from '../dist/milo.node';
 
 import mergeCustomConfig from './merge-custom-config';
 mergeCustomConfig(Platform);
@@ -26,9 +26,9 @@ async function wait(ms: number) {
 async function run() {
     const context = {} as LocalContext;
     let agent = `test_harness_${getVersion()}`;
-    console.log("Testing Autobahn with", process.env.CASES);
-    console.log("Agent", agent);
-    console.log("If this is wrong, please edit your .env file.");
+    Platform.log("Testing Autobahn with", process.env.CASES);
+    Platform.log("Agent", agent);
+    Platform.log("If this is wrong, please edit your .env file.");
 
     setAgent(agent);
 
