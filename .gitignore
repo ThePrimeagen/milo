@@ -3,5 +3,6 @@
 node_modules
 build
 dist
+.milo-test-env
 
 /src/nrdp/NrdpSSLBoundFunctions.ts

@@ -6,7 +6,6 @@ import { readyConfig } from './config';
 import { killDocker } from './kill';
 import { launch } from './launch';
 import { stop } from './stop';
-import Platform from "../../../src/Platform";
 
 export {
     stop
@@ -16,7 +15,6 @@ const ON_DEATH = death({ uncaughtException: true });
 
 // Attempts to kill all autobahn testsuites
 ON_DEATH((...args: any[]) => {
-    Platform.log(args);
     killDocker();
     process.exit();
 });
