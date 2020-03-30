@@ -83,7 +83,7 @@ Host: ${request.url.host}\r\n`;
                         this._parseHeaders(rnrn);
                         this.headersFinished = true;
 
-                        let remaining = this.headerBuffer.byteLength - (rnrn + 4);
+                        const remaining = this.headerBuffer.byteLength - (rnrn + 4);
                         const hOffset = this.headerBuffer.byteLength - remaining;
                         if (this.connection === "Upgrade") {
                             if (remaining) {

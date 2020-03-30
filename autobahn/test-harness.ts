@@ -42,9 +42,9 @@ async function wait(ms: number) {
 
 async function run() {
     let agent = `test_harness_${getVersion()}`;
-    console.log("Testing Autobahn with", process.env.CASES);
-    console.log("Agent", agent);
-    console.log("If this is wrong, please edit your .env file.");
+    Platform.log("Testing Autobahn with", process.env.CASES);
+    Platform.log("Agent", agent);
+    Platform.log("If this is wrong, please edit your .env file.");
 
     setAgent(agent);
 
@@ -83,11 +83,11 @@ async function run() {
     }).filter(x => x) as string[];
 
     if (fails.length) {
-        console.log(fails.length, "Test cases have failed:", fails.join(', '));
+        Platform.log(fails.length, "Test cases have failed:", fails.join(', '));
         process.exit(1);
     }
 
-    console.log("Successfully passed", process.env.CASES, "autobahn tests");
+    Platform.log("Successfully passed", process.env.CASES, "autobahn tests");
     killContext(GlobalContext);
     process.exit(0);
 }
