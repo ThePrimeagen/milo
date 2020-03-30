@@ -97,9 +97,22 @@ export default class WS {
     }
 
     private async connect(url: string | UrlObject) {
+        let pipe: NetworkPipe;
         try {
+            pipe = await upgrade(url)
+        } catch (e) {
+            // TODO: Handle this exception that can happen here and forward on
+            // the alert.
+            if (this.callbacks.error) {
+                this.callbacks.error.forEach(cb => cb(e));
+            } else {
+                Platform.error("WebSocket Connection Error", e);
+            }
+            this.state = ConnectionState.Closed;
 
-        const pipe = await upgrade(url)
+            return;
+        }
+
         const {
             message,
             close,
