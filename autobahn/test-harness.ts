@@ -68,13 +68,13 @@ async function run() {
         return false;
     }).filter(x => x) as string[];
 
-    console.error("XXX examining reports finished, failures are ", fails);
+    Platform.error("XXX examining reports finished, failures are ", fails);
     if (fails.length) {
-        console.log(fails.length, "Test cases have failed:", fails.join(', '));
+        Platform.log(fails.length, "Test cases have failed:", fails.join(', '));
         process.exit(1);
     }
 
-    console.log("Successfully passed", process.env.CASES, "autobahn tests");
+    Platform.log("Successfully passed", process.env.CASES, "autobahn tests");
     killContext(context);
     process.exit(0);
 }
