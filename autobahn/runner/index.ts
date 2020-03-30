@@ -10,9 +10,9 @@ import { root } from './paths';
 import { start, stop } from './docker';
 import { runAutobahnTests, AutobahnOpts } from './run-test';
 
-export default async function autobahn(WebSocketClass: WebSocket, opts: AutobahnOpts) {
+export default async function autobahn(WebSocketClass: WebSocket, opts: AutobahnOpts): Promise<number> {
     await systemReq();
-    await runAutobahnTests(WebSocketClass, opts);
+    return await runAutobahnTests(WebSocketClass, opts);
 };
 
 

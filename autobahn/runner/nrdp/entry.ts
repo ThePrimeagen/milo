@@ -11,10 +11,10 @@ async function run() {
     Platform.log("NRDP Test Started");
     const context = {};
 
+    let errCode = 0;
     try {
         Platform.error("NRDP ABout to run tests.");
         await runAutobahnTests(WS, {
-            context,
             Platform,
             agent: getAgent(),
         });
@@ -22,9 +22,11 @@ async function run() {
     } catch (e) {
         Platform.error("NRDPs autobahn tests have failed:");
         Platform.error(e);
+        errCode = 1;
     }
 
     Platform.log("NRDP Test Finished");
+    nrdp.exit(errCode);
 }
 
 // @ts-ignore

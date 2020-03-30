@@ -1,5 +1,3 @@
-import {LocalContext} from '../context';
-
 export type IPlatform = {
     log(...args: any[]): void;
     trace(...args: any[]): void;
@@ -10,7 +8,6 @@ export type AutobahnOpts = {
     port?: number;
     Platform: IPlatform;
     agent: string;
-    context: LocalContext;
 };
 
 export async function runAutobahnTests(WebSocketClass: any, {
@@ -18,8 +15,7 @@ export async function runAutobahnTests(WebSocketClass: any, {
     port = 9001,
     agent,
     Platform,
-    context,
-}: AutobahnOpts) {
+}: AutobahnOpts): Promise<number> {
 
     const wsuri = `ws://localhost:${port}`;
     let currentCaseId: number;
@@ -88,7 +84,7 @@ export async function runAutobahnTests(WebSocketClass: any, {
 
                 // Last socket closed.
                 if (currentCaseId >= caseCount) {
-                    res();
+                    res(caseCount);
                 }
             }
         }
@@ -120,7 +116,7 @@ export async function runAutobahnTests(WebSocketClass: any, {
             }
 
             webSocket.onmessage = (e: { data: any }) => {
-                Platform.log("onmessage", e);
+                Platform.log("Websocket:onmessage (Not including message due to length)");
                 webSocket.send(e.data);
             }
         }

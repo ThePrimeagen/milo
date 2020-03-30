@@ -10,7 +10,7 @@ mergeCustomConfig(Platform);
 import autobahn from './runner';
 import getAgent, { setAgent, getVersion } from './runner/get-agent';
 import autobahnTestSuite from './start';
-import { killContext, LocalContext } from './context';
+import { killContext, GlobalContext } from './context';
 import { getReports, testPass, getId } from './autobahn-reports';
 import getNrdpAgent from './runner/nrdp/agent';
 import testNrdp from './runner/nrdp';
@@ -24,7 +24,6 @@ async function wait(ms: number) {
 }
 
 async function run() {
-    const context = {} as LocalContext;
     let agent = `test_harness_${getVersion()}`;
     console.log("Testing Autobahn with", process.env.CASES);
     console.log("Agent", agent);
@@ -32,34 +31,32 @@ async function run() {
 
     setAgent(agent);
 
-    console.error("XXX starting test");
     await wait(1000);
-    console.error("XXX self managed autobahn test suite?", process.env.SELF_MANAGED_AUTOBAHN);
     if (process.env.SELF_MANAGED_AUTOBAHN !== 'true') {
-        console.error("XXX launchinng autobahn test suite");
-        await autobahnTestSuite(context);
-        console.error("XXX finished autobahn test suite");
+        await autobahnTestSuite();
     }
 
-    console.error("XXX Is NRDP?", isNrdpRun);
+    let cases = -1;
     if (isNrdpRun) {
         agent = getNrdpAgent();
-        console.error("XXX launching NRDP");
-        await testNrdp(Platform, context);
-        console.error("XXX finished NRDP");
+        cases = await testNrdp(Platform);
     }
     else {
-        await autobahn(WS, {
+        cases = await autobahn(WS, {
             updateReport: true,
             port: 9001,
             Platform,
             agent,
-            context,
         });
     }
 
-    console.error("XXX examining reports");
     const reports = await getReports(agent);
+
+    if (reports.length < cases) {
+        throw new Error(`Expected ${cases} to be reported, but got ${reports.length}`);
+        process.exit(1);
+    }
+
     const fails = reports.map(r => {
         if (!testPass(r)) {
             return getId(r);
@@ -68,14 +65,13 @@ async function run() {
         return false;
     }).filter(x => x) as string[];
 
-    console.error("XXX examining reports finished, failures are ", fails);
     if (fails.length) {
         console.log(fails.length, "Test cases have failed:", fails.join(', '));
         process.exit(1);
     }
 
     console.log("Successfully passed", process.env.CASES, "autobahn tests");
-    killContext(context);
+    killContext(GlobalContext);
     process.exit(0);
 }
 

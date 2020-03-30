@@ -30,6 +30,7 @@ export default class HTTP1 extends EventEmitter implements IHTTP {
         return `${hostName}${query}`;
     }
     send(networkPipe: NetworkPipe, request: IHTTPRequest): boolean {
+
         this.networkPipe = networkPipe;
         this.request = request;
         let str =
@@ -84,9 +85,7 @@ Host: ${request.url.host}\r\n`;
 
                         let remaining = this.headerBuffer.byteLength - (rnrn + 4);
                         const hOffset = this.headerBuffer.byteLength - remaining;
-                        Platform.log("End Header", this.connection, remaining, hOffset);
                         if (this.connection === "Upgrade") {
-
                             if (remaining) {
                                 this.networkPipe.stash(this.headerBuffer, hOffset, remaining);
                             }
@@ -118,6 +117,7 @@ Host: ${request.url.host}\r\n`;
             }
         });
         this.networkPipe.on("close", () => {
+            Platform.log("Closed?");
             this.emit("finished");
         });
         return true;

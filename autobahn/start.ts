@@ -14,14 +14,15 @@ import { systemReq } from './runner/sys-requirements';
 import { killDocker } from './runner/docker/kill';
 import { readyConfig } from './runner/docker/config';
 import { launch } from './runner/docker/launch';
-import { killContext, LocalContext } from './context';
+import { killContext, GlobalContext } from './context';
 
 death(async () => {
     await killDocker();
+    killContext(GlobalContext);
     process.exit();
 });
 
-export default async function run(context: LocalContext) {
+export default async function run() {
     await systemReq();
     await killDocker();
     await readyConfig()
@@ -29,9 +30,8 @@ export default async function run(context: LocalContext) {
 };
 
 async function runner() {
-    const context = {} as LocalContext;
-    await run(context);
-    killContext(context);
+    await run();
+    killContext(GlobalContext);
 }
 
 if (require.main === module) {

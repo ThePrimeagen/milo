@@ -124,7 +124,6 @@ export default class Request {
             pendingConnection = conn;
             return conn.onNetworkPipe();
         }).then((pipe: NetworkPipe) => {
-            Platform.trace("GOT OUR PIPE NOW", Object.keys(pendingConnection));
             this.networkPipe = pipe;
             this.requestResponse.socket = pipe.socket;
             this.requestResponse.cname = pendingConnection.cname;
@@ -153,6 +152,7 @@ export default class Request {
     private _transition(state: RequestState): void {
         Platform.trace("transition", requestStateToString(this.state), "to", requestStateToString(state));
         this.state = state;
+
         switch (state) {
         case RequestState.Initial:
             throw new Error("Invalid state transition to Initial");
@@ -238,7 +238,6 @@ export default class Request {
                 networkStartTime: this.requestResponse.networkStartTime
             };
             this.http.send(this.networkPipe, req);
-            // Platform.trace("CALLING WRITE", str);
             break;
         case RequestState.Closed:
             this._transition(RequestState.Finished);

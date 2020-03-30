@@ -152,9 +152,6 @@ export default class WSFramer {
             const remainingPacket = state.payloadLength - state.payloadPtr;
             const subEndIdx = Math.min(ptr + remainingPacket, endIdx);
 
-            Platform.log("WS:processStreamData", remainingPacket, subEndIdx);
-            //Platform.log("WS:processStreamData", remainingPacket, subEndIdx);
-
             ptr += this.parseBody(state, packet, ptr, subEndIdx);
             this.tryFinishFrame(state);
 

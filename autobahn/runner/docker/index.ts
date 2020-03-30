@@ -1,6 +1,7 @@
 import shell, { exec } from 'shelljs';
 import death from 'death';
 
+import { GlobalContext, killContext } from '../../context';
 import { autobahnDocker } from '../paths';
 import { readyConfig } from './config';
 import { killDocker } from './kill';
@@ -15,7 +16,12 @@ const ON_DEATH = death({ uncaughtException: true });
 
 // Attempts to kill all autobahn testsuites
 ON_DEATH((...args: any[]) => {
-    killDocker();
+    if (process.env.SELF_MANAGED_AUTOBAHN !== 'true') {
+        killDocker();
+    }
+
+    killContext(GlobalContext);
+
     process.exit();
 });
 

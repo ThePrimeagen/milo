@@ -4,23 +4,19 @@ export interface Killable {
 
 // This will help kill programs that are started by shelljs
 export interface LocalContext {
-    nrdp?: Killable;
-    autobahn?: Killable;
+    runners: Killable[]
 };
 
 export function killContext(context: LocalContext) {
-    try {
-        if (context.autobahn) {
-            context.autobahn.kill();
+    context.runners.forEach(k => {
+        try {
+            k.kill()
+        } catch (e) {
+            console.error("killContext Error", e);
         }
-
-        if (context.nrdp) {
-            context.nrdp.kill();
-        }
-    } catch (e) {
-        console.error("ShellJS Error", e);
-    }
+    });
 }
 
-export type ContextKey = "nrdp" | "autobahn";
-
+export const GlobalContext = {
+    runners: []
+} as LocalContext;
