@@ -30,6 +30,7 @@ export default class HTTP1 extends EventEmitter implements IHTTP {
         return `${hostName}${query}`;
     }
     send(networkPipe: NetworkPipe, request: IHTTPRequest): boolean {
+
         this.networkPipe = networkPipe;
         this.request = request;
         let str =
@@ -82,29 +83,33 @@ Host: ${request.url.host}\r\n`;
                         this._parseHeaders(rnrn);
                         this.headersFinished = true;
 
-                        let remaining = this.headerBuffer.byteLength - (rnrn + 4);
-
+                        const remaining = this.headerBuffer.byteLength - (rnrn + 4);
                         const hOffset = this.headerBuffer.byteLength - remaining;
-                        if (!this.chunkyParser && !this.contentLength) {
-                            this.networkPipe.stash(this.headerBuffer, hOffset, remaining);
-                            remaining = 0;
-                        }
-
-                        if (remaining) {
-                            this._processResponseData(this.headerBuffer, hOffset, remaining);
-                        }
-
-                        this.headerBuffer = undefined;
                         if (this.connection === "Upgrade") {
+                            if (remaining) {
+                                this.networkPipe.stash(this.headerBuffer, hOffset, remaining);
+                            }
+
                             this.upgrade = true;
                             this.emit("finished");
 
+                            // TODO: Something is off here.  We will have to re
+                            // think this in the near future.  It should be
+                            // better than this, but there is complication with
+                            // empting the pipe and stashing.
+                            //
+                            // TODO: Old Note
                             // If you don't break, you will
                             // continue to process what's
                             // left in the buffer which is
                             // wrong on upgrade.
+                            this.headerBuffer = undefined;
                             break;
+                        } else if (remaining) {
+                            this._processResponseData(this.headerBuffer, hOffset, remaining);
                         }
+
+                        this.headerBuffer = undefined;
                     }
                 } else {
                     this._processResponseData(scratch, 0, read);
@@ -112,6 +117,7 @@ Host: ${request.url.host}\r\n`;
             }
         });
         this.networkPipe.on("close", () => {
+            Platform.log("Closed?");
             this.emit("finished");
         });
         return true;

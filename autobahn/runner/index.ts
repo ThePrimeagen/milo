@@ -7,17 +7,11 @@ import shell from 'shelljs';
 import { Platform } from '../../dist/milo.node';
 import { systemReq } from './sys-requirements';
 import { root } from './paths';
-import { start, stop } from './docker';
-import { runAutobahnTests } from './run-test';
+import { runAutobahnTests, AutobahnOpts } from './run-test';
 
-export type RunnerOptions = {
-    updateReport: boolean;
-    port: number;
-};
-
-export default async function autobahn(WebSocketClass: WebSocket, opts: RunnerOptions) {
+export default async function autobahn(WebSocketClass: WebSocket, opts: AutobahnOpts): Promise<number> {
     await systemReq();
-    await runAutobahnTests(WebSocketClass, opts);
+    return await runAutobahnTests(WebSocketClass, opts);
 };
 
 

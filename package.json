@@ -16,6 +16,7 @@
   "main": "build/node/src/milo.js",
   "scripts": {
     "build:nrdp": "npm run nrdp-generate-ssl-functions && tsc -p tsconfig.nrdp.json && rollup -c rollup.nrdp.js",
+    "build:nrdp:test": "npm run nrdp-generate-ssl-functions && tsc -p tsconfig.nrdp.json && rollup -c rollup.nrdp.test.js",
     "build:node": "tsc -p tsconfig.node.json && rollup -c rollup.node.js",
     "lint": "node bin/lint.js",
     "nrdp-generate-ssl-functions": "node bin/generate-ssl-functions.js",
@@ -25,7 +26,7 @@
     "node": "npm run build:node",
     "all": "npm run build:all",
     "test:autobahn": "ts-node ./autobahn/test-harness.ts",
-    "test:autobahn:debug": "node --inspect-brk ./node_modules/.bin/ts-node ./autobahn/test-harness.ts",
+    "test:autobahn:nrdp": "ts-node ./autobahn/test-harness.ts nrdp",
     "test:all": "npm run test && npm run test:autobahn",
     "test": "jest",
     "clean": "del-cli build/ dist/"

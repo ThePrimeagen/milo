@@ -44,7 +44,10 @@ export enum ConnectionState {
     Closed = 3,
 };
 
+let debugId = 0;
 export default class WS {
+    private id: number;
+
     // @ts-ignore
     private frame: WSFramer;
     // @ts-ignore
@@ -61,6 +64,7 @@ export default class WS {
     constructor(url: string | UrlObject, opts: WSOptions = defaultOptions) {
         this.state = ConnectionState.Connecting;
         this.opts = opts;
+        this.id = debugId++;
 
         this.callbacks = {
             message: [],
@@ -79,7 +83,7 @@ export default class WS {
 
         let payload: string | IDataBuffer = msg;
         if (state && state.opcode === Opcodes.TextFrame) {
-            payload = Platform.utf8toa(msg);
+            payload = Platform.utf8toa(msg) || "";
         }
 
         // TODO: What other dumb things do I need to add to this?
@@ -93,7 +97,22 @@ export default class WS {
     }
 
     private async connect(url: string | UrlObject) {
-        const pipe = await upgrade(url)
+        let pipe: NetworkPipe;
+        try {
+            pipe = await upgrade(url)
+        } catch (e) {
+            // TODO: Handle this exception that can happen here and forward on
+            // the alert.
+            if (this.callbacks.error) {
+                this.callbacks.error.forEach(cb => cb(e));
+            } else {
+                Platform.error("WebSocket Connection Error", e);
+            }
+            this.state = ConnectionState.Closed;
+
+            return;
+        }
+
         const {
             message,
             close,
@@ -122,6 +141,9 @@ export default class WS {
         const readData = (fromStash: boolean = false) => {
             let bytesRead;
             while (1) {
+                if (this.pipe.closed) {
+                    return;
+                }
 
                 if (fromStash) {
                     bytesRead = pipe.unstash(readView, 0, readView.byteLength);
@@ -137,7 +159,10 @@ export default class WS {
             }
         }
 
-        pipe.on("data", readData);
+        pipe.on("data", () => {
+            readData();
+            setTimeout(readData, 0);
+        });
 
         this.frame.onFrame((buffer: IDataBuffer, state: WSState) => {
 
@@ -187,7 +212,10 @@ export default class WS {
         });
 
         this.callCallback(open, this.onopen);
+
         readData(true);
+        readData();
+        setTimeout(readData, 32);
     }
 
     ping() {

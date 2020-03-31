@@ -27,7 +27,6 @@ export function upgrade(u: string | UrlObject): Promise<NetworkPipe> {
         const key = arrayBufferKey.toString("base64");
 
 
-        Platform.trace("key is", key, arrayBufferKey);
         data.headers.Upgrade = "websocket";
         data.headers.Connection = "Upgrade";
         data.headers["Sec-WebSocket-Key"] = key;
@@ -36,18 +35,19 @@ export function upgrade(u: string | UrlObject): Promise<NetworkPipe> {
         data.freshConnect = true;
         const req = new Request(data);
         req.send().then(response => {
-            Platform.trace("Got response", response);
             if (response.statusCode !== 101)
                 throw new Error("status code");
 
             const upgradeKeyResponse = headerValue(response.headers, "sec-websocket-accept");
-            if (!upgradeKeyResponse)
+            if (!upgradeKeyResponse) {
                 throw new Error("no Sec-WebSocket-Accept key");
+            }
 
             const WS_KEY = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
             const shadkey = Platform.btoa(Platform.sha1(key + WS_KEY));
-            if (shadkey !== upgradeKeyResponse)
+            if (shadkey !== upgradeKeyResponse) {
                 throw new Error(`Key mismatch expected: ${shadkey} got: ${upgradeKeyResponse}`);
+            }
 
             Platform.trace("successfully upgraded");
 

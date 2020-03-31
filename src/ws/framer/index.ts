@@ -1,3 +1,4 @@
+import Platform from "../../Platform";
 import DataBuffer from "../../DataBuffer";
 import IDataBuffer from "../../IDataBuffer";
 import NetworkPipe from "../../NetworkPipe";
@@ -78,7 +79,7 @@ export default class WSFramer {
 
             const fullBuf = new DataBuffer(headerEnd + frameSize);
 
-            fullBuf.set(0, header);
+            fullBuf.set(0, header, 0, headerEnd);
             fullBuf.set(headerEnd, buf, ptr, frameSize);
 
             ptr += frameSize;

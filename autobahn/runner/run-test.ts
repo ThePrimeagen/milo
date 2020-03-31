@@ -1,18 +1,22 @@
+export type IPlatform = {
+    log(...args: any[]): void;
+    trace(...args: any[]): void;
+}
 
-import WebSocket from 'ws';
+export type AutobahnOpts = {
+    updateReport?: boolean;
+    port?: number;
+    Platform: IPlatform;
+    agent: string;
+};
 
-import { root } from './paths';
-import getAgent from './get-agent';
-
-// @ts-ignore
-import { Platform } from '../../dist/milo.node';
-
-export async function runAutobahnTests(WebSocketClass: WebSocket, {
+export async function runAutobahnTests(WebSocketClass: any, {
     updateReport = true,
     port = 9001,
-}) {
+    agent,
+    Platform,
+}: AutobahnOpts): Promise<number> {
 
-    const agent = getAgent();
     const wsuri = `ws://localhost:${port}`;
     let currentCaseId: number;
     let caseCount: number;
@@ -41,6 +45,12 @@ export async function runAutobahnTests(WebSocketClass: WebSocket, {
             const webSocket = openWebSocket(wsUri);
 
             // @ts-ignore
+            webSocket.onopen = () => {
+                Platform.log("getCaseCount#onopen");
+            }
+            webSocket.onerror = (e: any) => {
+                Platform.log("getCaseCount#onerror", e);
+            }
             webSocket.onmessage = (e: { data: any }) => {
                 caseCount = JSON.parse(e.data);
                 Platform.log("getCaseCount#onmessage", caseCount);
@@ -74,7 +84,7 @@ export async function runAutobahnTests(WebSocketClass: WebSocket, {
 
                 // Last socket closed.
                 if (currentCaseId >= caseCount) {
-                    res();
+                    res(caseCount);
                 }
             }
         }
@@ -90,6 +100,10 @@ export async function runAutobahnTests(WebSocketClass: WebSocket, {
                 updateStatus("Executing test case " + currentCaseId + "/" + caseCount);
             }
 
+            webSocket.onerror = (e: any) => {
+                Platform.log("getCaseCount#onerror", e);
+            }
+
             webSocket.onclose = () => {
                 currentCaseId = currentCaseId + 1;
                 Platform.log("runNextCase#onclose", currentCaseId);
@@ -102,7 +116,7 @@ export async function runAutobahnTests(WebSocketClass: WebSocket, {
             }
 
             webSocket.onmessage = (e: { data: any }) => {
-                Platform.log("onmessage", e);
+                Platform.log("Websocket:onmessage (Not including message due to length)");
                 webSocket.send(e.data);
             }
         }
