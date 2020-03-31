@@ -27,7 +27,8 @@ function execFile(path, args) {
 const nrdp = execFile("node", [ path.join(__dirname, "generate-ssl-functions.js") ]).then(() => {
     return execFile(path.join(__dirname, "../node_modules/.bin/tsc"), [ "--pretty", "-p", path.join(__dirname, "../tsconfig.nrdp.json") ]);
 }).then(() => {
-    return execFile(path.join(__dirname, "../node_modules/.bin/rollup"), [ "-c", path.join(__dirname, "../rollup.nrdp.js") ]);
+    return Promise.all([ execFile(path.join(__dirname, "../node_modules/.bin/rollup"), [ "-c", path.join(__dirname, "../rollup.nrdp.js") ]),
+                         execFile(path.join(__dirname, "../node_modules/.bin/rollup"), [ "-c", path.join(__dirname, "../rollup.nrdp.test.js") ]) ]);
 });
 
 const node = execFile(path.join(__dirname, "../node_modules/.bin/tsc"), [ "--pretty", "-p", path.join(__dirname, "../tsconfig.node.json") ]).then(() => {
