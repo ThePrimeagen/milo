@@ -35,9 +35,7 @@ const node = execFile(path.join(__dirname, "../node_modules/.bin/tsc"), [ "--pre
     return execFile(path.join(__dirname, "../node_modules/.bin/rollup"), [ "-c", path.join(__dirname, "../rollup.node.js") ]);
 });
 
-const test = execFile(path.join(__dirname, "../node_modules/.bin/tsc"), [ "--pretty", "-p", path.join(__dirname, "../tsconfig.test.json") ]);
-
-Promise.all([ nrdp, node, test ]).then(() => {
+Promise.all([ nrdp, node ]).then(() => {
     return execFile("node", [ path.join(__dirname, "lint.js") ]);
 }).catch((error) => {
     console.error("BUILD FAILURE", error.toString());
