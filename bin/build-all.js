@@ -22,8 +22,6 @@ function execFile(path, args) {
     });
 }
 
-
-
 const nrdp = execFile("node", [ path.join(__dirname, "generate-ssl-functions.js") ]).then(() => {
     return execFile(path.join(__dirname, "../node_modules/.bin/tsc"), [ "--pretty", "-p", path.join(__dirname, "../tsconfig.nrdp.json") ]);
 }).then(() => {
