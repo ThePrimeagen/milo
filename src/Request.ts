@@ -256,7 +256,7 @@ export default class Request {
                 let responseDataBuffer: IDataBuffer;
                 if (this.responseDataArray) {
                     // Platform.trace("GOT HERE 1", this.responseDataArray);
-                    responseDataBuffer = DataBuffer.concat.apply(undefined, this.responseDataArray);
+                    responseDataBuffer = DataBuffer.concat(this.responseDataArray);
                 } else if (this.responseData) {
                     // Platform.trace("GOT HERE 2", this.responseData);
                     responseDataBuffer = this.responseData;

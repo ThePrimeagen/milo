@@ -160,3 +160,10 @@ export default interface IDataBuffer {
     toString(enc?: EncodingType, offset?: number, length?: number): string;
     uncompress(method: CompressionMethod, offset?: number, length?: number): string;
 }
+
+export type DataBufferConcatArrayArgs = string | number[] | number | IDataBuffer | Uint8Array | ArrayBuffer;
+export interface IDataBufferConstructor {
+    new(len: number | IDataBuffer | Uint8Array | ArrayBuffer | number[]): IDataBuffer;
+    new(str: string, encoding?: EncodingType): IDataBuffer;
+    concat(array: DataBufferConcatArrayArgs[]): IDataBuffer;
+}

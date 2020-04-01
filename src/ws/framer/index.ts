@@ -233,7 +233,7 @@ export default class WSFramer {
             state.payloads.push(state.payload);
 
             // buf = Buffer.concat(state.payloads);
-            buf = DataBuffer.concat(...state.payloads);
+            buf = DataBuffer.concat(state.payloads);
         }
 
         this.callbacks.forEach(cb => cb(buf, state));

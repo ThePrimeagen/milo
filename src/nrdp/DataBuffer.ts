@@ -5,7 +5,7 @@ type DataBufferConstructor = {
     new(data: string, encoding?: string): IDataBuffer;
     new(data: ArrayBuffer | IDataBuffer | Uint8Array, offset?: number, length?: number): IDataBuffer;
     compare(lhs: ConcatTypes, rhs: ConcatTypes): -1 | 0 | 1;
-    concat(...args: ConcatTypes[]): IDataBuffer
+    concat(args: ConcatTypes[]): IDataBuffer
     of(...args: ConcatTypes[]): IDataBuffer;
     random(size: number): IDataBuffer;
 }

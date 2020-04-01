@@ -1,4 +1,4 @@
-import IDataBuffer from "../IDataBuffer";
+import IDataBuffer, { DataBufferConcatArrayArgs } from "../IDataBuffer";
 import os from "os";
 import { EncodingType, HashType, CompressionMethod } from "../types";
 import { toUint8Array, bufferToArrayBufferCopy } from "./utils";
@@ -556,7 +556,7 @@ string value for the second parameter, offset.`);
 
     setView(byteOffset: number, byteLength: number): void { throw new Error("Not Implemented"); }
 
-    static concat(...args: ArrayBuffer[] | Uint8Array[] | IDataBuffer[]): IDataBuffer {
+    static concat(args: DataBufferConcatArrayArgs[]): IDataBuffer {
         const normalizedArr: Uint8Array[] = [];
         for (const arg of args) {
             if (arg instanceof ArrayBuffer) {
@@ -565,8 +565,21 @@ string value for the second parameter, offset.`);
             else if (arg instanceof Uint8Array) {
                 normalizedArr.push(arg);
             }
-
-            normalizedArr.push((arg as DataBuffer).buffer);
+            else if (Array.isArray(arg)) {
+                normalizedArr.push(new Uint8Array(arg));
+            } else {
+                switch (typeof arg) {
+                case "number":
+                    normalizedArr.push(new Uint8Array([arg]));
+                    break;
+                case "object":
+                    normalizedArr.push((arg as DataBuffer).buffer);
+                    break;
+                case "string":
+                    normalizedArr.push(toUint8Array(arg));
+                    break;
+                }
+            }
         }
 
         const normBuf = Buffer.concat(normalizedArr);
