@@ -6,3 +6,4 @@
 - http pipelining
 - enforce http connection management
 - transfer-encoding/transport-encoding inflate,gzip etc
+- resource request format none
