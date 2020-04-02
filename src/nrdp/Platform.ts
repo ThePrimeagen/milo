@@ -33,8 +33,8 @@ export class NrdpPlatform implements IPlatform {
         nrdp.l.error.apply(nrdp.l, args);
     }
     trace(...args: any[]): void {
-        // args.unshift({ traceArea: "MILO" });
-        // nrdp.l.trace.apply(nrdp.l, args);
+        args.unshift({ traceArea: "MILO" });
+        nrdp.l.trace.apply(nrdp.l, args);
     }
 
     get ipConnectivityMode(): IpConnectivityMode {
