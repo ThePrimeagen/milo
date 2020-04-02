@@ -13,6 +13,8 @@ import dns from "dns";
 import fs from "fs";
 import sha1 from "sha1";
 import SHA256Context from "./SHA256Context";
+import RequestResponse from "../RequestResponse";
+import IRequestData from "../IRequestData";
 import { IpVersion, HTTPRequestHeaders, IpConnectivityMode } from "../types";
 import { toUint8Array } from "./utils";
 
@@ -236,6 +238,7 @@ class NodePlatform implements IPlatform {
     parseXML(data: string | IDataBuffer): any {
         throw new Error("FIX CRAZY XML PARSING FROM NRDP");
     }
+
     parseJSONStream(data: string | IDataBuffer): any[] | undefined {
         if (typeof data !== "string")
             data = data.toString();
@@ -248,6 +251,7 @@ class NodePlatform implements IPlatform {
         }
         return undefined;
     }
+
     parseJSON(data: string | IDataBuffer): any | undefined {
         if (typeof data !== "string")
             data = data.toString();
@@ -258,6 +262,16 @@ class NodePlatform implements IPlatform {
             /**/
         }
         return undefined;
+    }
+
+    options(key: string): any {
+        return undefined;
+    }
+
+
+    polyfillGibbonLoad(mode: "all" | "optin",
+                       polyfill: (data: IRequestData, callback: (response: RequestResponse) => void) => number): void {
+        throw new Error("Dude!");
     }
 }
 

@@ -23,6 +23,7 @@ export default interface IRequestData {
     maxRecvSpeed?: number;
     maxSendSpeed?: number;
     method?: HTTPMethod;
+    milo?: boolean;
     networkMetricsPrecision?: "us" | "ms" | "none";
     noProxy?: boolean;
     onChunk?: (chunk: ArrayBuffer) => void;

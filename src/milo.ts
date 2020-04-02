@@ -11,7 +11,7 @@ export {
     Platform,
 };
 
-export function _load(data: IRequestData, callback: (response: RequestResponse) => void): number {
+export function _load(data: IRequestData | string, callback: (response: RequestResponse) => void): number {
     const req = new Request(data);
     req.send().then(response => {
         // if (response.data) {
@@ -146,4 +146,25 @@ export function loadTest(url: string, milo: boolean, dataFetchCount: number = 10
         }
     }
     load();
+}
+
+const poly: any = Platform.options("polyfill-milo");
+switch (typeof poly) {
+case "boolean":
+    if (poly) {
+        Platform.polyfillGibbonLoad("optin", _load);
+    }
+    break;
+case "string":
+    if (poly === "optin" || poly === "all") {
+        Platform.polyfillGibbonLoad(poly, _load);
+    } else {
+        Platform.error("Invalid polyfill string", poly);
+    }
+    break;
+case "undefined":
+    break;
+default:
+    Platform.error("Invalid polyfill type", poly);
+    break;
 }

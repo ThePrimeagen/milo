@@ -5,18 +5,23 @@ import ICreateTCPNetworkPipeOptions from "../ICreateTCPNetworkPipeOptions";
 import IDataBuffer from "../IDataBuffer";
 import IPipeResult from "../IPipeResult";
 import IPlatform from "../IPlatform";
+import IRequestData from "../IRequestData";
 import IRequestTimeouts from "../IRequestTimeouts";
 import ISHA256Context from "../ISHA256Context";
 import N = nrdsocket;
 import NrdpSSL from "./NrdpSSL";
+import RequestResponse from "../RequestResponse";
 import createNrdpSSLNetworkPipe from "./NrdpSSLNetworkPipe";
 import createNrdpTCPNetworkPipe from "./NrdpTCPNetworkPipe";
 import { IpConnectivityMode } from "../types";
 
+type NrdpGibbonLoadCallbackSignature = (response: RequestResponse) => void;
+type NrdpGibbonLoadSignature = (data: IRequestData | string, callback: NrdpGibbonLoadCallbackSignature) => number;
 export class NrdpPlatform implements IPlatform {
     constructor() {
         this.scratch = new DataBuffer(16 * 1024);
         this.ssl = new NrdpSSL(this);
+        this.realLoad = nrdp.gibbon.load;
     }
 
     sha1(input: string): Uint8Array { return nrdp.hash("sha1", input); }
@@ -145,6 +150,33 @@ export class NrdpPlatform implements IPlatform {
         return undefined;
     }
 
+    options(key: string): any {
+        if (nrdp.js_options) {
+            return nrdp.js_options[key];
+        }
+        return undefined;
+    }
+
+    polyfillGibbonLoad(mode: "all" | "optin", polyfill: NrdpGibbonLoadSignature): void {
+        this.log("POLYFILLING", mode);
+        if (mode === "optin") {
+            this.miloLoad = polyfill;
+            nrdp.gibbon.load = this.polyfilledGibbonLoad.bind(this);
+        } else {
+            nrdp.gibbon.load = polyfill;
+        }
+    }
+
+    private polyfilledGibbonLoad(data: IRequestData | string,
+                                 callback: NrdpGibbonLoadCallbackSignature): number {
+        this.log("got load", data);
+        if (typeof data === "string" || !data.milo || !this.miloLoad)
+            return this.realLoad(data, callback);
+        return this.miloLoad(data, callback);
+    }
+
+    private realLoad: NrdpGibbonLoadSignature;
+    private miloLoad?: NrdpGibbonLoadSignature;
 };
 
 export default new NrdpPlatform();

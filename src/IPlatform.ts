@@ -3,9 +3,11 @@ import ICreateTCPNetworkPipeOptions from "./ICreateTCPNetworkPipeOptions";
 import IDataBuffer from "./IDataBuffer";
 import IDnsResult from "./IDnsResult";
 import IPipeResult from "./IPipeResult";
+import IRequestData from "./IRequestData";
 import IRequestTimeouts from "./IRequestTimeouts";
 import ISHA256Context from "./ISHA256Context";
-import { IpConnectivityMode, IpVersion } from "./types";
+import RequestResponse from "./RequestResponse";
+import { IpConnectivityMode, IpVersion, } from "./types";
 
 export default interface IPlatform {
     // return number of octets
@@ -66,4 +68,10 @@ export default interface IPlatform {
     parseXML(data: string | IDataBuffer): any;
     parseJSONStream(data: string | IDataBuffer): any[] | undefined;
     parseJSON(data: string | IDataBuffer): any | undefined;
+
+    options(key: string): any;
+
+    polyfillGibbonLoad(mode: "all" | "optin",
+                       polyfill: (data: IRequestData | string,
+                                  callback: (response: RequestResponse) => void) => number): void;
 };

@@ -2,6 +2,8 @@ declare namespace nrdp {
     type IDataBuffer = import("../src/IDataBuffer").default;
     type IpVersion = import("../src/types").IpVersion;
     type IDnsResult = import("../src/IDnsResult").default;
+    type RequestResponse = import("../src/RequestResponse").default;
+    type IRequestData = import("../src/IRequestData").default;
 
     namespace dns {
         function lookupHost(host: string,
@@ -19,6 +21,7 @@ declare namespace nrdp {
 
     namespace gibbon {
         let location: string;
+        let load: (req: IRequestData | string, callback: (response: RequestResponse) => void) => number;
     }
 
     namespace l {
@@ -61,4 +64,6 @@ declare namespace nrdp {
     function atob(buffer: Uint8Array | ArrayBuffer | IDataBuffer | string, returnUint8Array: true): Uint8Array;
     function atob(buffer: Uint8Array | ArrayBuffer | IDataBuffer | string, returnUint8Array: false | undefined): string;
     function atob(buffer: Uint8Array | ArrayBuffer | IDataBuffer | string): string;
+
+    const js_options: any;
 }
