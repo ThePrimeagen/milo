@@ -31,6 +31,7 @@ declare namespace nrdp {
     }
 
     namespace options {
+        /* tslint:disable:variable-name */
         let default_network_connect_timeout: number;
         let default_network_delay: number;
         let default_network_dns_fallback_timeout_wait_for_4: number;
@@ -59,6 +60,7 @@ declare namespace nrdp {
     function utf8toa(input: Uint8Array | ArrayBuffer | IDataBuffer | string, offset?: number, length?: number): string;
     function hash(type: string, data: Uint8Array | ArrayBuffer | IDataBuffer | string): Uint8Array;
     function btoa(buffer: Uint8Array | ArrayBuffer | IDataBuffer | string, returnUint8Array: true): Uint8Array;
+    /* tslint:disable:unified-signatures */
     function btoa(buffer: Uint8Array | ArrayBuffer | IDataBuffer | string, returnUint8Array: false | undefined): string;
     function btoa(buffer: Uint8Array | ArrayBuffer | IDataBuffer | string): string;
     function atob(buffer: Uint8Array | ArrayBuffer | IDataBuffer | string, returnUint8Array: true): Uint8Array;
