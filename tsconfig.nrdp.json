@@ -1,6 +1,6 @@
 {
     "extends": "./tsconfig.json",
-    "exclude": ["**/__tests__/**", "examples"],
+    "exclude": ["**/__tests__/**", "examples", "**/flycheck_*"],
     "compilerOptions": {
         "outDir": "./build/nrdp",
         "module": "ES2015",

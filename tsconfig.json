@@ -1,5 +1,6 @@
 {
     "include": ["src", "typings", "examples", "autobahn"],
+    "exclude": ["**/flycheck_*"],
     "compilerOptions": {
         "moduleResolution": "node",
         "sourceMap": true,
