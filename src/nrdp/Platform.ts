@@ -106,10 +106,10 @@ export class NrdpPlatform implements IPlatform {
             this.error(`Failed to open ${fileName} for writing`, N.errno, N.strerror());
             return false;
         }
-        const len = typeof contents === "string" ? contents.length : contents.byteLength;
+        const len = typeof contents === "string" ? this.utf8Length(contents) : contents.byteLength;
         const w = N.write(fd, contents);
         N.close(fd);
-        if (w !== len && (typeof contents !== "string" || w !== nrdp.atoutf8(contents).byteLength)) {
+        if (w !== len) {
             this.error(`Failed to write to ${fileName} for writing ${w} vs ${len}`, N.errno, N.strerror());
             return false;
         }
