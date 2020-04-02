@@ -3,6 +3,7 @@ import resolve from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs";
 import babel from "rollup-plugin-babel";
 import target from "./rollup-target-plugin";
+import sourcemaps from 'rollup-plugin-sourcemaps';
 
 export default {
     input: "build/nrdp/src/milo.js",
@@ -10,7 +11,8 @@ export default {
         file: 'dist/milo.nrdp.js',
         format: "iife",
         name: "milo",
-        exports: "named"
+        exports: "named",
+        sourcemap: true
     }, plugins: [
         target({
             target: "nrdp"
@@ -19,7 +21,7 @@ export default {
         commonjs(),
         babel({
             babelrc: false,
-		    presets: [
+            presets: [
                 [
                     '@babel/preset-env',
                     {
@@ -40,5 +42,6 @@ export default {
                 }]
             ]
         }),
+        sourcemaps()
     ]
 };
