@@ -40,12 +40,20 @@ Host: ${request.url.host}\r\n`;
         const standardHeaders = Platform.standardHeaders;
         for (const key in standardHeaders) {
             if (Platform.standardHeaders.hasOwnProperty(key) && !(key in request.requestHeaders)) {
-                str += `${key}: ${standardHeaders[key]}\r\n`;
+                let value = standardHeaders[key];
+                if (typeof value === "object") {
+                    value = JSON.stringify(value);
+                }
+                str += `${key}: ${value}\r\n`;
             }
         }
         for (const key in request.requestHeaders) {
             if (request.requestHeaders.hasOwnProperty(key)) {
-                str += `${key}: ${request.requestHeaders[key]}\r\n`;
+                let value = request.requestHeaders[key];
+                if (typeof value === "object") {
+                    value = JSON.stringify(value);
+                }
+                str += `${key}: ${value}\r\n`;
             }
         }
         str += "\r\n";
