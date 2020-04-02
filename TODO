@@ -1,0 +1,8 @@
+- Don't close TCP socket on SSL_ERROR_ZERO_RETURN
+- Report peer verification errors correctly
+- ssl resumption
+- ssl 0-RTT
+- ssl false start
+- http pipelining
+- enforce http connection management
+- transfer-encoding/transport-encoding inflate,gzip etc
