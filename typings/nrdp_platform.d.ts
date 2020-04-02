@@ -9,9 +9,10 @@ declare namespace nrdp_platform {
         reset(): void;
     }
 
-    function utf8Length(str: string): number;
+    namespace JSON {
+        function parse(data: string | IDataBuffer): any[] | undefined;
+    }
 
+    function utf8Length(str: string): number;
     function parseXML(data: string | IDataBuffer): any;
-    function parseJSONStream(data: string | IDataBuffer): any[] | undefined;
-    function parseJSON(data: string | IDataBuffer): any | undefined;
 }

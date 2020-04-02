@@ -136,10 +136,10 @@ export class NrdpPlatform implements IPlatform {
 
     parseXML(data: string | IDataBuffer): any { return nrdp_platform.parseXML(data); }
     parseJSONStream(data: string | IDataBuffer): any[] | undefined {
-        return nrdp_platform.parseJSON(data);
+        return nrdp_platform.JSON.parse(data);
     }
     parseJSON(data: string | IDataBuffer): any | undefined {
-        const ret = nrdp_platform.parseJSON(data);
+        const ret = nrdp_platform.JSON.parse(data);
         if (ret)
             return ret[0];
         return undefined;
