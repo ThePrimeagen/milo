@@ -22,6 +22,9 @@ export class NrdpPlatform implements IPlatform {
         this.scratch = new DataBuffer(16 * 1024);
         this.ssl = new NrdpSSL(this);
         this.realLoad = nrdp.gibbon.load;
+        const sdkVersion = nrdp.device.SDKVersion;
+
+        this.userAgent = `Gibbon/${sdkVersion.versionString}/${sdkVersion.versionString}: Netflix/${sdkVersion.versionString} (DEVTYPE=${nrdp.device.ESNPrefix}; CERTVER=${nrdp.device.certificationVersion})`;
     }
 
     sha1(input: string): Uint8Array { return nrdp.hash("sha1", input); }
@@ -63,15 +66,18 @@ export class NrdpPlatform implements IPlatform {
         return nrdp.device.tlsv13StreamingEnabled;
     }
 
-    private cachedStandardHeaders?: { [key: string]: string };
-    private cachedUILanguages?: string[];
     get standardHeaders(): { [key: string]: string } {
         const currentLanguages = this.UILanguages;
-        if (!this.cachedStandardHeaders || this.cachedUILanguages !== currentLanguages) {
+        const location = this.location;
+        if (!this.cachedStandardHeaders
+            || this.cachedUILanguages !== currentLanguages
+            || this.cachedLocation !== location) {
             this.cachedUILanguages = currentLanguages;
+            this.cachedLocation = location;
             this.cachedStandardHeaders = {};
-            this.cachedStandardHeaders["User-Agent"] = "Milo/0.1";
+            this.cachedStandardHeaders["User-Agent"] = this.userAgent;
             this.cachedStandardHeaders.Accept = "*/*";
+            this.cachedStandardHeaders.Referer = this.location;
             if (currentLanguages && currentLanguages.length) {
                 this.cachedStandardHeaders.Language = currentLanguages.join(",");
             }
@@ -175,8 +181,12 @@ export class NrdpPlatform implements IPlatform {
         return this.miloLoad(data, callback);
     }
 
+    private cachedStandardHeaders?: { [key: string]: string };
+    private cachedUILanguages?: string[];
+    private cachedLocation?: string;
     private realLoad: NrdpGibbonLoadSignature;
     private miloLoad?: NrdpGibbonLoadSignature;
+    private userAgent: string;
 };
 
 export default new NrdpPlatform();

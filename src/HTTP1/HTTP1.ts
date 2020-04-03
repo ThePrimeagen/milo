@@ -214,6 +214,7 @@ Host: ${request.url.host}\r\n`;
         }
 
         if (transferEncoding) {
+            let encodings: number = 0;
             const transferEncodings = transferEncoding.split(",");
             Platform.trace("got some encodings", transferEncodings);
             for (const encoding of transferEncodings) {
@@ -237,19 +238,19 @@ Host: ${request.url.host}\r\n`;
                         this.emit("finished");
                     });
 
-                    event.transferEncoding |= HTTPTransferEncoding.Chunked;
+                    encodings |= HTTPTransferEncoding.Chunked;
                     break;
                 case "compress":
-                    event.transferEncoding |= HTTPTransferEncoding.Compress;
+                    encodings |= HTTPTransferEncoding.Compress;
                     break;
                 case "deflate":
-                    event.transferEncoding |= HTTPTransferEncoding.Deflate;
+                    encodings |= HTTPTransferEncoding.Deflate;
                     break;
                 case "gzip":
-                    event.transferEncoding |= HTTPTransferEncoding.Gzip;
+                    encodings |= HTTPTransferEncoding.Gzip;
                     break;
                 case "identity":
-                    event.transferEncoding |= HTTPTransferEncoding.Identity;
+                    encodings |= HTTPTransferEncoding.Identity;
                     break;
                 }
             }
@@ -277,6 +278,7 @@ Host: ${request.url.host}\r\n`;
         } else {
             this.emit("data", data, offset, length);
         }
+            event.transferEncoding = encodings as HTTPTransferEncoding;
     }
 };
 
