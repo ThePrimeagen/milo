@@ -254,6 +254,7 @@ Host: ${request.url.host}\r\n`;
                     break;
                 }
             }
+            event.transferEncoding = encodings as HTTPTransferEncoding;
         }
 
         if (contentLength) {
@@ -278,7 +279,6 @@ Host: ${request.url.host}\r\n`;
         } else {
             this.emit("data", data, offset, length);
         }
-            event.transferEncoding = encodings as HTTPTransferEncoding;
     }
 };
 

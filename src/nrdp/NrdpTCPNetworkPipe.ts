@@ -248,7 +248,7 @@ export default function createTCPNetworkPipe(platform: NrdpPlatform,
                 sock = N.socket(N.AF_INET, N.SOCK_STREAM, 0);
                 const cur = N.fcntl(sock, N.F_GETFL);
                 N.fcntl(sock, N.F_SETFL, cur | N.O_NONBLOCK);
-                const ret = N.connect(sock, sockAddr);
+                const ret = N.connect(sock, sockAddr, options.hostname);
                 if (!ret) {
                     connected();
                 } else if (N.errno !== N.EINPROGRESS) {

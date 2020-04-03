@@ -422,9 +422,10 @@ declare namespace nrdsocket {
     function accept(sockfd: number, addr: Sockaddr | undefined): number;
     function bind(sockfd: number, addr: Sockaddr): number;
     function close(fd: number): number;
-    function connect(sockfd: number, addr: Sockaddr): number;
-    function fcntl(fd: number, cmd: number, arg?: ConstBuffer | undefined | number | boolean): number;
-    function getsockopt(fd: number, level: number, optname: number, optval: Buffer | undefined, optvalOffset?: number, optvalLength?: number): number;
+    function connect(sockfd: number, addr: Sockaddr, hostname?: string): number;
+    function fcntl(fd: number, cmd: number, arg?: ConstBuffer | number | boolean | undefined): number;
+    function getsockopt(fd: number, level: number, optname: number, optval: Buffer | undefined,
+                        optvalOffset?: number, optvalLength?: number): number;
     function listen(sockfd: number, backlog: number): number;
     function open(pathname: ConstBuffer, flags: number, mode: number): number;
     function read(fd: number, buf: Buffer, bufOffset?: number, bufLength?: number): number;
