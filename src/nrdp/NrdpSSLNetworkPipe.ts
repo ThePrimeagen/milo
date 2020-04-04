@@ -135,7 +135,7 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
         const platform: NrdpPlatform = this.platform as NrdpPlatform;
 
         if (typeof buf === 'string') {
-            length = buf.length;
+            length = platform.utf8Length(buf);
         } else if (length === undefined) {
             length = buf.byteLength;
         }
