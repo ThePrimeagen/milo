@@ -23,19 +23,21 @@ function execFile(path, args) {
 }
 
 const nrdp = execFile("node", [ path.join(__dirname, "generate-ssl-functions.js") ]).then(() => {
-    return execFile(path.join(__dirname, "../node_modules/.bin/tsc"), [ "--pretty", "-p", path.join(__dirname, "../tsconfig.nrdp.json") ]);
+    const lint = execFile("node", [ path.join(__dirname, "lint.js") ]);
+    const tsc = execFile(path.join(__dirname, "../node_modules/.bin/tsc"), [ "--pretty", "-p", path.join(__dirname, "../tsconfig.nrdp.json") ]);
+    return Promise.all([ lint, tsc ]);
 }).then(() => {
-    return Promise.all([ execFile(path.join(__dirname, "../node_modules/.bin/rollup"), [ "-c", path.join(__dirname, "../rollup.nrdp.js") ]),
-                         execFile(path.join(__dirname, "../node_modules/.bin/rollup"), [ "-c", path.join(__dirname, "../rollup.nrdp.test.js") ]) ]);
+    const nrdp = execFile(path.join(__dirname, "../node_modules/.bin/rollup"), [ "-c", path.join(__dirname, "../rollup.nrdp.js") ]);
+    const test = execFile(path.join(__dirname, "../node_modules/.bin/rollup"), [ "-c", path.join(__dirname, "../rollup.nrdp.test.js") ]);
+    return Promise.all([ nrdp, test ]);
 });
 
 const node = execFile(path.join(__dirname, "../node_modules/.bin/tsc"), [ "--pretty", "-p", path.join(__dirname, "../tsconfig.node.json") ]).then(() => {
     return execFile(path.join(__dirname, "../node_modules/.bin/rollup"), [ "-c", path.join(__dirname, "../rollup.node.js") ]);
 });
 
-Promise.all([ nrdp, node ]).then(() => {
-    return execFile("node", [ path.join(__dirname, "lint.js") ]);
-}).catch((error) => {
+
+Promise.all([ nrdp, node ]).catch((error) => {
     console.error("BUILD FAILURE", error.toString());
     process.exit(1);
 });
