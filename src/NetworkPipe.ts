@@ -8,6 +8,7 @@ function assert(platform: IPlatform, condition: any, msg: string): asserts condi
     platform.assert(condition, msg);
 }
 
+let pipeId = 0;
 export abstract class NetworkPipe extends EventEmitter {
     protected platform: IPlatform;
     private buffer?: IDataBuffer;
@@ -15,6 +16,10 @@ export abstract class NetworkPipe extends EventEmitter {
     constructor(platform: IPlatform) {
         super();
         this.idle = false;
+        if (++pipeId === 2147483647) {
+            pipeId = 1;
+        }
+        this.id = pipeId;
         this.platform = platform;
         this.forbidReuse = false;
     }
@@ -22,6 +27,8 @@ export abstract class NetworkPipe extends EventEmitter {
     // concrete properties
     idle: boolean;
     forbidReuse: boolean;
+
+    readonly id: number;
 
     // abstract properties
     abstract bytesRead: number;
