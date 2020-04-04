@@ -18,6 +18,8 @@ import IRequestData from "../IRequestData";
 import { IpVersion, HTTPRequestHeaders, IpConnectivityMode } from "../types";
 import { toUint8Array } from "./utils";
 
+type ArrayBufferConcatType = Uint8Array | IDataBuffer | ArrayBuffer;
+
 function toBuffer(buf: Uint8Array | ArrayBuffer | string) {
     // @ts-ignore
     return Buffer.from(buf);
@@ -169,6 +171,35 @@ class NodePlatform implements IPlatform {
 
         // @ts-ignore
         return String.fromCharCode.apply(null, buf);
+    }
+
+    arrayBufferConcat(...buffers: ArrayBufferConcatType[]): ArrayBuffer {
+        let len = 0;
+        for (const b of buffers) {
+            len += b.byteLength;
+        }
+        const ret = Buffer.allocUnsafe(len);
+        let idx = 0;
+        for (const b of buffers) {
+            let buf: Buffer;
+            let offset = 0;
+            let bufferLen;
+            if (b instanceof DataBuffer) {
+                buf = (b as DataBuffer).buffer;
+                offset = (b as DataBuffer).byteOffset;
+                bufferLen = (b as DataBuffer).byteLength;
+            } else if (b instanceof Uint8Array) {
+                buf = Buffer.from(b as Uint8Array);
+                bufferLen = buf.byteLength;
+            } else {
+                buf = Buffer.from(b as ArrayBuffer);
+                bufferLen = buf.byteLength;
+            }
+            buf.copy(ret, idx, offset, bufferLen);
+            idx += bufferLen;
+        }
+
+        return ret.buffer;
     }
 
     randomBytes(len: number): Uint8Array {

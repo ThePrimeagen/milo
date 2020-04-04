@@ -17,11 +17,13 @@ import { IpConnectivityMode } from "../types";
 
 type NrdpGibbonLoadCallbackSignature = (response: RequestResponse) => void;
 type NrdpGibbonLoadSignature = (data: IRequestData | string, callback: NrdpGibbonLoadCallbackSignature) => number;
+type ArrayBufferConcatType = Uint8Array | IDataBuffer | ArrayBuffer;
 export class NrdpPlatform implements IPlatform {
     constructor() {
         this.scratch = new DataBuffer(16 * 1024);
         this.ssl = new NrdpSSL(this);
         this.realLoad = nrdp.gibbon.load;
+        this.polyfillAll = false;
         const sdkVersion = nrdp.device.SDKVersion;
 
         this.userAgent = `Gibbon/${sdkVersion.versionString}/${sdkVersion.versionString}: Netflix/${sdkVersion.versionString} (DEVTYPE=${nrdp.device.ESNPrefix}; CERTVER=${nrdp.device.certificationVersion})`;
@@ -101,13 +103,17 @@ export class NrdpPlatform implements IPlatform {
     }
 
     mono = nrdp.mono;
-    assert = (cond: any, message: string) => { /* */ }; // nrdp.assert;
+    assert = nrdp.assert;
     btoa = nrdp.btoa;
     atob = nrdp.atob;
     atoutf8 = nrdp.atoutf8;
     utf8toa = nrdp.utf8toa;
     randomBytes = nrdp_platform.random;
     stacktrace = nrdp.stacktrace;
+    arrayBufferConcat(...buffers: ArrayBufferConcatType[]): ArrayBuffer {
+        // @ts-ignore
+        return ArrayBuffer.concat(...buffers);
+    }
 
     utf8Length = nrdp_platform.utf8Length;
 
@@ -117,7 +123,7 @@ export class NrdpPlatform implements IPlatform {
             this.error(`Failed to open ${fileName} for writing`, N.errno, N.strerror());
             return false;
         }
-        const len = typeof contents === "string" ? this.utf8Length(contents) : contents.byteLength;
+        const len = typeof contents === "string" ? nrdp_platform.utf8Length(contents) : contents.byteLength;
         const w = N.write(fd, contents);
         N.close(fd);
         if (w !== len) {
@@ -165,19 +171,28 @@ export class NrdpPlatform implements IPlatform {
 
     polyfillGibbonLoad(mode: "all" | "optin", polyfill: NrdpGibbonLoadSignature): void {
         this.log("POLYFILLING", mode);
-        if (mode === "optin") {
-            this.miloLoad = polyfill;
-            nrdp.gibbon.load = this.polyfilledGibbonLoad.bind(this);
-        } else {
-            nrdp.gibbon.load = polyfill;
-        }
+        this.polyfillAll = mode === "all";
+        this.miloLoad = polyfill;
+        nrdp.gibbon.load = this.polyfilledGibbonLoad.bind(this);
     }
 
     private polyfilledGibbonLoad(data: IRequestData | string,
                                  callback: NrdpGibbonLoadCallbackSignature): number {
-        this.log("got load", data);
-        if (typeof data === "string" || !data.milo || !this.miloLoad)
+        if (typeof data === "string") {
+            data = { url: data };
+        }
+        const realData: IRequestData = data;
+        if ((!this.polyfillAll && !realData.milo)
+            || !this.miloLoad
+            || data.url.lastIndexOf("http://localcontrol.netflix.com/", 0) === 0
+            || data.url.lastIndexOf("file://", 0) === 0
+            || data.url.lastIndexOf("data:", 0) === 0) {
+            // this.log("got req", realData.url, typeof realData.body);
+            // return this.realLoad(data, (response: RequestResponse) => {
+            //     callback(response);
+            // });
             return this.realLoad(data, callback);
+        }
         return this.miloLoad(data, callback);
     }
 
@@ -186,6 +201,7 @@ export class NrdpPlatform implements IPlatform {
     private cachedLocation?: string;
     private realLoad: NrdpGibbonLoadSignature;
     private miloLoad?: NrdpGibbonLoadSignature;
+    private polyfillAll: boolean;
     private userAgent: string;
 };
 

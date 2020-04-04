@@ -17,6 +17,9 @@ declare namespace nrdp {
         let ipConnectivityMode: "4" | "6" | "dual" | "invalid";
         let tlsv13SmallAssetsEnabled: boolean;
         let tlsv13StreamingEnabled: boolean;
+        const SDKVersion: { [key: string]: any };
+        const ESNPrefix: string;
+        const certificationVersion: number;
     }
 
     namespace gibbon {

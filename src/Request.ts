@@ -1,18 +1,18 @@
 import DataBuffer from "./DataBuffer";
 import HTTP1 from "./HTTP1/HTTP1";
+import IConnectionOptions from "./IConnectionOptions";
 import IDataBuffer from "./IDataBuffer";
 import IHTTP from "./IHTTP";
 import IHTTPHeadersEvent from "./IHTTPHeadersEvent";
+import IPendingConnection from "./IPendingConnection";
 import IRequestData from "./IRequestData";
 import NetworkPipe from "./NetworkPipe";
 import Platform from "./Platform";
 import RequestResponse from "./RequestResponse";
 import Url from "url-parse";
 import connectionPool from "./ConnectionPool";
-import { HTTPTransferEncoding } from "./types";
+import { HTTPTransferEncoding, NetError } from "./types";
 import { assert } from "./utils";
-import IPendingConnection from "./IPendingConnection";
-import IConnectionOptions from "./IConnectionOptions";
 
 let nextId = 0;
 
@@ -52,13 +52,14 @@ export default class Request {
     private responseDataLength: number;
     private transferEncoding: HTTPTransferEncoding;
     private http: IHTTP;
+    private _onTimeoutTimer?: any;
+    private transactionStartTime?: number;
 
-    constructor(data: IRequestData | string) {
-        if (typeof data === "string") {
-            data = { url: data };
-        }
+    constructor(data: IRequestData) {
+        this.requestData = data;
         this.id = ++nextId;
-        this.requestResponse = new RequestResponse(this.id, data.url);
+        this.requestResponse = new RequestResponse(this.id, this.requestData.url);
+        this.requestResponse.reason = NetError.SUCCESS;
         this.transferEncoding = 0;
         this.responseDataLength = 0;
 
@@ -67,23 +68,23 @@ export default class Request {
         this.http.on("data", this._onData.bind(this));
         this.http.on("error", this._onError.bind(this));
         this.http.on("finished", () => {
-            this._transition(RequestState.Finished);
+            if (this.state !== RequestState.Finished)
+                this._transition(RequestState.Finished);
         });
 
-        if (!data.timeouts) {
-            data.timeouts = Platform.defaultRequestTimeouts;
+        if (!this.requestData.timeouts) {
+            this.requestData.timeouts = Platform.defaultRequestTimeouts;
         }
 
-        if (!data.method) {
-            data.method = data.body ? "POST" : "GET";
+        if (!this.requestData.method) {
+            this.requestData.method = this.requestData.body ? "POST" : "GET";
         }
 
-        data.http2 = data.http2 || false;
-        if (data.http2) {
+        this.requestData.http2 = this.requestData.http2 || false;
+        if (this.requestData.http2) {
             throw new Error("http2 not implemented yet");
         }
 
-        this.requestData = data;
 
         this.url = new Url(this.requestData.url, this.requestData.baseUrl || Platform.location);
         this.state = RequestState.Initial;
@@ -97,6 +98,8 @@ export default class Request {
             throw new Error("Bad state transition");
         }
 
+        // Platform.log(`${this.url} SENT`);
+
         // Platform.trace("Request#send");
         const ret = new Promise<RequestResponse>((resolve, reject) => {
             // Platform.trace("Request#send return promise");
@@ -107,6 +110,9 @@ export default class Request {
         // Platform.trace("Request#send creating TCP pipe");
         assert(this.requestData.timeouts, "must have timeouts by now");
         const timeouts = this.requestData.timeouts;
+        if (timeouts && timeouts.timeout && timeouts.timeout > 0) {
+            this._onTimeoutTimer = setTimeout(this._onTimeout.bind(this), timeouts.timeout);
+        }
 
         const connectionOpts = {
             url: this.url,
@@ -124,6 +130,8 @@ export default class Request {
             pendingConnection = conn;
             return conn.onNetworkPipe();
         }).then((pipe: NetworkPipe) => {
+            Platform.log(`actually got the connection ${pipe.socket} ${this.url}`);
+            this.transactionStartTime = Platform.mono();
             this.networkPipe = pipe;
             this.requestResponse.socket = pipe.socket;
             this.requestResponse.cname = pendingConnection.cname;
@@ -138,7 +146,6 @@ export default class Request {
                 this.requestResponse.sslSessionResumed = pendingConnection.sslSessionResumed;
                 this.requestResponse.sslHandshakeTime = pendingConnection.sslHandshakeTime;
             }
-
             this._transition(RequestState.Connected);
         }).catch((err: Error) => {
             Platform.error("got an error", err);
@@ -151,6 +158,7 @@ export default class Request {
 
     private _transition(state: RequestState): void {
         Platform.trace("transition", requestStateToString(this.state), "to", requestStateToString(state));
+        assert(this.state !== state, `Shouldn't transition to the same state ${requestStateToString(state)}`);
         this.state = state;
 
         switch (state) {
@@ -181,7 +189,7 @@ export default class Request {
                 if (cacheControl) {
                     const split = cacheControl.split(',');
                     for (const val of split) {
-                        if (val.lastIndexOf("key=", 0)) {
+                        if (val.lastIndexOf("key=", 0) === 0) {
                             cacheKey = Platform.atoutf8(val.substr(4));
                         } else {
                             // ### handle other cache controls
@@ -245,36 +253,35 @@ export default class Request {
         case RequestState.Error:
             break;
         case RequestState.Finished:
+            assert(this.transactionStartTime, "Gotta have a transactionStartTime");
             assert(this.requestResponse, "Gotta have a requestResponse");
             assert(this.requestResponse.networkStartTime, "Gotta have a requestResponse.networkStartTime");
-            this.requestResponse.duration = Platform.mono() - this.requestResponse.networkStartTime;
+
+            if (this._onTimeoutTimer) {
+                clearTimeout(this._onTimeoutTimer);
+                this._onTimeoutTimer = undefined;
+            }
+
+            const now = Platform.mono();
+            this.requestResponse.duration = now - this.requestResponse.networkStartTime;
+            this.requestResponse.transactionTime = now - this.transactionStartTime;
             this.requestResponse.size = this.responseDataLength;
             this.requestResponse.state = "network";
             assert(this.networkPipe, "must have networkPipe");
+            Platform.log(`We're finished ${this.networkPipe.socket} ${this.url} ${this.requestResponse.statusCode}`);
             this.requestResponse.bytesRead = this.networkPipe.bytesRead;
             if (this.requestData.format !== "none") {
-                let responseDataBuffer: IDataBuffer;
-                if (this.responseDataArray) {
-                    // Platform.trace("GOT HERE 1", this.responseDataArray);
-                    responseDataBuffer = DataBuffer.concat(this.responseDataArray);
-                } else if (this.responseData) {
-                    // Platform.trace("GOT HERE 2", this.responseData);
-                    responseDataBuffer = this.responseData;
-                } else {
-                    responseDataBuffer = new DataBuffer(0);
-                }
-
                 let handled = false;
                 switch (this.requestData.format) {
                 case "xml":
-                    const xml = Platform.parseXML(responseDataBuffer);
+                    const xml = Platform.parseXML(this.responseDataToDataBuffer());
                     if (xml) {
                         handled = true;
                         this.requestResponse.xml = xml;
                     }
                     break;
                 case "json":
-                    const json = Platform.parseJSON(responseDataBuffer);
+                    const json = Platform.parseJSON(this.responseDataToDataBuffer());
                     if (!json) {
                         this.requestResponse.jsonError = true;
                     } else {
@@ -283,7 +290,7 @@ export default class Request {
                     }
                     break;
                 case "jsonstream":
-                    const jsonstream = Platform.parseJSONStream(responseDataBuffer);
+                    const jsonstream = Platform.parseJSONStream(this.responseDataToDataBuffer());
                     if (!jsonstream) {
                         this.requestResponse.jsonError = true;
                     } else {
@@ -292,30 +299,32 @@ export default class Request {
                     }
                     break;
                 case "arraybuffer":
-                    this.requestResponse.data = responseDataBuffer.toArrayBuffer();
+                    this.requestResponse.data = this.responseDataToArrayBuffer();
                     handled = true;
                     break;
                 case "uint8array":
-                    this.requestResponse.data = new Uint8Array(responseDataBuffer.toArrayBuffer());
+                    this.requestResponse.data = new Uint8Array(this.responseDataToArrayBuffer());
                     handled = true;
                     break;
                 case "databuffer":
-                    this.requestResponse.data = responseDataBuffer;
+                    this.requestResponse.data = this.responseDataToDataBuffer();
                     handled = true;
                     break;
                 default:
                     break;
                 }
                 if (!handled) {
-                    this.requestResponse.data = responseDataBuffer.toString();
+                    this.requestResponse.data = this.responseDataToDataBuffer().toString();
                 }
             }
+
             assert(this.resolve, "Must have resolve");
             this.resolve(this.requestResponse);
             assert(this.networkPipe, "must have networkpipe");
-            Platform.trace("got to finished, pipe is closed?", this.networkPipe.closed);
+            Platform.log("got to finished, pipe is closed?", this.networkPipe.closed, this.requestData.format);
+            // this.requestResponse.json);
             this.networkPipe.removeEventHandlers();
-            if (!this.http.upgrade) {
+            if (!this.http.upgrade || this.networkPipe.closed) {
                 connectionPool.finish(this.networkPipe);
                 this.networkPipe = undefined;
             }
@@ -380,11 +389,52 @@ export default class Request {
         } // else format === "none"
     }
 
+    private _onTimeout(): void {
+        assert(this.state !== RequestState.Finished, "We can't be finished");
+        const now = Platform.mono();
+        assert(this.requestResponse, "Gotta have a requestResponse");
+        assert(this.requestResponse.networkStartTime, "Gotta have a requestResponse.networkStartTime");
+        this._onError(new Error(`Request timed out after ${now - this.requestResponse.networkStartTime}ms`));
+    }
+
     private _onError(error: Error) {
         Platform.error("got error", error);
         assert(this.reject, "Must have reject");
         if (this.networkPipe)
             this.networkPipe.close();
+        if (this._onTimeoutTimer) {
+            clearTimeout(this._onTimeoutTimer);
+            this._onTimeoutTimer = undefined;
+        }
+
         this.reject(error);
     }
+
+    private responseDataToDataBuffer(): IDataBuffer {
+        // let responseDataBuffer: IDataBuffer;
+        if (this.responseDataArray) {
+            // Platform.trace("GOT HERE 1", this.responseDataArray);
+            return DataBuffer.concat(this.responseDataArray);
+        } else if (this.responseData) {
+            // Platform.trace("GOT HERE 2", this.responseData);
+            return this.responseData;
+        } else {
+            return new DataBuffer(0);
+        }
+    }
+
+    private responseDataToArrayBuffer(): ArrayBuffer {
+        // let responseDataBuffer: IDataBuffer;
+        if (this.responseDataArray) {
+            // Platform.trace("GOT HERE 1", this.responseDataArray);
+            return Platform.arrayBufferConcat.apply(Platform, this.responseDataArray);
+        } else if (this.responseData) {
+            // Platform.trace("GOT HERE 2", this.responseData);
+            return this.responseData.toArrayBuffer();
+        } else {
+            return new ArrayBuffer(0);
+        }
+    }
+
+
 }

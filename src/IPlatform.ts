@@ -9,6 +9,8 @@ import ISHA256Context from "./ISHA256Context";
 import RequestResponse from "./RequestResponse";
 import { IpConnectivityMode, IpVersion, } from "./types";
 
+type ArrayBufferConcatType = Uint8Array | IDataBuffer | ArrayBuffer;
+
 export default interface IPlatform {
     // return number of octets
     utf8Length(str: string): number;
@@ -28,6 +30,7 @@ export default interface IPlatform {
     // uint8array to string
     utf8toa(input: IDataBuffer | Uint8Array | ArrayBuffer | string, offset?: number, length?: number): string;
 
+    arrayBufferConcat(...buffers: ArrayBufferConcatType[]): ArrayBuffer;
     randomBytes(len: number): Uint8Array
 
     writeFile(fileName: string, contents: Uint8Array | ArrayBuffer | IDataBuffer | string): boolean;

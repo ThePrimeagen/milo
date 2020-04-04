@@ -163,25 +163,26 @@ export class ConnectionPool {
             return;
         }
 
-        // ###
-        // assert(!pipe.listenerCount("data"), "Shouldn't have data callbacks anymore");
-        // assert(!pipe.listenerCount("close"), "Shouldn't have close callbacks anymore");
-        // assert(!pipe.listenerCount("error"), "Shouldn't have error callbacks anymore");
+        assert(!pipe.listenerCount("data"), "Shouldn't have data callbacks anymore");
+        assert(!pipe.listenerCount("close"), "Shouldn't have close callbacks anymore");
+        assert(!pipe.listenerCount("error"), "Shouldn't have error callbacks anymore");
         const hostPort = `${pipe.hostname}:${pipe.port}`;
-        let data = this._hosts.get(hostPort);
-        if (!data) { // can this happen?
-            data = { pipes: [], initializing: 0, pending: [], ssl: pipe.ssl, hostPort };
-            this._hosts.set(hostPort, data);
-        }
+        const data = this._hosts.get(hostPort);
+        assert(data, "Must have data");
 
         if (pipe.closed) {
             const idx = data.pipes.indexOf(pipe);
             assert(idx !== -1, "where the pipe?");
+            if (data.pipes.length === 1 && !data.pending.length && !data.initializing) {
+                // Platform.log("deleting the whole thing", data);
+                this._hosts.delete(hostPort);
+                return;
+            }
             data.pipes.splice(idx, 1);
         } else {
             pipe.idle = true;
             pipe.clearStats();
-            data.pipes.push(pipe);
+            assert(data.pipes.indexOf(pipe) !== -1, "It should be in here");
         }
         this.processHost(data);
     }

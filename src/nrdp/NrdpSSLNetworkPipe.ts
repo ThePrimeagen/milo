@@ -1,3 +1,5 @@
+import DataBuffer from "../DataBuffer";
+import IConnectionDataSSL from "../IConnectionDataSSL";
 import ICreateSSLNetworkPipeOptions from "../ICreateSSLNetworkPipeOptions";
 import IDataBuffer from "../IDataBuffer";
 import IPipeResult from "../IPipeResult";
@@ -5,7 +7,6 @@ import IPlatform from "../IPlatform";
 import N = nrdsocket;
 import NetworkPipe from "../NetworkPipe";
 import { NrdpPlatform } from "./Platform";
-import IConnectionDataSSL from "../IConnectionDataSSL";
 // ### could probably just import Platform as well as NrdpPlatform here
 
 // have to redeclare assert since NrdpPlatform doesn't declare assert as asserting
@@ -71,41 +72,9 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
         this.outputBio = bio;
 
         platform.ssl.g.BIO_ctrl(this.outputBio, platform.ssl.g.BIO_C_SET_BUF_MEM_EOF_RETURN, -1, undefined);
-        this.pipe.on("data", () => {
-            while (true) {
-                const read = this.pipe.read(platform.scratch, 0, platform.scratch.byteLength);
-                if (read === -1) {
-                    assert(platform,
-                           N.errno === N.EWOULDBLOCK || N.errno === N.EAGAIN || this.pipe.closed,
-                           "Should be closed already");
-                    return;
-                }
-
-                if (read === 0) {
-                    assert(platform, this.pipe.closed, "Should be closed already");
-                    return;
-                }
-                platform.trace("got data", read);
-                const written = platform.ssl.g.BIO_write(this.inputBio, platform.scratch, 0, read);
-                platform.trace("wrote", read, "bytes to inputBio =>", written);
-                if (!this.connected) {
-                    this._connect();
-                }
-                if (this.connected) {
-                    const pending = platform.ssl.g.BIO_ctrl_pending(this.inputBio);
-                    if (pending) {
-                        this.emit("data");
-                    }
-                }
-            }
-        });
-        this.pipe.on("close", () => {
-            this.emit("close");
-        });
-        this.pipe.on("error", (error: Error) => {
-            platform.error("got error", error);
-            this._error(error);
-        });
+        this.pipe.on("data", this._onData.bind(this));
+        this.pipe.on("close", this.emit.bind(this, "close"));
+        this.pipe.on("error", this._error.bind(this));
 
         platform.ssl.g.SSL_set_bio(this.sslInstance, this.inputBio, this.outputBio);
         this.connectStartTime = this.platform.mono();
@@ -135,7 +104,8 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
         const platform: NrdpPlatform = this.platform as NrdpPlatform;
 
         if (typeof buf === 'string') {
-            length = platform.utf8Length(buf);
+            buf = new DataBuffer(buf);
+            length = buf.byteLength;
         } else if (length === undefined) {
             length = buf.byteLength;
         }
@@ -160,6 +130,11 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
             this.writeBufferOffsets.push(offset || 0);
             this.writeBufferLengths.push(length);
         } else {
+            if (written < length) {
+                this.writeBuffers.push(buf);
+                this.writeBufferOffsets.push((offset || 0) + written);
+                this.writeBufferLengths.push(length - written);
+            }
             this._flushOutputBio();
         }
     }
@@ -197,6 +172,7 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
                 platform.error("got error syscall");
                 break;
             case platform.ssl.g.SSL_ERROR_ZERO_RETURN:
+                // this shouldn't really close the tcp socket
                 this.close();
                 platform.trace("got error zero return");
                 break;
@@ -274,6 +250,37 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
             } as IConnectionDataSSL;
             this.connectedCallback(undefined, data);
             this.connectedCallback = undefined;
+        }
+    }
+
+    private _onData() {
+        const platform = this.platform as NrdpPlatform;
+        while (!this.pipe.closed) {
+            const read = this.pipe.read(platform.scratch, 0, platform.scratch.byteLength);
+            // platform.log("read return", read, this.pipe.socket);
+            if (read === -1) {
+                assert(platform,
+                       N.errno === N.EWOULDBLOCK || N.errno === N.EAGAIN || this.pipe.closed,
+                       "Should be closed already");
+                return;
+            }
+
+            if (read === 0) {
+                assert(platform, this.pipe.closed, "Should be closed already");
+                return;
+            }
+            platform.trace("got data", read);
+            const written = platform.ssl.g.BIO_write(this.inputBio, platform.scratch, 0, read);
+            platform.trace("wrote", read, "bytes to inputBio =>", written);
+            if (!this.connected) {
+                this._connect();
+            }
+            if (this.connected) {
+                const pending = platform.ssl.g.BIO_ctrl_pending(this.inputBio);
+                if (pending) {
+                    this.emit("data");
+                }
+            }
         }
     }
 

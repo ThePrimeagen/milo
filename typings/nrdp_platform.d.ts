@@ -1,5 +1,10 @@
 declare namespace nrdp_platform {
     type IDataBuffer = import("../src/IDataBuffer").default;
+    type ArrayBufferConcatType = Uint8Array | IDataBuffer | ArrayBuffer;
+
+    function utf8Length(str: string): number;
+    function arrayBufferConcat(...buffers: ArrayBufferConcatType[]): ArrayBuffer;
+
     function random(length: number): Uint8Array;
     class Hasher {
         constructor(type: "sha1" | "sha256" | "sha512" | "md5");
@@ -13,6 +18,5 @@ declare namespace nrdp_platform {
         function parse(data: string | IDataBuffer): any[] | undefined;
     }
 
-    function utf8Length(str: string): number;
     function parseXML(data: string | IDataBuffer): any;
 }

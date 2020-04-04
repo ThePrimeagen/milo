@@ -30,3 +30,38 @@ export enum RequestResponseDnsType {
     DNS_CacheHit = 4,
     DNS_Preresolved = 5
 };
+
+export enum NetError {
+    // Should be in sync with NetErrorInternal.h
+    SUCCESS = 0,
+    NO_IP_ADDRESS = 1,
+    CONNECTIVITY_ERROR = 2,
+    NAMERESOLVEERROR = 3,
+    SSLERROR = 4,
+    CRLOCSPERROR = 5,
+    HTTP_ERROR = 6,
+    DNS_CHECK = 7,
+    UNKNOWN_ERROR = 8,
+    NOTSECUREERROR = 1,
+    FILEACCESSERROR = 2,
+    DATAURIERROR = 3,
+    CONNECT_ERROR = 4,
+    TIMEOUTERROR = 5,
+    DNS_ERROR = 6,
+    SSLHANDSHAKEERROR = 7,
+    SSLCACERTERROR = 8,
+    SSLCACERTFILEERROR = 9,
+    CERTSTATUSSSLERROR = 10,
+    CERTSTATUSREVOKED = 11,
+    CERTSTATUSPEWREVOKED = 12,
+    SENDERROR = 13,
+    RECVERROR = 14,
+    COMPRESSIONERROR = 15,
+    NO_DNS_SERVER = 16,
+    NETWORKERROR = 17,
+    SECURITYERROR = 18,
+    INVALIDHASH_ERROR = 20,
+    ABORTED = 21,
+    INVALID_PLATFORMHASH_ERROR = 22,
+    SSLGENERICERROR = 23
+}
