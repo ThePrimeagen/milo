@@ -132,7 +132,7 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
         assert(this.platform, this.writeBuffers.length === this.writeBufferLengths.length,
                `writeBuffers and writeBufferLengths have the same length ${this.writeBuffers.length} vs ${this.writeBufferLengths}.length`);
         while (this.writeBuffers.length) {
-            assert(this.platform, this.writeBufferOffsets[0] < this.writeBufferLengths[0], "Nothing to write");
+            assert(this.platform, this.writeBufferLengths[0] > 0, "Nothing to write");
             const written = N.write(this.sock, this.writeBuffers[0],
                                     this.writeBufferOffsets[0], this.writeBufferLengths[0]);
             this.platform.trace("wrote", written, "of", this.writeBufferLengths[0], "for", this.sock);
