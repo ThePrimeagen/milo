@@ -6,4 +6,6 @@
 - http pipelining
 - enforce http connection management
 - transfer-encoding/transport-encoding inflate,gzip etc
-- resource request format none
+- handle other X-Gibbon-Cache-Control stuff than key=
+- don't make a databuffer when output format is arraybuffer/uint8array and data is in chunks
+- consider sockets surviving scriptengine restart or not?
