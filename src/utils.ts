@@ -28,4 +28,3 @@ export function escapeData(data: Uint8Array | ArrayBuffer | IDataBuffer | string
     }
     return data.replace(/\r/g, "\\r").replace(/\n/g, "\\n\n");
 }
-
