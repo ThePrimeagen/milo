@@ -13,7 +13,7 @@ declare namespace nrdsocket {
     class BIO {
         flags: number;
 
-        onctrl: (cmd: number, num: number, ptr: undefined | DataPointer) => number;
+        onctrl: (cmd: number, num: number, ptr?: DataPointer) => number;
 
         onread: (bufferSize: number) => number; // this is called when the buffer wants to read, e.g. you need to call writeData in the callback
         onwrite: (bufferSize: number) => number; // this is called when the buffer wants to write, e.g. you need to call readData in the callback
@@ -107,7 +107,7 @@ declare namespace nrdsocket {
     type FDCallback = (fd: number, mode: number) => void;
 
     // functions
-    function setFD(fd: number, mode: number, callback: FDCallback | undefined): void;
+    function setFD(fd: number, mode: number, callback?: FDCallback): void;
     function clearFD(fd: number): void;
     function clearFDs(): void;
 
@@ -414,36 +414,42 @@ declare namespace nrdsocket {
     const SO_TYPE: number;
     const SO_WIFI_STATUS: number;
 
-
     // functions
     function bindFunction<T>(signature: string, options?: BindFunctionOptions): T;
     function unbindFunction(signature: string): boolean;
 
-    function accept(sockfd: number, addr: Sockaddr | undefined): number;
+    function accept(sockfd: number, addr?: Sockaddr): number;
     function bind(sockfd: number, addr: Sockaddr): number;
     function close(fd: number): number;
     function connect(sockfd: number, addr: Sockaddr, hostname?: string): number;
-    function fcntl(fd: number, cmd: number, arg?: ConstBuffer | number | boolean | undefined): number;
-    function getsockopt(fd: number, level: number, optname: number, optval: Buffer | undefined,
+    function fcntl(fd: number, cmd: number, arg?: ConstBuffer | number | boolean): number;
+    function getsockopt(fd: number, level: number, optname: number, optval?: Buffer,
                         optvalOffset?: number, optvalLength?: number): number;
     function listen(sockfd: number, backlog: number): number;
     function open(pathname: ConstBuffer, flags: number, mode: number): number;
     function read(fd: number, buf: Buffer, bufOffset?: number, bufLength?: number): number;
-    function recv(sockfd: number, buf: Buffer, bufOffset: number, bufLength: number, flags: number): number;
-    function recvfrom(sockfd: number, buf: Buffer, bufOffset: number, bufLength: number, flags: number, addr: Sockaddr | undefined): number;
+    function recv(sockfd: number, buf: Buffer, bufOffset: number, bufLength: number,
+                  flags: number): number;
+    function recvfrom(sockfd: number, buf: Buffer, bufOffset: number, bufLength: number,
+                      flags: number, addr?: Sockaddr): number;
     function recvmsg(sockfd: number, msg: MsgHdr, flags: number): number;
-    function send(sockfd: number, buf: ConstBuffer, bufOffset: number, bufLength: number, flags: number): number;
+    function send(sockfd: number, buf: ConstBuffer, bufOffset: number, bufLength: number,
+                  flags: number): number;
     function sendmsg(sockfd: number, msg: ConstMsgHdr, flags: number): number;
-    function sendto(sockfd: number, buf: ConstBuffer, bufOffset: number, bufLength: number, flags: number, addr: Sockaddr): number;
-    function setsockopt(fd: number, level: number, optname: number, optval: ConstBuffer | undefined, optvalOffset?: number, optvalLength?: number): number;
+    function sendto(sockfd: number, buf: ConstBuffer, bufOffset: number, bufLength: number,
+                    flags: number, addr: Sockaddr): number;
+    function setsockopt(fd: number, level: number, optname: number, optval?: ConstBuffer,
+                        optvalOffset?: number, optvalLength?: number): number;
     function socket(domain: number, type: number, protocol: number): number;
     function unlink(pathname: ConstBuffer): number;
     function write(fd: number, buf: ConstBuffer, bufOffset?: number, bufLength?: number): number;
 
     interface SSLCallbackData {
+        /* tslint:disable:ban-types */
         callback: Function;
         functionPointer: DataPointer;
     }
+    /* tslint:disable:ban-types */
     function setSSLCallback(name: string, callback?: Function): DataPointer;
     function allSSLCallbacks(): { [key: string]: SSLCallbackData | undefined };
 }
