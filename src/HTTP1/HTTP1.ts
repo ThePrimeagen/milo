@@ -1,4 +1,5 @@
 import ChunkyParser from "./ChunkyParser";
+import DataBuffer from "../DataBuffer";
 import EventEmitter from "../EventEmitter";
 import IDataBuffer from "../IDataBuffer";
 import IHTTP from "../IHTTP";
@@ -40,13 +41,13 @@ Host: ${request.url.host}\r\n`;
         const standardHeaders = Platform.standardHeaders;
         for (const key in standardHeaders) {
             if (Platform.standardHeaders.hasOwnProperty(key) && !(key in request.requestHeaders)) {
-                let value = standardHeaders[key];
-                if (typeof value === "object") {
-                    value = JSON.stringify(value);
-                }
+                const value: string = standardHeaders[key];
                 str += `${key}: ${value}\r\n`;
             }
         }
+        const hasBody = typeof request.body !== "undefined";
+        let hasContentLength = false;
+        let hasContentType = false;
         for (const key in request.requestHeaders) {
             if (request.requestHeaders.hasOwnProperty(key)) {
                 let value = request.requestHeaders[key];
@@ -54,18 +55,68 @@ Host: ${request.url.host}\r\n`;
                     value = JSON.stringify(value);
                 }
                 str += `${key}: ${value}\r\n`;
+                if (hasBody) {
+                    if (!hasContentLength) {
+                        hasContentLength = (key === "Content-Length" || (key.length === 14 && key.toLowerCase() === "content-length"));
+                    }
+                    if (!hasContentType) {
+                        hasContentType = (key === "Content-Type" || (key.length === 12 && key.toLowerCase() === "content-type"));
+                    }
+                }
             }
         }
-        str += "\r\n";
-        this.networkPipe.write(str);
+        if (hasBody) {
+            if (!hasContentType) {
+                str += "Content-Type: application/octet-stream\r\n";
+            }
+            switch (typeof request.body) {
+            case "string":
+                if (!hasContentLength) {
+                    str += `Content-Length: ${Platform.utf8Length(request.body)}\r\n\r\n`;
+                } else {
+                    str += "\r\n";
+                }
+                this.networkPipe.write(str);
+                this.networkPipe.write(request.body);
+                break;
+            case "number":
+            case "boolean":
+                const body = JSON.stringify(request.body);
+                if (!hasContentLength) {
+                    str += `Content-Length: ${body.length}\r\n\r\n`;
+                } else {
+                    str += "\r\n";
+                }
+                this.networkPipe.write(str);
+                this.networkPipe.write(body);
+                break;
+            case "object":
+                if (request.body instanceof DataBuffer
+                    || request.body instanceof Uint8Array
+                    || request.body instanceof ArrayBuffer) {
+                    if (!hasContentLength) {
+                        str += `Content-Length: ${request.body.byteLength}\r\n\r\n`;
+                    } else {
+                        str += "\r\n";
+                    }
+                    this.networkPipe.write(str);
+                    this.networkPipe.write(request.body, 0, request.body.byteLength);
+                } else {
+                    const json = JSON.stringify(request.body);
+                    if (!hasContentLength) {
+                        str += `Content-Length: ${Platform.utf8Length(json)}\r\n\r\n`;
+                    } else {
+                        str += "\r\n";
+                    }
 
-        switch (typeof request.body) {
-        case "string":
-            this.networkPipe.write(request.body);
-            break;
-        case "object":
-            this.networkPipe.write(request.body, 0, request.body.byteLength);
-            break;
+                    this.networkPipe.write(str);
+                    this.networkPipe.write(json);
+                }
+                break;
+            }
+        } else {
+            str += "\r\n";
+            this.networkPipe.write(str);
         }
 
         // BRB, Upping my bits above 3000...
