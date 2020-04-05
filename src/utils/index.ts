@@ -1,5 +1,5 @@
-import Platform from "./Platform";
-import IDataBuffer from "./IDataBuffer";
+import Platform from "../Platform";
+import IDataBuffer from "../IDataBuffer";
 
 export function headerValue(headers: string[], header: string): string {
     const lower = header.toLowerCase() + ": ";
@@ -9,12 +9,6 @@ export function headerValue(headers: string[], header: string): string {
         }
     }
     return "";
-}
-
-export function assert(condition: any, msg: string): asserts condition {
-    if (!condition) {
-        Platform.assert(condition, msg);
-    }
 }
 
 export function escapeData(data: Uint8Array | ArrayBuffer | IDataBuffer | string,
