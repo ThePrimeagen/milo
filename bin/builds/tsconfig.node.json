@@ -1,0 +1,17 @@
+{
+    "extends": "../../tsconfig.json",
+    "exclude": [
+        "../../examples",
+        "../../autobahn",
+        "../../src/nrdp",
+        "../../src/**/__tests__",
+        "../../src/**/__Disabled_tests__",
+    ],
+    "compilerOptions": {
+        "incremental": true,
+        "outDir": "../../build/node",
+        "lib": ["es6"],
+        "module": "es6",
+        "target": "es6"
+    }
+}
