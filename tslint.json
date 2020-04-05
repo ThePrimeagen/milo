@@ -3,7 +3,9 @@
     "rulesDirectory": [],
     "linterOptions": {
       "exclude": [
-          "**/runner.ts"
+          "**/runner.ts",
+          "**/dist/**",
+          "**/build/**"
       ]
     },
     "rules": {
