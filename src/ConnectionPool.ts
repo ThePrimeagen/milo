@@ -8,7 +8,7 @@ import NetworkPipe from "./NetworkPipe";
 import Platform from "./Platform";
 import UnorderedMap from "./UnorderedMap";
 import { DnsType } from "./types";
-import { assert } from "./utils";
+import assert from "./utils/assert.macro";
 
 class PendingConnectionImpl implements IPendingConnection {
     private pool: ConnectionPool;
@@ -340,9 +340,9 @@ export class ConnectionPool {
                 pending.socketReused = pipeResult.socketReused;
                 if (pipeResult.sslVersion) {
                     pending.sslVersion = pipeResult.sslVersion;
-                    Platform.assert(typeof pipeResult.sslSessionResumed !== "undefined", "must have sslSessionResumed");
+                    assert(typeof pipeResult.sslSessionResumed !== "undefined", "must have sslSessionResumed");
                     pending.sslSessionResumed = pipeResult.sslSessionResumed;
-                    Platform.assert(typeof pipeResult.sslHandshakeTime !== "undefined", "must have sslHandshakeTime");
+                    assert(typeof pipeResult.sslHandshakeTime !== "undefined", "must have sslHandshakeTime");
                     pending.sslHandshakeTime = pipeResult.sslHandshakeTime;
                 }
                 pipe.idle = false;

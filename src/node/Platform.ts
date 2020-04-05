@@ -210,14 +210,6 @@ class NodePlatform implements IPlatform {
         return bytes;
     }
 
-    assert(cond: any, message?: string): void {
-        if (process.env.NODE_ENV === 'development') {
-            if (!cond) {
-                throw new Error(message ? message : 'You dun messed up.');
-            }
-        }
-    }
-
     log(...args: any): void {
         /* tslint:disable:no-console */
         console.log.apply(console, args);

@@ -8,7 +8,7 @@ import IHTTPRequest from "../IHTTPRequest";
 import NetworkPipe from "../NetworkPipe";
 import Platform from "../Platform";
 import { HTTPTransferEncoding } from "../types";
-import { assert } from "../utils";
+import assert from "../utils/assert.macro";
 
 export default class HTTP1 extends EventEmitter implements IHTTP {
     private headerBuffer?: IDataBuffer;

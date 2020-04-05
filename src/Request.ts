@@ -12,7 +12,7 @@ import RequestResponse from "./RequestResponse";
 import Url from "url-parse";
 import connectionPool from "./ConnectionPool";
 import { HTTPTransferEncoding, NetError } from "./types";
-import { assert } from "./utils";
+import assert from "./utils/assert.macro";
 
 let nextId = 0;
 

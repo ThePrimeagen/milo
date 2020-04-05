@@ -3,15 +3,11 @@ import ICreateTCPNetworkPipeOptions from "../ICreateTCPNetworkPipeOptions";
 import IDataBuffer from "../IDataBuffer";
 import IDnsResult from "../IDnsResult";
 import IPipeResult from "../IPipeResult";
-import IPlatform from "../IPlatform";
 import N = nrdsocket;
 import NetworkPipe from "../NetworkPipe";
 import { DnsType } from "../types";
 import { NrdpPlatform } from "./Platform";
-
-function assert(platform: IPlatform, condition: any, msg: string): asserts condition {
-    platform.assert(condition, msg);
-}
+import assert from '../utils/assert.macro';
 
 export class NrdpTCPNetworkPipe extends NetworkPipe {
     private sock: number;
@@ -79,7 +75,7 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
         if (!length)
             throw new Error("0 length write");
 
-        assert(this.platform,
+        assert(
                this.writeBuffers.length === this.writeBufferLengths.length,
                "These should be the same length");
         this.writeBuffers.push(buf);
@@ -88,12 +84,12 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
         if (this.writeBuffers.length === 1) { // don't really need these arrays when writebuffers is empty
             this._write();
         } else {
-            assert(this.platform, this.selectMode === N.READWRITE, "select mode must be readwrite");
+            assert(this.selectMode === N.READWRITE, "select mode must be readwrite");
         }
     }
 
     read(buf: IDataBuffer, offset: number, length: number): number {
-        assert(this.platform, this.sock !== -1, "Noone should call read if the socket is closed");
+        assert(this.sock !== -1, "Noone should call read if the socket is closed");
         let read = this.unstash(buf, offset, length);
         if (read === -1) {
             read = N.read(this.sock, buf, offset, length);
@@ -113,26 +109,26 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
                 break;
             }
         }
-        assert(this.platform, read >= 0, "Should not be negative");
+        assert(read >= 0, "Should not be negative");
         this.bytesRead += read;
         return read;
     }
 
     close(): void {
-        assert(this.platform, this.sock !== -1, "must have socket");
+        assert(this.sock !== -1, "must have socket");
         N.close(this.sock); // ### error checking?
         this.sock = -1;
         this.emit("close");
     }
 
     private _write(): void {
-        assert(this.platform, this.writeBuffers.length, "Should have write buffers " + this.sock);
-        assert(this.platform, this.writeBuffers.length === this.writeBufferOffsets.length,
+        assert(this.writeBuffers.length, "Should have write buffers " + this.sock);
+        assert(this.writeBuffers.length === this.writeBufferOffsets.length,
                `writeBuffers and writeBufferOffsets should have the same length ${this.writeBuffers.length} vs ${this.writeBufferOffsets}.length`);
-        assert(this.platform, this.writeBuffers.length === this.writeBufferLengths.length,
+        assert(this.writeBuffers.length === this.writeBufferLengths.length,
                `writeBuffers and writeBufferLengths have the same length ${this.writeBuffers.length} vs ${this.writeBufferLengths}.length`);
         while (this.writeBuffers.length) {
-            assert(this.platform, this.writeBufferLengths[0] > 0, "Nothing to write");
+            assert(this.writeBufferLengths[0] > 0, "Nothing to write");
             const written = N.write(this.sock, this.writeBuffers[0],
                                     this.writeBufferOffsets[0], this.writeBufferLengths[0]);
             this.platform.trace("wrote", written, "of", this.writeBufferLengths[0], "for", this.sock);
@@ -158,7 +154,7 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
         if (mode !== this.selectMode) {
             this.selectMode = mode;
             N.setFD(this.sock, mode, this._onSelect.bind(this));
-            assert(this.platform, !(mode & N.WRITE) || this.writeBuffers.length, "Should have write buffers now");
+            assert(!(mode & N.WRITE) || this.writeBuffers.length, "Should have write buffers now");
         }
     }
     /* tslint:disable:no-shadowed-variable */
@@ -231,8 +227,8 @@ export default function createTCPNetworkPipe(platform: NrdpPlatform,
             const dnsTime = dnsStartTime ? now - dnsStartTime : 0;
             let sock = -1;
             function connected() {
-                assert(platform, sockAddr.ipAddress, "Gotta have an ip address at this point");
-                assert(platform, dnsType, "Must have dns here");
+                assert(sockAddr.ipAddress, "Gotta have an ip address at this point");
+                assert(dnsType, "Must have dns here");
                 resolve({
                     pipe: new NrdpTCPNetworkPipe(platform, sock, options.hostname, options.port, sockAddr.ipAddress),
                     socketReused: false,

@@ -6,10 +6,7 @@ import N = nrdsocket;
 import NrdpSSLBoundFunctions from "./NrdpSSLBoundFunctions";
 import UnorderedMap from "./UnorderedMap";
 import ICreateSSLNetworkPipeOptions from "../ICreateSSLNetworkPipeOptions";
-
-function assert(platform: IPlatform, condition: any, msg: string): asserts condition {
-    platform.assert(condition, msg);
-}
+import assert from '../utils/assert.macro';
 
 type SSL_CTX_verify_callback_type = (preverifyOk: number, x509Ctx: N.Struct) => number;
 type X509Data = {
@@ -43,7 +40,7 @@ export default class NrdpSSL {
 
         this.sslCtxVerifyCallback = N.setSSLCallback("SSL_verify_cb", (preverifyOk: number, x509Ctx: N.Struct) => {
             const ssl = this.g.X509_STORE_CTX_get_ex_data(x509Ctx, this.g.SSL_get_ex_data_X509_STORE_CTX_idx());
-            assert(platform, ssl, "gotta have ssl");
+            assert(ssl, "gotta have ssl");
             const cb = this.verifyCallbackSSLs.get(ssl);
             if (cb) {
                 preverifyOk = cb(preverifyOk, x509Ctx);
@@ -63,9 +60,9 @@ export default class NrdpSSL {
         }
         if (!this.sslCtx || this.trustStoreHash !== nrdp.trustStoreHash || maxProtoVersion !== this.maxProtoVersion) {
             const meth = this.g.TLS_client_method();
-            assert(this.platform, meth, "gotta have meth");
+            assert(meth, "gotta have meth");
             this.sslCtx = this.g.SSL_CTX_new(meth);
-            assert(this.platform, this.sslCtx, "gotta have sslCtx");
+            assert(this.sslCtx, "gotta have sslCtx");
             this.sslCtx.free = "SSL_CTX_free";
             this.g.SSL_CTX_set_verify(this.sslCtx, this.g.SSL_VERIFY_PEER, this.sslCtxVerifyCallback);
             this.platform.trace("cipher", nrdp.cipherList);
@@ -90,10 +87,10 @@ export default class NrdpSSL {
             this.g.SSL_CTX_set_options(this.sslCtx, ctxOptions);
 
             const certStore = this.g.SSL_CTX_get_cert_store(this.sslCtx);
-            assert(this.platform, certStore, "gotta have certStore");
+            assert(certStore, "gotta have certStore");
             const trustStoreData = nrdp.trustStore;
             const trustBIO = this.g.BIO_new_mem_buf(trustStoreData, trustStoreData.byteLength);
-            assert(this.platform, trustBIO, "gotta have trustBIO");
+            assert(trustBIO, "gotta have trustBIO");
             while (true) {
                 const x509 = this.g.PEM_read_bio_X509(trustBIO, undefined, undefined, undefined);
                 if (!x509)
@@ -107,7 +104,7 @@ export default class NrdpSSL {
         }
 
         const param = this.g.X509_VERIFY_PARAM_new();
-        assert(this.platform, param, "gotta have param");
+        assert(param, "gotta have param");
         this.g.X509_VERIFY_PARAM_set_time(param, Math.round(nrdp.now() / 1000));
         if (!this.g.SSL_CTX_set1_param(this.sslCtx, param)) {
             this.platform.error("Failure: SSL_CTX_set1_param(param)");
@@ -115,9 +112,9 @@ export default class NrdpSSL {
         this.g.X509_VERIFY_PARAM_free(param);
 
         const ret = this.g.SSL_new(this.sslCtx);
-        assert(this.platform, ret, "gotta have ssl");
+        assert(ret, "gotta have ssl");
         if (verifyCallback) {
-            assert(this.platform, !this.verifyCallbackSSLs.has(ret), "only once please");
+            assert(!this.verifyCallbackSSLs.has(ret), "only once please");
             this.verifyCallbackSSLs.set(ret, verifyCallback);
         }
 

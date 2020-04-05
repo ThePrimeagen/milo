@@ -103,7 +103,6 @@ export class NrdpPlatform implements IPlatform {
     }
 
     mono = nrdp.mono;
-    assert = nrdp.assert;
     btoa = nrdp.btoa;
     atob = nrdp.atob;
     atoutf8 = nrdp.atoutf8;

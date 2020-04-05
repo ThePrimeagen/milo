@@ -2,11 +2,7 @@ import EventEmitter from "./EventEmitter";
 import DataBuffer from "./DataBuffer";
 import IDataBuffer from "./IDataBuffer";
 import IPlatform from "./IPlatform";
-
-// have to redeclare assert since NrdpPlatform doesn't declare assert as asserting
-function assert(platform: IPlatform, condition: any, msg: string): asserts condition {
-    platform.assert(condition, msg);
-}
+import assert from './utils/assert.macro';
 
 let pipeId = 0;
 export abstract class NetworkPipe extends EventEmitter {
@@ -57,7 +53,7 @@ export abstract class NetworkPipe extends EventEmitter {
         if (length === undefined) {
             length = buf.byteLength - offset;
         }
-        assert(this.platform, length > 0, "Must have length");
+        assert(length > 0, "Must have length");
         this.platform.log("NetworkPipe#stash", offset, length);
         if (this.buffer) {
             this.buffer.bufferLength = this.buffer.bufferLength + length;

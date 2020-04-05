@@ -1,8 +1,9 @@
 import Platform from "../Platform";
 import DataBuffer from "../DataBuffer";
-import { assert, escapeData } from "../utils";
+import { escapeData } from "../utils";
 import EventEmitter from "../EventEmitter";
 import IDataBuffer from "../IDataBuffer";
+import assert from '../utils/assert.macro';
 
 export default class ChunkyParser extends EventEmitter {
     private buffers: IDataBuffer[];
@@ -19,7 +20,7 @@ export default class ChunkyParser extends EventEmitter {
     }
 
     feed(data: IDataBuffer, offset: number, length: number): void {
-        Platform.assert(this.hasListener("chunk"), "Gotta have an onchunk");
+        assert(this.hasListener("chunk"), "Gotta have an onchunk");
         this.buffers.push(data.slice(offset, length));
         this.available += length;
         this._process();
@@ -74,8 +75,8 @@ export default class ChunkyParser extends EventEmitter {
             } else if (!this.dataNeeded && this.available >= 2) {
                 this._consume(2);
                 const buffer = this.available ? this._extractChunk(this.available) : undefined;
-                Platform.assert(!this.available, "Nothing should be left");
-                Platform.assert(!this.buffers.length, "No buffers here");
+                assert(!this.available, "Nothing should be left");
+                assert(!this.buffers.length, "No buffers here");
                 this.emit("done", buffer);
             } else if (this.dataNeeded + 2 <= this.available) {
                 const chunk = this._extractChunk(this.dataNeeded);
@@ -90,7 +91,7 @@ export default class ChunkyParser extends EventEmitter {
     }
 
     private _consume(bytes: number): void {
-        Platform.assert(bytes <= this.available, "Not enough bytes to consume");
+        assert(bytes <= this.available, "Not enough bytes to consume");
         // Platform.trace("consuoming", bytes, "from", this.buffers, this.available);
         let consumed = 0;
         while (consumed < bytes) {
@@ -103,17 +104,17 @@ export default class ChunkyParser extends EventEmitter {
                 const wanted = bytes - consumed;
                 this.offset += wanted;
                 consumed += wanted;
-                Platform.assert(consumed === bytes, "consumed should === bytes");
+                assert(consumed === bytes, "consumed should === bytes");
                 break;
             }
         }
-        Platform.assert(consumed === bytes,
+        assert(consumed === bytes,
                         `Bytes should be nothing by now bytes: ${bytes} consumed: ${consumed} available: ${this.available}`);
         this.available -= consumed;
     }
 
     private _extractChunk(size: number): IDataBuffer {
-        Platform.assert(this.available >= size, "available's gotta be more than size");
+        assert(this.available >= size, "available's gotta be more than size");
         // grab the whole first chunk
         if (!this.offset && this.buffers[0].byteLength === size) {
             this.available -= size;
@@ -134,20 +135,20 @@ export default class ChunkyParser extends EventEmitter {
                 this.offset += wanted;
                 break;
             } else if (this.offset) {
-                Platform.assert(bufferAvailable <= wanted, "foo");
+                assert(bufferAvailable <= wanted, "foo");
                 ret.set(idx, buf, this.offset, bufferAvailable);
                 this.offset = 0;
                 this.buffers.shift();
                 idx += bufferAvailable;
             } else {
-                Platform.assert(bufferAvailable <= wanted, "bar");
-                Platform.assert(!this.offset, "zot");
+                assert(bufferAvailable <= wanted, "bar");
+                assert(!this.offset, "zot");
                 ret.set(idx, buf);
                 this.buffers.shift();
                 idx += bufferAvailable;
             }
         }
-        Platform.assert(idx === size, "We should be done now");
+        assert(idx === size, "We should be done now");
         this.available -= size;
         return ret;
     }

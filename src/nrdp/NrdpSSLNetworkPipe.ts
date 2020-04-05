@@ -3,16 +3,12 @@ import IConnectionDataSSL from "../IConnectionDataSSL";
 import ICreateSSLNetworkPipeOptions from "../ICreateSSLNetworkPipeOptions";
 import IDataBuffer from "../IDataBuffer";
 import IPipeResult from "../IPipeResult";
-import IPlatform from "../IPlatform";
 import N = nrdsocket;
 import NetworkPipe from "../NetworkPipe";
 import { NrdpPlatform } from "./Platform";
-// ### could probably just import Platform as well as NrdpPlatform here
+import assert from '../utils/assert.macro';
 
-// have to redeclare assert since NrdpPlatform doesn't declare assert as asserting
-function assert(platform: IPlatform, condition: any, msg: string): asserts condition {
-    platform.assert(condition, msg);
-}
+// ### could probably just import Platform as well as NrdpPlatform here
 
 class NrdpSSLNetworkPipe extends NetworkPipe {
     private sslInstance: N.Struct;
@@ -61,14 +57,14 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
         });
 
         const memMethod = platform.ssl.g.BIO_s_mem();
-        assert(platform, memMethod, "gotta have memMethod");
+        assert(memMethod, "gotta have memMethod");
         let bio = platform.ssl.g.BIO_new(memMethod);
-        assert(platform, bio, "gotta have inputBio");
+        assert(bio, "gotta have inputBio");
         this.inputBio = bio;
         platform.ssl.g.BIO_ctrl(this.inputBio, platform.ssl.g.BIO_C_SET_BUF_MEM_EOF_RETURN, -1, undefined);
 
         bio = platform.ssl.g.BIO_new(memMethod);
-        assert(platform, bio, "gotta have outputBio");
+        assert(bio, "gotta have outputBio");
         this.outputBio = bio;
 
         platform.ssl.g.BIO_ctrl(this.outputBio, platform.ssl.g.BIO_C_SET_BUF_MEM_EOF_RETURN, -1, undefined);
@@ -208,13 +204,13 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
     private _flushOutputBio() {
         const platform: NrdpPlatform = this.platform as NrdpPlatform;
         const pending = platform.ssl.g.BIO_ctrl_pending(this.outputBio);
-        // assert(this.platform, pending <= this.scratch.byteLength,
+        // assert(pending <= this.scratch.byteLength,
         //        "Pending too large. Probably have to increase scratch buffer size");
         if (pending > 0) {
             // should maybe pool these arraybuffers
             const buf = new ArrayBuffer(pending);
             const read = platform.ssl.g.BIO_read(this.outputBio, buf, 0, pending);
-            assert(platform, read === pending, "Read should be pending");
+            assert(read === pending, "Read should be pending");
             // this.platform.trace("writing", read, platform.ssl.g.BIO_ctrl_pending(this.outputBio));
             this.pipe.write(buf, 0, read);
             // this.platform
@@ -225,7 +221,7 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
         const platform: NrdpPlatform = this.platform as NrdpPlatform;
 
         // ### connectedCallback?
-        assert(platform, this.connectedCallback, "must have connectedCallback");
+        assert(this.connectedCallback, "must have connectedCallback");
         const ret = platform.ssl.g.SSL_connect(this.sslInstance);
         // platform.trace("CALLED CONNECT", ret);
         if (ret <= 0) {
@@ -239,7 +235,7 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
             }
         } else {
             // this.platform.trace("sheeeet", ret);
-            assert(this.platform, ret === 1, "This should be 1");
+            assert(ret === 1, "This should be 1");
             // this.platform.trace("we're connected");
             this.connected = true;
             const version = platform.ssl.g.SSL_get_version(this.sslInstance);
@@ -259,14 +255,14 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
             const read = this.pipe.read(platform.scratch, 0, platform.scratch.byteLength);
             // platform.log("read return", read, this.pipe.socket);
             if (read === -1) {
-                assert(platform,
+                assert(
                        N.errno === N.EWOULDBLOCK || N.errno === N.EAGAIN || this.pipe.closed,
                        "Should be closed already");
                 return;
             }
 
             if (read === 0) {
-                assert(platform, this.pipe.closed, "Should be closed already");
+                assert(this.pipe.closed, "Should be closed already");
                 return;
             }
             platform.trace("got data", read);
@@ -299,9 +295,9 @@ export default function createSSLNetworkPipe(platform: NrdpPlatform,
                 reject(error);
             } else {
                 if (connData) {
-                    assert(platform, typeof connData.sslHandshakeTime !== "undefined", "must have ssl hand shake time");
-                    assert(platform, connData.sslVersion, "must have ssl version");
-                    assert(platform, typeof connData.sslSessionResumed !== "undefined", "must have ssl session resumedness");
+                    assert(typeof connData.sslHandshakeTime !== "undefined", "must have ssl hand shake time");
+                    assert(connData.sslVersion, "must have ssl version");
+                    assert(typeof connData.sslSessionResumed !== "undefined", "must have ssl session resumedness");
                     options.sslHandshakeTime = connData.sslHandshakeTime;
                     options.sslVersion = connData.sslVersion;
                     options.sslSessionResumed = connData.sslSessionResumed;
