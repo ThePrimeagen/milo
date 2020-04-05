@@ -13,7 +13,7 @@
   },
   "license": "MIT",
   "author": "",
-  "main": "build/node/src/milo.js",
+  "main": "dist/milo.node.js",
   "scripts": {
     "all": "node bin/build.js",
     "build": "node bin/build.js",
