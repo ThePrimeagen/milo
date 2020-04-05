@@ -17,11 +17,13 @@
   "scripts": {
     "all": "node bin/build.js",
     "build": "node bin/build.js",
+    "prod": "node bin/build.js --prod",
     "build:nrdp:test": "npm run nrdp-generate-ssl-functions && tsc -p tsconfig.nrdp.json && rollup -c rollup.nrdp.test.js",
     "clean": "del-cli build/ dist/",
     "lint": "node bin/lint.js",
     "node": "node bin/build.js --target node",
     "nrdp": "node bin/build.js --target nrdp",
+    "nrdp:prod": "node bin/build.js --target nrdp --prod",
     "nrdp-generate-ssl-functions": "node bin/generate-ssl-functions.js",
     "test": "jest",
     "test:all": "npm run test && npm run test:autobahn",
