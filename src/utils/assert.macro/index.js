@@ -5,7 +5,7 @@ module.exports = createMacro(assertMacro, MacroError);
 function assertMacro({ references, state, babel }) {
     const { template } = babel;
     const { default: defaultImport = [], ...otherReferences } = references;
-    
+
     const enabled = process.env.NODE_ENV === 'development';
     const implTarget = process.env.TARGET_PLATFORM;
 
@@ -17,7 +17,7 @@ function assertMacro({ references, state, babel }) {
     if (defaultImport.length < 1) {
         return;
     }
-    
+
     let assertTemplate;
     if (implTarget === 'nrdp') {
         assertTemplate = template(`const assert = nrdp.assert;`);
@@ -31,7 +31,7 @@ function assertMacro({ references, state, babel }) {
     }
 
     if (enabled) {
-        
+
         state.file.ast.program.body.unshift(assertTemplate());
     }
 

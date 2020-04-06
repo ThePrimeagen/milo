@@ -70,7 +70,7 @@ export default (CLIArgs) => {
             sourcemap: true
         },
     };
-    
+
     // Apply plugins
     bundle.plugins = getPluginsConfig(prod);
 

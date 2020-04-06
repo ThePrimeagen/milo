@@ -26,7 +26,7 @@ require('yargs')
         },
         handler: (argv) => {
             const { target, prod } = argv;
-            
+
             let tasks;
             if (target) {
                 tasks = [
@@ -54,7 +54,7 @@ require('yargs')
                     tasks.push(getRollupTask(t, {prod}));
                 })
             }
-            
+
             const hrstart = process.hrtime()
             new Listr(tasks).run()
                 .then(() => {
@@ -106,7 +106,7 @@ function getRollupTask(target, { prod }) {
         '-c',
         rollupConfig,
     ];
-    
+
     if (prod) {
         rollupOptions.push('--prod');
     }
