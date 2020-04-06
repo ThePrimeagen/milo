@@ -14,25 +14,32 @@ import RequestResponse from "../RequestResponse";
 import createNrdpSSLNetworkPipe from "./NrdpSSLNetworkPipe";
 import createNrdpTCPNetworkPipe from "./NrdpTCPNetworkPipe";
 import { IpConnectivityMode } from "../types";
+import ConnectionPool from "../ConnectionPool";
+import assert from "../utils/assert.macro";
 
 type NrdpGibbonLoadCallbackSignature = (response: RequestResponse) => void;
-type NrdpGibbonLoadSignature = (data: IRequestData | string, callback: NrdpGibbonLoadCallbackSignature) => number;
-type ArrayBufferConcatType = Uint8Array | IDataBuffer | ArrayBuffer;
+type NrdpGibbonLoadSignature = (data: IRequestData | string, callback?: NrdpGibbonLoadCallbackSignature) => number;
 export class NrdpPlatform implements IPlatform {
     constructor() {
         this.scratch = new DataBuffer(16 * 1024);
         this.ssl = new NrdpSSL(this);
         this.realLoad = nrdp.gibbon.load;
+        this.realLoadScript = nrdp.gibbon.loadScript;
+        this.realStopLoad = nrdp.gibbon.stopLoad;
         this.polyfillAll = false;
         const sdkVersion = nrdp.device.SDKVersion;
 
         this.userAgent = `Gibbon/${sdkVersion.versionString}/${sdkVersion.versionString}: Netflix/${sdkVersion.versionString} (DEVTYPE=${nrdp.device.ESNPrefix}; CERTVER=${nrdp.device.certificationVersion})`;
+        this.connectionPool = new ConnectionPool();
+        this.cachedLocation = "";
+        this.cachedLocationBase = "";
     }
 
     sha1(input: string): Uint8Array { return nrdp.hash("sha1", input); }
 
     public readonly scratch: IDataBuffer;
     public readonly ssl: NrdpSSL;
+    public readonly connectionPool: ConnectionPool;
 
     log(...args: any[]): void {
         args.unshift({ traceArea: "MILO" });
@@ -73,9 +80,9 @@ export class NrdpPlatform implements IPlatform {
         const location = this.location;
         if (!this.cachedStandardHeaders
             || this.cachedUILanguages !== currentLanguages
-            || this.cachedLocation !== location) {
+            || this.cachedLocationForHeaders !== location) {
             this.cachedUILanguages = currentLanguages;
-            this.cachedLocation = location;
+            this.cachedLocationForHeaders = location;
             this.cachedStandardHeaders = {};
             this.cachedStandardHeaders["User-Agent"] = this.userAgent;
             this.cachedStandardHeaders.Accept = "*/*";
@@ -110,10 +117,8 @@ export class NrdpPlatform implements IPlatform {
     randomBytes = nrdp_platform.random;
     stacktrace = nrdp.stacktrace;
     assert = nrdp.assert;
-    arrayBufferConcat(...buffers: ArrayBufferConcatType[]): ArrayBuffer {
-        // @ts-ignore
-        return ArrayBuffer.concat(...buffers);
-    }
+    arrayBufferConcat = nrdp_platform.arrayBufferConcat;
+    bufferSet = nrdp_platform.bufferSet;
 
     utf8Length = nrdp_platform.utf8Length;
 
@@ -174,15 +179,25 @@ export class NrdpPlatform implements IPlatform {
         this.polyfillAll = mode === "all";
         this.miloLoad = polyfill;
         nrdp.gibbon.load = this.polyfilledGibbonLoad.bind(this);
+        // nrdp.gibbon.loadScript = this.polyfilledGibbonLoadScript.bind(this);
+        nrdp.gibbon.stopLoad = this.polyfilledGibbonStopLoad.bind(this);
     }
 
     private polyfilledGibbonLoad(data: IRequestData | string,
-                                 callback: NrdpGibbonLoadCallbackSignature): number {
+                                 callback?: NrdpGibbonLoadCallbackSignature): number {
+        nrdp.l.success("LOAD", JSON.stringify(data, (key: string, value: any) => {
+            if (key === "data" || key === "body" || key === "source") {
+                return key;
+            }
+            return value;
+        }));
         if (typeof data === "string") {
-            data = { url: data };
+            data = { url: this.resolveUrl(data) };
+        } else {
+            data.url = this.resolveUrl(data.url);
         }
-        const realData: IRequestData = data;
-        if ((!this.polyfillAll && !realData.milo)
+
+        if ((!this.polyfillAll && !data.milo)
             || !this.miloLoad
             || data.url.lastIndexOf("http://localcontrol.netflix.com/", 0) === 0
             || data.url.lastIndexOf("file://", 0) === 0
@@ -196,13 +211,99 @@ export class NrdpPlatform implements IPlatform {
         return this.miloLoad(data, callback);
     }
 
+    private polyfilledGibbonLoadScript(data: IRequestData | string,
+                                       callback?: NrdpGibbonLoadCallbackSignature): number {
+        nrdp.l.success("LOADSCRIPT", JSON.stringify(data, (key: string, value: any) => {
+            if (key === "data" || key === "body" || key === "source") {
+                return key;
+            }
+            return value;
+        }));
+        if (typeof data === "string") {
+            data = { url: this.resolveUrl(data) };
+        } else {
+            data.url = this.resolveUrl(data.url);
+        }
+        if ((!this.polyfillAll && !data.milo)
+            || !this.miloLoad
+            || data.url.lastIndexOf("http://localcontrol.netflix.com/", 0) === 0
+            || data.url.lastIndexOf("file://", 0) === 0
+            || data.url.lastIndexOf("data:", 0) === 0) {
+            // this.log("got req", realData.url, typeof realData.body);
+            // return this.realLoad(data, (response: RequestResponse) => {
+            //     callback(response);
+            // });
+            return this.realLoadScript(data, callback);
+        }
+        if (!data.format) {
+            data.format = "databuffer";
+        }
+
+        return this.miloLoad(data, (response: RequestResponse) => {
+            if (response.statusCode === 200 && response.data) {
+                assert(typeof data === "object", "Must be an object now");
+                try {
+                    nrdp.gibbon.eval(response.data, data.url);
+                } catch (err) {
+                    response.exception = err;
+                }
+            }
+            if (callback) {
+                callback(response);
+            }
+        });
+    }
+
+    private polyfilledGibbonStopLoad(id: number): void {
+        if (id < 0) {
+            nrdp.l.error("SOMEONE CALLING STOPLOAD ON US", id);
+        } else {
+            this.realStopLoad(id);
+        }
+    }
+
+    private resolveUrl(url: string): string {
+        if (url.indexOf("://") !== -1 || url.lastIndexOf("data:", 0) === 0) {
+            return url;
+        }
+
+        if (nrdp.gibbon.location !== this.cachedLocation) {
+            this.cachedLocation = nrdp.gibbon.location;
+            const q = this.cachedLocationBase.indexOf("?");
+            let s = q === -1 ? this.cachedLocation.lastIndexOf("/") : this.cachedLocation.lastIndexOf("/", q);
+            if (s < 8)
+                s = -1;
+            if (s === -1) {
+                this.cachedLocationBase = this.cachedLocation + "/";
+            } else {
+                this.cachedLocationBase = this.cachedLocation.substr(0, s + 1);
+            }
+        }
+
+        let baseUrl = this.cachedLocationBase;
+        let slash = -1;
+        if (url[0] === "/") {
+            slash = baseUrl.indexOf("/", 8);
+            if (slash !== -1) {
+                baseUrl = baseUrl.substr(0, slash);
+            }
+        }
+        // this.log("taking", url, "turning it into", (baseUrl + url),
+        //          "baseUrl", baseUrl, "slash", slash, "base", this.cachedLocationBase);
+        return baseUrl + url;
+    }
+
     private cachedStandardHeaders?: { [key: string]: string };
     private cachedUILanguages?: string[];
-    private cachedLocation?: string;
+    private cachedLocationForHeaders?: string;
     private realLoad: NrdpGibbonLoadSignature;
+    private realLoadScript: NrdpGibbonLoadSignature;
+    private realStopLoad: (id: number) => void;
     private miloLoad?: NrdpGibbonLoadSignature;
     private polyfillAll: boolean;
     private userAgent: string;
+    private cachedLocation: string;
+    private cachedLocationBase: string;
 };
 
 export default new NrdpPlatform();

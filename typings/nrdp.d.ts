@@ -24,7 +24,10 @@ declare namespace nrdp {
 
     namespace gibbon {
         let location: string;
-        let load: (req: IRequestData | string, callback: (response: RequestResponse) => void) => number;
+        let load: (req: IRequestData | string, callback?: (response: RequestResponse) => void) => number;
+        let loadScript: (req: IRequestData | string, callback?: (response: RequestResponse) => void) => number;
+        let stopLoad: (id: number) => void;
+        const eval: (data: string | Uint8Array | IDataBuffer | ArrayBuffer, url: string) => any;
     }
 
     namespace l {

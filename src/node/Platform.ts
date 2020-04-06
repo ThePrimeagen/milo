@@ -17,10 +17,14 @@ import RequestResponse from "../RequestResponse";
 import IRequestData from "../IRequestData";
 import { IpVersion, HTTPRequestHeaders, IpConnectivityMode } from "../types";
 import { toUint8Array } from "./utils";
+import ConnectionPool from "../ConnectionPool";
 
 type ArrayBufferConcatType = Uint8Array | IDataBuffer | ArrayBuffer;
 
-function toBuffer(buf: Uint8Array | ArrayBuffer | string) {
+function toBuffer(buf: Uint8Array | ArrayBuffer | string | IDataBuffer) {
+    if (buf instanceof DataBuffer) {
+        return buf.buffer;
+    }
     // @ts-ignore
     return Buffer.from(buf);
 }
@@ -52,6 +56,7 @@ class NodePlatform implements IPlatform {
     public ipConnectivityMode: IpConnectivityMode;
     public tlsv13SmallAssetsEnabled: boolean = true;
     public tlsv13StreamingEnabled: boolean = true;
+    public readonly connectionPool: ConnectionPool;
 
     constructor() {
         this.scratch = new DataBuffer(1024 * 32);
@@ -59,6 +64,7 @@ class NodePlatform implements IPlatform {
         // TODO: probably need to think about this.
         // TODO: Pipe this through to net
         this.ipConnectivityMode = 4;
+        this.connectionPool = new ConnectionPool();
     }
 
     quit(code: number) {
@@ -172,6 +178,16 @@ class NodePlatform implements IPlatform {
         // @ts-ignore
         return String.fromCharCode.apply(null, buf);
     }
+    bufferSet(dest: Uint8Array | ArrayBuffer | IDataBuffer, destOffset: number,
+              src: Uint8Array | ArrayBuffer | IDataBuffer | string,
+              srcOffset?: number, srcLength?: number): void {
+
+        const destBuf = toBuffer(dest);
+        const srcBuf = toBuffer(src);
+
+        srcBuf.copy(destBuf, destOffset, srcOffset, srcLength);
+    }
+
 
     arrayBufferConcat(...buffers: ArrayBufferConcatType[]): ArrayBuffer {
         let len = 0;

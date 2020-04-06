@@ -11,14 +11,23 @@ export {
     Platform,
 };
 
-export function _load(data: IRequestData | string, callback: (response: RequestResponse) => void): number {
+export function _load(data: IRequestData | string, callback?: (response: RequestResponse) => void): number {
     if (typeof data === "string")
         data = { url: data };
     const req = new Request(data);
     req.send().then(response => {
-        callback(response);
+        if (!callback)
+            return;
+        try {
+            callback(response);
+        } catch (err) {
+            Platform.error("Got error from callback", err);
+        }
     }).catch(error => {
         Platform.error("Got error", error);
+        if (callback) {
+            // TODO gotta call callback with the error
+        }
     });
     return req.id;
 }

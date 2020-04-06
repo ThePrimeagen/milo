@@ -10,7 +10,6 @@ import NetworkPipe from "./NetworkPipe";
 import Platform from "./Platform";
 import RequestResponse from "./RequestResponse";
 import Url from "url-parse";
-import connectionPool from "./ConnectionPool";
 import { HTTPTransferEncoding, NetError } from "./types";
 import assert from "./utils/assert.macro";
 
@@ -57,7 +56,10 @@ export default class Request {
 
     constructor(data: IRequestData) {
         this.requestData = data;
-        this.id = ++nextId;
+        this.id = --nextId;
+        if (this.id === -2147483648)
+            nextId = 0;
+
         this.requestResponse = new RequestResponse(this.id, this.requestData.url);
         this.requestResponse.reason = NetError.SUCCESS;
         this.transferEncoding = 0;
@@ -124,13 +126,13 @@ export default class Request {
         } as IConnectionOptions;
 
         let pendingConnection: IPendingConnection;
-        connectionPool.requestConnection(connectionOpts).then((conn: IPendingConnection) => {
+        Platform.connectionPool.requestConnection(connectionOpts).then((conn: IPendingConnection) => {
             Platform.trace(`got a pending connection ${conn.id}`);
             // conn is abortable
             pendingConnection = conn;
             return conn.onNetworkPipe();
         }).then((pipe: NetworkPipe) => {
-            Platform.log(`actually got the connection ${pipe.socket} ${this.url}`);
+            Platform.trace(`actually got the connection ${pipe.socket} ${this.url}`);
             this.transactionStartTime = Platform.mono();
             this.networkPipe = pipe;
             this.requestResponse.socket = pipe.socket;
@@ -321,11 +323,13 @@ export default class Request {
             assert(this.resolve, "Must have resolve");
             this.resolve(this.requestResponse);
             assert(this.networkPipe, "must have networkpipe");
-            Platform.log("got to finished, pipe is closed?", this.networkPipe.closed, this.requestData.format);
+            Platform.log("got to finished, pipe is closed?", this.networkPipe.closed,
+                         this.requestData.format, this.requestResponse.statusCode,
+                         this.responseDataLength);
             // this.requestResponse.json);
             this.networkPipe.removeEventHandlers();
             if (!this.http.upgrade || this.networkPipe.closed) {
-                connectionPool.finish(this.networkPipe);
+                Platform.connectionPool.finish(this.networkPipe);
                 this.networkPipe = undefined;
             }
             break;

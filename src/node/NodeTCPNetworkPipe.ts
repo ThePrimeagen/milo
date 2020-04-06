@@ -45,7 +45,6 @@ function createReadBufferPool(): Pool<ReadBufferItem> {
 class NodeTCPNetworkPipe extends NetworkPipe {
     private sock?: net.Socket;
     private bufferPool: PoolItem<ReadBufferItem>[];
-    private stashPool: PoolItem<ReadBufferItem>[];
     private pool: Pool<ReadBufferItem>;
     private state: State;
 
@@ -68,7 +67,6 @@ class NodeTCPNetworkPipe extends NetworkPipe {
         super(platform);
         this.state = State.Connecting;
         this.bufferPool = [];
-        this.stashPool = [];
         this.hostname = host;
         this.port = port;
         this.pool = createReadBufferPool();
@@ -160,7 +158,12 @@ class NodeTCPNetworkPipe extends NetworkPipe {
         this.sock.write(write);
     }
 
-    read(buf: IDataBuffer | ArrayBuffer, offset: number, length: number): number {
+    read(buf: IDataBuffer | ArrayBuffer, offset: number, length: number, noStash?: boolean): number {
+        if (!noStash) {
+            const ret = this.unstash(buf, offset, length);
+            if (ret > 0)
+                return ret;
+        }
         return this.readFromPool(this.bufferPool, buf, offset, length);
     }
 
@@ -170,42 +173,6 @@ class NodeTCPNetworkPipe extends NetworkPipe {
         }
 
         this.sock.destroy();
-    }
-
-    // Do I want to keep it this way?  Or should I go with stashed items...
-    stash(buf: IDataBuffer | ArrayBuffer, offset: number = 0, length?: number) {
-        if (length === undefined) {
-            length = buf.byteLength - offset;
-        }
-
-        const item = this.pool.get();
-        item.item.offset = offset;
-        item.item.idx = 0;
-        item.item.len = length;
-
-        let readBuf: Buffer;
-        if (buf instanceof ArrayBuffer) {
-            readBuf = Buffer.from(buf);
-        }
-        else {
-            readBuf = (buf as DataBuffer).buffer;
-            item.item.offset += buf.byteOffset;
-        }
-
-        item.item.readBuf = readBuf;
-        this.stashPool.push(item);
-    }
-
-    unstash(buf: IDataBuffer | ArrayBuffer, offset: number = 0, length?: number): number {
-        if (length === undefined) {
-            length = buf.byteLength - offset;
-        }
-
-        return this.readFromPool(this.stashPool, buf, offset, length);
-    }
-
-    hasStash(): boolean {
-        return !!this.stashPool.length;
     }
 
     private readFromPool(pool: PoolItem<ReadBufferItem>[], buf: IDataBuffer | ArrayBuffer,

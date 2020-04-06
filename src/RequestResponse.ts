@@ -20,6 +20,7 @@ export default class RequestResponse {
     errorString?: string;
     errorcode?: ErrorCode;
     errorgroup?: number;
+    exception?: Error;
     headers: string[];
     headersSize?: number;
     httpVersion?: string;

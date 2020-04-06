@@ -31,9 +31,9 @@ export const SettingsDefault = [
     0,
     4096, // HEADER_TABLE_SIZE
     1, // PUSH
-    Number.MAX_SAFE_INTEGER, // MAX_CONCURRENT
+    2147483647, // MAX_CONCURRENT
     65535, // WINDOW_SIZE
     16384, // FRAME_SIZE
-    Number.MAX_SAFE_INTEGER // MAX_HEADER_LIST
+    2147483647 // MAX_HEADER_LIST
 ];
 

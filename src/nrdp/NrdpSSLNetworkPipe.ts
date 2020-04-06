@@ -135,10 +135,12 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
         }
     }
 
-    read(buf: IDataBuffer, offset: number, length: number): number {
-        const ret = this.unstash(buf, offset, length);
-        if (ret !== -1)
-            return ret;
+    read(buf: IDataBuffer, offset: number, length: number, noStash?: boolean): number {
+        if (!noStash) {
+            const ret = this.unstash(buf, offset, length);
+            if (ret !== -1)
+                return ret;
+        }
 
         const platform: NrdpPlatform = this.platform as NrdpPlatform;
         platform.trace("someone's calling read on ", this.pipe.socket, length,
@@ -256,8 +258,8 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
             // platform.log("read return", read, this.pipe.socket);
             if (read === -1) {
                 assert(
-                       N.errno === N.EWOULDBLOCK || N.errno === N.EAGAIN || this.pipe.closed,
-                       "Should be closed already");
+                    N.errno === N.EWOULDBLOCK || N.errno === N.EAGAIN || this.pipe.closed,
+                    "Should be closed already");
                 return;
             }
 

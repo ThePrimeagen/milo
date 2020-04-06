@@ -76,8 +76,8 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
             throw new Error("0 length write");
 
         assert(
-               this.writeBuffers.length === this.writeBufferLengths.length,
-               "These should be the same length");
+            this.writeBuffers.length === this.writeBufferLengths.length,
+            "These should be the same length");
         this.writeBuffers.push(buf);
         this.writeBufferOffsets.push(offset);
         this.writeBufferLengths.push(length);
@@ -88,26 +88,29 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
         }
     }
 
-    read(buf: IDataBuffer, offset: number, length: number): number {
+    read(buf: IDataBuffer, offset: number, length: number, noStash?: boolean): number {
+        if (!noStash) {
+            const ret = this.unstash(buf, offset, length);
+            if (ret !== -1)
+                return ret;
+        }
+
         assert(this.sock !== -1, "Noone should call read if the socket is closed");
-        let read = this.unstash(buf, offset, length);
-        if (read === -1) {
-            read = N.read(this.sock, buf, offset, length);
-            switch (read) {
-            case 0:
-                N.close(this.sock);
-                this.sock = -1;
-                this.emit("close");
-                break;
-            case -1:
-                if (N.errno !== N.EWOULDBLOCK)
-                    this._error(new Error(`read error, errno: ${N.errno} ${N.strerror()}`));
-                return -1; //
-            default:
-                if (!this.firstByteRead)
-                    this.firstByteRead = this.platform.mono();
-                break;
-            }
+        const read = N.read(this.sock, buf, offset, length);
+        switch (read) {
+        case 0:
+            N.close(this.sock);
+            this.sock = -1;
+            this.emit("close");
+            break;
+        case -1:
+            if (N.errno !== N.EWOULDBLOCK)
+                this._error(new Error(`read error, errno: ${N.errno} ${N.strerror()}`));
+            return -1; //
+        default:
+            if (!this.firstByteRead)
+                this.firstByteRead = this.platform.mono();
+            break;
         }
         assert(read >= 0, "Should not be negative");
         this.bytesRead += read;

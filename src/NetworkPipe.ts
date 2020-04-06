@@ -7,7 +7,7 @@ import assert from './utils/assert.macro';
 let pipeId = 0;
 export abstract class NetworkPipe extends EventEmitter {
     protected platform: IPlatform;
-    private buffer?: IDataBuffer;
+    private stashBuffer?: IDataBuffer;
 
     constructor(platform: IPlatform) {
         super();
@@ -43,7 +43,7 @@ export abstract class NetworkPipe extends EventEmitter {
     abstract removeEventHandlers(): void;
     abstract write(buf: IDataBuffer | Uint8Array | ArrayBuffer | string, offset: number, length: number): void;
     abstract write(buf: string): void;
-    abstract read(buf: ArrayBuffer | IDataBuffer, offset: number, length: number): number;
+    abstract read(buf: ArrayBuffer | IDataBuffer, offset: number, length: number, nostash?: boolean): number;
 
     abstract close(): void;
     abstract clearStats(): void;
@@ -55,38 +55,36 @@ export abstract class NetworkPipe extends EventEmitter {
         }
         assert(length > 0, "Must have length");
         this.platform.log("NetworkPipe#stash", offset, length);
-        if (this.buffer) {
-            this.buffer.bufferLength = this.buffer.bufferLength + length;
-            this.buffer.set(this.buffer.bufferLength - length, buf, offset, length);
+        if (this.stashBuffer) {
+            this.stashBuffer.bufferLength = this.stashBuffer.bufferLength + length;
+            this.stashBuffer.set(this.stashBuffer.bufferLength - length, buf, offset, length);
         } else if (buf instanceof DataBuffer) {
-            this.buffer = buf.subarray(offset, length);
+            this.stashBuffer = buf.subarray(offset, length);
         } else {
-            this.buffer = new DataBuffer(buf, offset, length);
+            this.stashBuffer = new DataBuffer(buf, offset, length);
         }
     }
 
-    unstash(buf: IDataBuffer, offset: number, length: number): number {
-        if (this.buffer) {
-            const byteLength = this.buffer.byteLength;
+    unstash(buf: IDataBuffer | ArrayBuffer | Uint8Array, offset: number, length: number): number {
+        if (this.stashBuffer) {
+            const byteLength = this.stashBuffer.byteLength;
             if (length >= byteLength) {
-                buf.set(offset, this.buffer, 0, byteLength);
-                this.buffer = undefined;
-                this.platform.log("NetworkPipe#unstash#ALL", offset, length, byteLength);
+                this.platform.bufferSet(buf, offset, this.stashBuffer, 0, byteLength);
+                this.stashBuffer = undefined;
+                // this.platform.log("NetworkPipe#unstash#ALL", offset, length, byteLength);
                 return byteLength;
             }
 
-            buf.set(offset, this.buffer, 0, length);
-            // TODO: is this right?
-            // TODO: Anders?
-            this.buffer.setView(this.buffer.byteOffset + length, this.buffer.byteLength - length);
-            this.platform.log("NetworkPipe#unstash#PARTIAL", offset, length, this.buffer.byteLength);
+            this.platform.bufferSet(buf, offset, this.stashBuffer, 0, length);
+            this.stashBuffer.setView(this.stashBuffer.byteOffset + length, this.stashBuffer.byteLength - length);
+            this.platform.log("NetworkPipe#unstash#PARTIAL", offset, length, this.stashBuffer.byteLength);
             return length;
         }
         return -1;
     }
 
     hasStash() {
-        return !!this.buffer;
+        return !!this.stashBuffer;
     }
 };
 

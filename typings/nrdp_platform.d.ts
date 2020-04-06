@@ -4,6 +4,11 @@ declare namespace nrdp_platform {
 
     function utf8Length(str: string): number;
     function arrayBufferConcat(...buffers: ArrayBufferConcatType[]): ArrayBuffer;
+    function bufferSet(dest: Uint8Array | ArrayBuffer | IDataBuffer,
+                       destOffset: number,
+                       src: Uint8Array | ArrayBuffer | string | IDataBuffer,
+                       srcOffset?: number,
+                       srcLength?: number): void;
 
     function random(length: number): Uint8Array;
     class Hasher {

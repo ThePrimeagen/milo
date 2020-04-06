@@ -8,6 +8,7 @@ import IRequestTimeouts from "./IRequestTimeouts";
 import ISHA256Context from "./ISHA256Context";
 import RequestResponse from "./RequestResponse";
 import { IpConnectivityMode, IpVersion, } from "./types";
+import ConnectionPool from "./ConnectionPool";
 
 type ArrayBufferConcatType = Uint8Array | IDataBuffer | ArrayBuffer;
 
@@ -29,6 +30,16 @@ export default interface IPlatform {
 
     // uint8array to string
     utf8toa(input: IDataBuffer | Uint8Array | ArrayBuffer | string, offset?: number, length?: number): string;
+
+    bufferSet(dest: Uint8Array | ArrayBuffer | IDataBuffer,
+              destOffset: number,
+              src: Uint8Array | ArrayBuffer | IDataBuffer,
+              srcOffset?: number,
+              srcLength?: number): void;
+
+    bufferSet(dest: Uint8Array | ArrayBuffer | IDataBuffer,
+              destOffset: number,
+              src: string): void;
 
     arrayBufferConcat(...buffers: ArrayBufferConcatType[]): ArrayBuffer;
     randomBytes(len: number): Uint8Array
@@ -62,6 +73,7 @@ export default interface IPlatform {
     location: string;
     scratch: IDataBuffer;
 
+    readonly connectionPool: ConnectionPool;
     defaultRequestTimeouts: IRequestTimeouts;
 
     quit(exitCode?: number): void;
@@ -74,5 +86,5 @@ export default interface IPlatform {
 
     polyfillGibbonLoad(mode: "all" | "optin",
                        polyfill: (data: IRequestData | string,
-                                  callback: (response: RequestResponse) => void) => number): void;
+                                  callback?: (response: RequestResponse) => void) => number): void;
 };

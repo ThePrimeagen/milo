@@ -1,3 +1,4 @@
+import DataBuffer from "./DataBuffer";
 import IConnectionOptions from "./IConnectionOptions";
 import ICreateSSLNetworkPipeOptions from "./ICreateSSLNetworkPipeOptions";
 import ICreateTCPNetworkPipeOptions from "./ICreateTCPNetworkPipeOptions";
@@ -7,8 +8,8 @@ import IUnorderedMap from "./IUnorderedMap";
 import NetworkPipe from "./NetworkPipe";
 import Platform from "./Platform";
 import UnorderedMap from "./UnorderedMap";
-import { DnsType } from "./types";
 import assert from "./utils/assert.macro";
+import { DnsType } from "./types";
 
 class PendingConnectionImpl implements IPendingConnection {
     private pool: ConnectionPool;
@@ -104,7 +105,7 @@ interface HostData {
     ssl: boolean;
 };
 
-export class ConnectionPool {
+export default class ConnectionPool {
     private _id: number;
     private _maxPoolSize: number;
     private _maxConnectionsPerHost: number;
@@ -166,20 +167,16 @@ export class ConnectionPool {
         assert(!pipe.listenerCount("data"), "Shouldn't have data callbacks anymore");
         assert(!pipe.listenerCount("close"), "Shouldn't have close callbacks anymore");
         assert(!pipe.listenerCount("error"), "Shouldn't have error callbacks anymore");
+
         const hostPort = `${pipe.hostname}:${pipe.port}`;
         const data = this._hosts.get(hostPort);
         assert(data, "Must have data");
 
         if (pipe.closed) {
-            const idx = data.pipes.indexOf(pipe);
-            assert(idx !== -1, "where the pipe?");
-            if (data.pipes.length === 1 && !data.pending.length && !data.initializing) {
-                // Platform.log("deleting the whole thing", data);
-                this._hosts.delete(hostPort);
-                return;
-            }
-            data.pipes.splice(idx, 1);
+            this.onClose(data, pipe);
         } else {
+            pipe.on("close", this.onClose.bind(this, data, pipe));
+            pipe.on("data", this.onData.bind(this, pipe));
             pipe.idle = true;
             pipe.clearStats();
             assert(data.pipes.indexOf(pipe) !== -1, "It should be in here");
@@ -230,7 +227,7 @@ export class ConnectionPool {
 
             const pending = new PendingConnectionImpl(this, ++this._id, hostname, port, options);
             resolve(pending);
-            if (this._id === Number.MAX_SAFE_INTEGER) {
+            if (this._id === 2147483647) {
                 this._id = 0;
             }
 
@@ -261,7 +258,7 @@ export class ConnectionPool {
 
                 // if (this._maxPoolSize > 0 && this._connectionCount >= this._maxPoolSize) {
                 //     const pending = new PendingConnectionImpl(++this._id);
-                //     if (this._id == Number.MAX_SAFE_INTEGER) {
+                //     if (this._id == 2147483647) {
                 //         this._id = 0;
                 //     }
 
@@ -299,6 +296,10 @@ export class ConnectionPool {
                 const pending = data.pending.shift();
                 assert(pending, "must have pending");
                 Platform.trace(`found idle connection for ${data.hostPort} socket: ${pipe.socket}`);
+                assert(pipe.listenerCount("close") === 1, "Should have exactly one listener for close");
+                assert(pipe.listenerCount("data") === 1, "Should have exactly one listener for data");
+                pipe.removeAllListeners("close");
+                pipe.removeAllListeners("data");
                 pending.socketReused = true;
                 pending.resolve(pipe);
                 return;
@@ -357,6 +358,30 @@ export class ConnectionPool {
             });
         }
     }
-}
 
-export default new ConnectionPool();
+    private onClose(data: HostData, pipe: NetworkPipe): void {
+        const idx = data.pipes.indexOf(pipe);
+        assert(idx !== -1, "where the pipe?");
+        if (data.pipes.length === 1 && !data.pending.length && !data.initializing) {
+            const hostPort = `${pipe.hostname}:${pipe.port}`;
+            // Platform.log("deleting the whole thing", data);
+            this._hosts.delete(hostPort);
+            return;
+        }
+        data.pipes.splice(idx, 1);
+    }
+
+    private onData(pipe: NetworkPipe): void {
+        while (true) {
+            // We shouldn't really get any data at this point, this is
+            // to monitor if the pipe has been closed
+            const buf = new DataBuffer(32);
+            assert(!pipe.closed, "Should not be closed yet");
+            const read = pipe.read(buf, 0, 32, true);
+            if (read <= 0) {
+                break;
+            }
+            pipe.stash(buf, 0, read);
+        }
+    }
+}
