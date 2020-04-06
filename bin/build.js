@@ -7,6 +7,8 @@ const targetPlatforms = [
     'nrdp',
 ];
 
+const taskRenderer = process.env.EMACS ? 'verbose' : 'default';
+
 require('yargs')
     .command({
         command: '$0',
@@ -29,49 +31,61 @@ require('yargs')
 
             let tasks;
             if (target) {
-                tasks = [
-                    target === 'nrdp' && getNRDPSSLGenerationTask(),
-                    getLintTask(),
-                    getTscTask(target),
-                    getRollupTask(target, { prod })
-                ].filter(Boolean);
+                tasks = [getTargetTasks(target, {prod})];
             } else {
-                /* BUILD ALL */
+                /* Build for all the target platforms */
+                const buildAllTasks = targetPlatforms.map(t => getTargetTasks(t, {prod}));
                 tasks = [
-                    getNRDPSSLGenerationTask(),
-                    getLintTask(),
                     {
-                        title: 'compile typescript',
+                        title: `build platforms: ${targetPlatforms.join(', ')}`,
                         task: () => {
-                            const tscTasks = targetPlatforms.map(getTscTask);
-                            return new Listr(tscTasks, { concurrent: true });
+                            return new Listr(buildAllTasks, { concurrent: true })
                         }
-                    },
+                    }
                 ];
-
-                // Rollup tasks has to be serial beacuse of the macro
-                targetPlatforms.forEach(t => {
-                    tasks.push(getRollupTask(t, {prod}));
-                });
             }
 
             const hrstart = process.hrtime()
-            new Listr(tasks).run()
+            new Listr(tasks, {
+                renderer: taskRenderer
+            }).run()
                 .then(() => {
                     const hrend = process.hrtime(hrstart);
                     console.info("\nAll tasks successfully completed in %ds", hrend[0]);
                 })
                 .catch(err => {
                     console.error(err);
+                    process.exit(1);
                 });
         }
     })
     .help()
     .argv;
 
+function getTargetTasks(target, {prod}) {
+    return {
+        title: `build target: ${target}`,
+        task: () => {
+            return new Listr([
+                target === 'nrdp' && getNRDPSSLGenerationTask(),
+                {
+                    title: `lint & compile TS`,
+                    task: () => {
+                        return new Listr([
+                            getLintTask(),
+                            getTscTask(target),
+                        ], { concurrent: true })
+                    }
+                },
+                getRollupTask(target, {prod})
+            ].filter(Boolean))
+        }
+    }
+}
+
 function getNRDPSSLGenerationTask() {
     return {
-        title: `nrdp: generate ssl functions`,
+        title: `generate ssl functions`,
         task: () => execa('node', [path.join(__dirname, 'generate-ssl-functions.js')], { stdout: 'inherit' })
     };
 }
@@ -89,15 +103,12 @@ function getTscTask(target) {
         `builds/tsconfig.${target}.json`
     );
     return {
-        title: `${target}: compile typescript`,
+        title: `compile typescript`,
         task: () => execa('tsc', ['-p', tscConfig], { stdout: 'inherit' })
     };
 }
 
 function getRollupTask(target, { prod }) {
-    process.env.NODE_ENV = prod ? "production" : "development";
-    process.env.TARGET_PLATFORM = target;
-
     const rollupConfig = path.resolve(
         __dirname,
         `builds/rollup.${target}.js`
@@ -111,7 +122,17 @@ function getRollupTask(target, { prod }) {
         rollupOptions.push('--prod');
     }
     return {
-        title: `${target}: create bundle`,
-        task: () => execa('rollup', rollupOptions, { stdout: 'inherit' })
+        title: `create bundle`,
+        task: () => execa(
+            'rollup',
+            rollupOptions,
+            {
+                env: {
+                    NODE_ENV: prod ? "production" : "development",
+                    TARGET_PLATFORM: target
+                },
+                stdout: 'inherit'
+            }
+        )
     };
 }

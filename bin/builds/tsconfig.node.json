@@ -11,7 +11,7 @@
         "incremental": true,
         "outDir": "../../build/node",
         "lib": ["es6"],
-        "module": "es6",
+        "module": "es6", // we keep es6 beacuse rollup will take care of creating cjs
         "target": "es6"
     }
 }
