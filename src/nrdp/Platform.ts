@@ -109,6 +109,7 @@ export class NrdpPlatform implements IPlatform {
     utf8toa = nrdp.utf8toa;
     randomBytes = nrdp_platform.random;
     stacktrace = nrdp.stacktrace;
+    assert = nrdp.assert;
     arrayBufferConcat(...buffers: ArrayBufferConcatType[]): ArrayBuffer {
         // @ts-ignore
         return ArrayBuffer.concat(...buffers);
