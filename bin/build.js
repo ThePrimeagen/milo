@@ -22,7 +22,7 @@ require('yargs')
                 describe: 'Create a build stripped out of __DEV__ specific code and minified',
                 type: 'boolean',
                 default: false
-            })
+            });
         },
         handler: (argv) => {
             const { target, prod } = argv;
@@ -52,7 +52,7 @@ require('yargs')
                 // Rollup tasks has to be serial beacuse of the macro
                 targetPlatforms.forEach(t => {
                     tasks.push(getRollupTask(t, {prod}));
-                })
+                });
             }
 
             const hrstart = process.hrtime()
@@ -67,20 +67,20 @@ require('yargs')
         }
     })
     .help()
-    .argv
+    .argv;
 
 function getNRDPSSLGenerationTask() {
     return {
         title: `nrdp: generate ssl functions`,
         task: () => execa('node', [path.join(__dirname, 'generate-ssl-functions.js')], { stdout: 'inherit' })
-    }
+    };
 }
 
 function getLintTask() {
     return {
         title: `linting`,
         task: () => execa('node', [path.join(__dirname, 'lint.js')], { stdout: 'inherit' })
-    }
+    };
 }
 
 function getTscTask(target) {
@@ -113,5 +113,5 @@ function getRollupTask(target, { prod }) {
     return {
         title: `${target}: create bundle`,
         task: () => execa('rollup', rollupOptions, { stdout: 'inherit' })
-    }
+    };
 }
