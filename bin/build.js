@@ -69,17 +69,17 @@ function getTargetTasks(target, {prod}) {
             return new Listr([
                 target === 'nrdp' && getNRDPSSLGenerationTask(),
                 {
-                    title: `lint & compile TS`,
+                    title: `lint & compile TS (${target})`,
                     task: () => {
                         return new Listr([
-                            getLintTask(),
+                            getLintTask(target),
                             getTscTask(target),
                         ], { concurrent: true });
                     }
                 },
                 getRollupTask(target, {prod})
             ].filter(Boolean));
-    }
+        }
     };
 }
 
@@ -90,9 +90,9 @@ function getNRDPSSLGenerationTask() {
     };
 }
 
-function getLintTask() {
+function getLintTask(target) {
     return {
-        title: `linting`,
+        title: `linting (${target})`,
         task: () => execa('node', [path.join(__dirname, 'lint.js')], { stdout: 'inherit' })
     };
 }
@@ -103,7 +103,7 @@ function getTscTask(target) {
         `builds/tsconfig.${target}.json`
     );
     return {
-        title: `compile typescript`,
+        title: `compile typescript (${target})`,
         task: () => execa('tsc', ['-p', tscConfig], { stdout: 'inherit' })
     };
 }
@@ -122,7 +122,7 @@ function getRollupTask(target, { prod }) {
         rollupOptions.push('--prod');
     }
     return {
-        title: `create bundle`,
+        title: `create bundle (${target})`,
         task: () => execa(
             'rollup',
             rollupOptions,
