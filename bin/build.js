@@ -39,13 +39,13 @@ require('yargs')
                     {
                         title: `build platforms: ${targetPlatforms.join(', ')}`,
                         task: () => {
-                            return new Listr(buildAllTasks, { concurrent: true })
+                            return new Listr(buildAllTasks, { concurrent: true });
                         }
                     }
                 ];
             }
 
-            const hrstart = process.hrtime()
+            const hrstart = process.hrtime();
             new Listr(tasks, {
                 renderer: taskRenderer
             }).run()
@@ -74,13 +74,13 @@ function getTargetTasks(target, {prod}) {
                         return new Listr([
                             getLintTask(),
                             getTscTask(target),
-                        ], { concurrent: true })
+                        ], { concurrent: true });
                     }
                 },
                 getRollupTask(target, {prod})
-            ].filter(Boolean))
-        }
+            ].filter(Boolean));
     }
+    };
 }
 
 function getNRDPSSLGenerationTask() {
