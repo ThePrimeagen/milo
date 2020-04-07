@@ -5,7 +5,7 @@ import IPipeResult from "../IPipeResult";
 import IPlatform from "../IPlatform";
 import NetworkPipe from "../NetworkPipe";
 import net from "net";
-import { Pool, PoolItem, PoolFreeFunction, } from '../pool';
+import { Pool, PoolItem, PoolFreeFunction, } from '../Pool';
 
 enum State {
     Connecting = "Connecting",
