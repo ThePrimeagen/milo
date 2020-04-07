@@ -89,13 +89,13 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
     }
 
     read(buf: IDataBuffer, offset: number, length: number, noStash?: boolean): number {
+        assert(this.sock !== -1, "Noone should call read if the socket is closed");
         if (!noStash) {
             const ret = this.unstash(buf, offset, length);
             if (ret !== -1)
                 return ret;
         }
 
-        assert(this.sock !== -1, "Noone should call read if the socket is closed");
         const read = N.read(this.sock, buf, offset, length);
         switch (read) {
         case 0:
