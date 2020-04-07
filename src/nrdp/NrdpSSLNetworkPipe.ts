@@ -2,13 +2,14 @@ import DataBuffer from "../DataBuffer";
 import IConnectionDataSSL from "../IConnectionDataSSL";
 import ICreateSSLNetworkPipeOptions from "../ICreateSSLNetworkPipeOptions";
 import IDataBuffer from "../IDataBuffer";
+import INetworkError from "../INetworkError";
 import IPipeResult from "../IPipeResult";
 import N = nrdsocket;
+import NetworkError from "../NetworkError";
 import NetworkPipe from "../NetworkPipe";
-import { NrdpPlatform } from "./Platform";
 import assert from '../utils/assert.macro';
-
-// ### could probably just import Platform as well as NrdpPlatform here
+import { NetworkErrorCode } from "../types";
+import { NrdpPlatform } from "./Platform";
 
 class NrdpSSLNetworkPipe extends NetworkPipe {
     private sslInstance: N.Struct;
@@ -19,11 +20,11 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
     private writeBuffers: (Uint8Array | ArrayBuffer | string | IDataBuffer)[];
     private writeBufferOffsets: number[];
     private writeBufferLengths: number[];
-    private connectedCallback?: (error?: Error, connData?: IConnectionDataSSL) => void;
+    private connectedCallback?: (error?: INetworkError, connData?: IConnectionDataSSL) => void;
     private connectStartTime: number;
 
     constructor(platform: NrdpPlatform, options: ICreateSSLNetworkPipeOptions,
-                callback: (error?: Error, connData?: IConnectionDataSSL) => void) {
+                callback: (error?: INetworkError, connData?: IConnectionDataSSL) => void) {
         super(platform);
 
         this.connectedCallback = callback;
@@ -232,7 +233,7 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
                 this._flushOutputBio();
             } else {
                 this.platform.error("BIG FAILURE", platform.ssl.g.SSL_get_error(this.sslInstance, ret), N.errno);
-                this.connectedCallback(new Error(`SSL_connect failure ${platform.ssl.g.SSL_get_error(this.sslInstance, ret)} ${N.errno}`));
+                this.connectedCallback(new NetworkError(NetworkErrorCode.SSLConnectFailure, `SSL_connect failure ${platform.ssl.g.SSL_get_error(this.sslInstance, ret)} ${N.errno}`));
                 this.connectedCallback = undefined;
             }
         } else {
@@ -282,7 +283,7 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
         }
     }
 
-    private _error(error: Error): void {
+    private _error(error: INetworkError): void {
         // ### have to shut down all sorts of ssl stuff
         this.emit("error", error);
     }
@@ -291,7 +292,7 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
 export default function createSSLNetworkPipe(platform: NrdpPlatform,
                                              options: ICreateSSLNetworkPipeOptions): Promise<IPipeResult> {
     return new Promise<IPipeResult>((resolve, reject) => {
-        const pipe = new NrdpSSLNetworkPipe(platform, options, (error?: Error, connData?: IConnectionDataSSL) => {
+        const cb = (error?: INetworkError, connData?: IConnectionDataSSL) => {
             // platform.trace("connected or something", error);
             if (error) {
                 reject(error);
@@ -307,6 +308,8 @@ export default function createSSLNetworkPipe(platform: NrdpPlatform,
                 options.pipe = pipe;
                 resolve(options);
             }
-        });
+        };
+
+        const pipe = new NrdpSSLNetworkPipe(platform, options, cb);
     });
-};
+}

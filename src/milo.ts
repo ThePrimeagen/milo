@@ -1,9 +1,12 @@
 import IDataBuffer from "./IDataBuffer";
+import NetworkError from "./NetworkError";
 import IRequestData from "./IRequestData";
 import Platform from "./Platform";
 import Request from "./Request";
 import RequestResponse from "./RequestResponse";
 import WS, { WSState } from "./ws";
+import assert from "./utils/assert.macro";
+import { NetworkErrorCode } from "./types";
 
 export {
     WS,
@@ -14,6 +17,7 @@ export {
 export function _load(data: IRequestData | string, callback?: (response: RequestResponse) => void): number {
     if (typeof data === "string")
         data = { url: data };
+    const url = data.url;
     const req = new Request(data);
     req.send().then(response => {
         if (!callback)
@@ -23,10 +27,20 @@ export function _load(data: IRequestData | string, callback?: (response: Request
         } catch (err) {
             Platform.error("Got error from callback", err);
         }
-    }).catch(error => {
+    }).catch((error: Error) => {
         Platform.error("Got error", error);
         if (callback) {
-            // TODO gotta call callback with the error
+            assert(typeof data === "object", "This must be an object");
+            const resp = new RequestResponse(req.id, url);
+            resp.errorString = error.message;
+            if (error instanceof NetworkError) {
+                resp.nativeErrorCode = error.code;
+            } else {
+                resp.nativeErrorCode = NetworkErrorCode.UnknownError;
+                assert(error instanceof Error, "This should be an error");
+            }
+            resp.errorString = error.message;
+            callback(resp);
         }
     });
     return req.id;

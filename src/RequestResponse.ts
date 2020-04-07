@@ -5,7 +5,7 @@ export default class RequestResponse {
     constructor(id: number, url: string | string[]) {
         this.id = id;
         if (typeof url === "string") {
-        this.url = url;
+            this.url = url;
         } else {
             this._urls = url;
             this.url = url[0];
@@ -65,7 +65,6 @@ export default class RequestResponse {
     get responseDataLength() {
         return this.size || 0;
     }
-
 
     addUrl(url: string): number {
         if (!this._urls) {

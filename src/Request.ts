@@ -4,14 +4,16 @@ import IConnectionOptions from "./IConnectionOptions";
 import IDataBuffer from "./IDataBuffer";
 import IHTTP from "./IHTTP";
 import IHTTPHeadersEvent from "./IHTTPHeadersEvent";
+import INetworkError from "./INetworkError";
 import IPendingConnection from "./IPendingConnection";
 import IRequestData from "./IRequestData";
+import NetworkError from "./NetworkError";
 import NetworkPipe from "./NetworkPipe";
 import Platform from "./Platform";
 import RequestResponse from "./RequestResponse";
 import Url from "url-parse";
-import { HTTPTransferEncoding, NetError } from "./types";
 import assert from "./utils/assert.macro";
+import { HTTPTransferEncoding, NetError, NetworkErrorCode } from "./types";
 
 let nextId = 0;
 
@@ -49,7 +51,7 @@ export default class Request {
     networkPipe?: NetworkPipe;
 
     private resolve?: (response: RequestResponse) => void;
-    private reject?: (error: Error) => void;
+    private reject?: (error: INetworkError) => void;
     private requestResponse: RequestResponse;
     private responseData?: IDataBuffer;
     private responseDataOffset?: number;
@@ -98,7 +100,7 @@ export default class Request {
 
         this.requestData.http2 = this.requestData.http2 || false;
         if (this.requestData.http2) {
-            throw new Error("http2 not implemented yet");
+            throw new NetworkError(NetworkErrorCode.NotImplemented, "http2 is not implemented yet");
         }
 
         Platform.log("Going to", this.requestData.url);
@@ -163,10 +165,18 @@ export default class Request {
                 this.requestResponse.sslHandshakeTime = pendingConnection.sslHandshakeTime;
             }
             this._transition(RequestState.Connected);
-        }).catch((err: Error) => {
+        }).catch((err: any) => {
+            let e: INetworkError;
+            if (!(err instanceof NetworkError)) {
+                assert(err instanceof Error, "This has to be an error");
+                e = err as INetworkError;
+                e.code = NetworkErrorCode.UnknownError;
+            } else {
+                e = err;
+            }
             Platform.error("got an error", err);
             // Platform.trace("Request#send#createTCPNetworkPipe error", err);
-            this._onError(err);
+            this._onError(e);
         });
 
         return ret;
@@ -280,61 +290,61 @@ export default class Request {
 
             switch (this.redirected) {
             case RedirectState.NotRedirected:
-            const now = Platform.mono();
-            this.requestResponse.duration = now - this.requestResponse.networkStartTime;
-            this.requestResponse.transactionTime = now - this.transactionStartTime;
-            this.requestResponse.size = this.responseDataLength;
-            this.requestResponse.state = "network";
-            assert(this.networkPipe, "must have networkPipe");
+                const now = Platform.mono();
+                this.requestResponse.duration = now - this.requestResponse.networkStartTime;
+                this.requestResponse.transactionTime = now - this.transactionStartTime;
+                this.requestResponse.size = this.responseDataLength;
+                this.requestResponse.state = "network";
+                assert(this.networkPipe, "must have networkPipe");
                 Platform.log(`Finished ${this.networkPipe.socket} ${this.url} ${this.requestResponse.statusCode}`);
-            this.requestResponse.bytesRead = this.networkPipe.bytesRead;
-            if (this.requestData.format !== "none") {
-                let handled = false;
-                switch (this.requestData.format) {
-                case "xml":
-                    const xml = Platform.parseXML(this.responseDataToDataBuffer());
-                    if (xml) {
+                this.requestResponse.bytesRead = this.networkPipe.bytesRead;
+                if (this.requestData.format !== "none") {
+                    let handled = false;
+                    switch (this.requestData.format) {
+                    case "xml":
+                        const xml = Platform.parseXML(this.responseDataToDataBuffer());
+                        if (xml) {
+                            handled = true;
+                            this.requestResponse.xml = xml;
+                        }
+                        break;
+                    case "json":
+                        const json = Platform.parseJSON(this.responseDataToDataBuffer());
+                        if (!json) {
+                            this.requestResponse.jsonError = true;
+                        } else {
+                            handled = true;
+                            this.requestResponse.json = json;
+                        }
+                        break;
+                    case "jsonstream":
+                        const jsonstream = Platform.parseJSONStream(this.responseDataToDataBuffer());
+                        if (!jsonstream) {
+                            this.requestResponse.jsonError = true;
+                        } else {
+                            handled = true;
+                            this.requestResponse.json = jsonstream;
+                        }
+                        break;
+                    case "arraybuffer":
+                        this.requestResponse.data = this.responseDataToArrayBuffer();
                         handled = true;
-                        this.requestResponse.xml = xml;
-                    }
-                    break;
-                case "json":
-                    const json = Platform.parseJSON(this.responseDataToDataBuffer());
-                    if (!json) {
-                        this.requestResponse.jsonError = true;
-                    } else {
+                        break;
+                    case "uint8array":
+                        this.requestResponse.data = new Uint8Array(this.responseDataToArrayBuffer());
                         handled = true;
-                        this.requestResponse.json = json;
-                    }
-                    break;
-                case "jsonstream":
-                    const jsonstream = Platform.parseJSONStream(this.responseDataToDataBuffer());
-                    if (!jsonstream) {
-                        this.requestResponse.jsonError = true;
-                    } else {
+                        break;
+                    case "databuffer":
+                        this.requestResponse.data = this.responseDataToDataBuffer();
                         handled = true;
-                        this.requestResponse.json = jsonstream;
+                        break;
+                    default:
+                        break;
                     }
-                    break;
-                case "arraybuffer":
-                    this.requestResponse.data = this.responseDataToArrayBuffer();
-                    handled = true;
-                    break;
-                case "uint8array":
-                    this.requestResponse.data = new Uint8Array(this.responseDataToArrayBuffer());
-                    handled = true;
-                    break;
-                case "databuffer":
-                    this.requestResponse.data = this.responseDataToDataBuffer();
-                    handled = true;
-                    break;
-                default:
-                    break;
+                    if (!handled) {
+                        this.requestResponse.data = this.responseDataToDataBuffer().toString();
+                    }
                 }
-                if (!handled) {
-                    this.requestResponse.data = this.responseDataToDataBuffer().toString();
-                }
-            }
                 break;
             case RedirectState.Redirected:
                 Platform.log(`Got a redirect ${this.requestResponse.urls}`);
@@ -363,7 +373,7 @@ export default class Request {
                 this.resolve(this.requestResponse);
                 break;
             case RedirectState.TooManyRedirects:
-                this.reject(new Error("Too many redirects"));
+                this.reject(new NetworkError(NetworkErrorCode.TooManyRedirects));
                 break;
             }
             break;
@@ -400,7 +410,7 @@ export default class Request {
                 this.responseDataArray = [];
             } else if (event.contentLength && event.contentLength > 0) {
                 if (event.contentLength > 1024 * 1024 * 16) {
-                    this._onError(new Error("Content length too long"));
+                    this._onError(new NetworkError(NetworkErrorCode.ContentLengthTooLong));
                     return;
                 }
                 this.responseDataOffset = 0;
@@ -443,10 +453,10 @@ export default class Request {
         const now = Platform.mono();
         assert(this.requestResponse, "Gotta have a requestResponse");
         assert(this.requestResponse.networkStartTime, "Gotta have a requestResponse.networkStartTime");
-        this._onError(new Error(`Request timed out after ${now - this.requestResponse.networkStartTime}ms`));
+        this._onError(new NetworkError(NetworkErrorCode.Timeout, `Request timed out after ${now - this.requestResponse.networkStartTime}ms`));
     }
 
-    private _onError(error: Error) {
+    private _onError(error: INetworkError) {
         Platform.error("got error", error);
         assert(this.reject, "Must have reject");
         if (this.networkPipe)

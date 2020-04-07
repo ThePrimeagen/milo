@@ -2,20 +2,22 @@ import DataBuffer from "./DataBuffer";
 import IConnectionOptions from "./IConnectionOptions";
 import ICreateSSLNetworkPipeOptions from "./ICreateSSLNetworkPipeOptions";
 import ICreateTCPNetworkPipeOptions from "./ICreateTCPNetworkPipeOptions";
+import INetworkError from "./INetworkError";
 import IPendingConnection from "./IPendingConnection";
 import IPipeResult from "./IPipeResult";
 import IUnorderedMap from "./IUnorderedMap";
+import NetworkError from "./NetworkError";
 import NetworkPipe from "./NetworkPipe";
 import Platform from "./Platform";
 import UnorderedMap from "./UnorderedMap";
 import assert from "./utils/assert.macro";
-import { DnsType } from "./types";
+import { DnsType, NetworkErrorCode } from "./types";
 
 class PendingConnectionImpl implements IPendingConnection {
     private pool: ConnectionPool;
-    private error?: Error;
+    private error?: INetworkError;
     private pipe?: NetworkPipe;
-    private rejectFunction?: (reason: Error) => void;
+    private rejectFunction?: (reason: INetworkError) => void;
     private resolveFunction?: (pipe: NetworkPipe) => void;
 
     public hostname: string;
@@ -86,7 +88,7 @@ class PendingConnectionImpl implements IPendingConnection {
         }
     }
 
-    reject(error: Error): void {
+    reject(error: INetworkError): void {
         assert(!this.pipe, "must not have pipe");
         assert(!this.error, "must not have error");
 
@@ -210,7 +212,7 @@ export default class ConnectionPool {
 
             const hostname = options.url.hostname;
             if (!hostname || port < 1 || port > 65535) {
-                reject(new Error("Invalid url " + options.url));
+                reject(new NetworkError(NetworkErrorCode.InvalidUrl, "Invalid url " + options.url));
                 return;
             }
 
@@ -251,7 +253,7 @@ export default class ConnectionPool {
                     }
                 }).then((pipeResult: IPipeResult) => {
                     pending.resolve(pipeResult.pipe);
-                }).catch((error: Error) => {
+                }).catch((error: INetworkError) => {
                     pending.reject(error);
                 });
                 return;
@@ -351,7 +353,10 @@ export default class ConnectionPool {
                 --data.initializing;
                 data.pipes.push(pipe);
                 pending.resolve(pipe);
-            }).catch((error: Error) => {
+            }).catch((error: any) => {
+                if (!(error instanceof NetworkError)) {
+                    error.code = NetworkErrorCode.UnknownError;
+                }
                 --data.initializing;
                 pending.reject(error);
                 this.processHost(data);

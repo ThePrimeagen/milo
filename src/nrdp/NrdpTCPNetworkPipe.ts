@@ -2,12 +2,14 @@ import DataBuffer from "../DataBuffer";
 import ICreateTCPNetworkPipeOptions from "../ICreateTCPNetworkPipeOptions";
 import IDataBuffer from "../IDataBuffer";
 import IDnsResult from "../IDnsResult";
+import INetworkError from "../INetworkError";
 import IPipeResult from "../IPipeResult";
 import N = nrdsocket;
+import NetworkError from "../NetworkError";
 import NetworkPipe from "../NetworkPipe";
-import { DnsType } from "../types";
-import { NrdpPlatform } from "./Platform";
 import assert from '../utils/assert.macro';
+import { DnsType, NetworkErrorCode } from "../types";
+import { NrdpPlatform } from "./Platform";
 
 export class NrdpTCPNetworkPipe extends NetworkPipe {
     private sock: number;
@@ -105,7 +107,7 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
             break;
         case -1:
             if (N.errno !== N.EWOULDBLOCK)
-                this._error(new Error(`read error, errno: ${N.errno} ${N.strerror()}`));
+                this._error(new NetworkError(NetworkErrorCode.SocketReadError, `read error, errno: ${N.errno} ${N.strerror()}`));
             return -1; //
         default:
             if (!this.firstByteRead)
@@ -149,7 +151,7 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
             } else if (N.errno === N.EWOULDBLOCK) {
                 break;
             } else {
-                this._error(new Error(`write error, errno: ${N.errno} ${N.strerror()}`));
+                this._error(new NetworkError(NetworkErrorCode.SocketWriteError, `write error, errno: ${N.errno} ${N.strerror()}`));
                 return;
             }
         }
@@ -160,8 +162,9 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
             assert(!(mode & N.WRITE) || this.writeBuffers.length, "Should have write buffers now");
         }
     }
-    /* tslint:disable:no-shadowed-variable */
+
     private _onSelect(sock: number, mode: number): void {
+        this.platform.trace(`NrdpTCPNetworkPipe(${this.id}._onSelect(${sock}, ${mode}`);
         if (mode & N.READ) {
             this.emit("data");
         }
@@ -171,7 +174,7 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
         }
     }
 
-    private _error(error: Error): void {
+    private _error(error: INetworkError): void {
         N.close(this.sock);
         this.sock = -1;
         this.emit("error", error);

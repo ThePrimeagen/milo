@@ -5,10 +5,11 @@ import IDataBuffer from "../IDataBuffer";
 import IHTTP from "../IHTTP";
 import IHTTPHeadersEvent from "../IHTTPHeadersEvent";
 import IHTTPRequest from "../IHTTPRequest";
+import INetworkError from "../INetworkError";
 import NetworkPipe from "../NetworkPipe";
 import Platform from "../Platform";
-import { HTTPTransferEncoding } from "../types";
 import assert from "../utils/assert.macro";
+import { HTTPTransferEncoding } from "../types";
 
 export default class HTTP1 extends EventEmitter implements IHTTP {
     private headerBuffer?: IDataBuffer;
@@ -210,12 +211,12 @@ Host: ${request.url.host}\r\n`;
                 break;
             case 14:
                 if (key === "Content-Length" || key.toLowerCase() === "content-length") {
-                contentLength = value;
+                    contentLength = value;
                 }
                 break;
             case 17:
                 if (key === "Transfer-Encoding" || key.toLowerCase() === "transfer-encoding") {
-                transferEncoding = value;
+                    transferEncoding = value;
                 }
                 break;
             }
@@ -234,7 +235,7 @@ Host: ${request.url.host}\r\n`;
                         Platform.trace("got a chunk right here", chunk.byteLength);
                         this.emit("data", chunk, 0, chunk.byteLength);
                     });
-                    this.chunkyParser.on("error", (err: Error) => {
+                    this.chunkyParser.on("error", (err: INetworkError) => {
                         this.emit("error", err);
                     });
 

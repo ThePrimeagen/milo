@@ -65,3 +65,42 @@ export enum NetError {
     INVALID_PLATFORMHASH_ERROR = 22,
     SSLGENERICERROR = 23
 }
+
+export enum NetworkErrorCode {
+    ConnectFailure,
+    ConnectTimeout,
+    ContentLengthTooLong,
+    HostLookupFailure,
+    InvalidIpAddress,
+    InvalidIpVersion,
+    InvalidUrl,
+    NotImplemented,
+    SSLConnectFailure,
+    SocketReadError,
+    SocketWriteError,
+    Timeout,
+    TooManyRedirects,
+    UnknownError,
+    ZeroLengthWrite,
+};
+
+export function networkErrorCodeToString(code: NetworkErrorCode): string {
+    switch (code) {
+    case NetworkErrorCode.ConnectFailure: return "Connect failure";
+    case NetworkErrorCode.ConnectTimeout: return "Connect timeout";
+    case NetworkErrorCode.ContentLengthTooLong: return "Content length too long";
+    case NetworkErrorCode.HostLookupFailure: return "Host lookup failure";
+    case NetworkErrorCode.InvalidIpAddress: return "Invalid ip address";
+    case NetworkErrorCode.InvalidIpVersion: return "Invalid ip version";
+    case NetworkErrorCode.InvalidUrl: return "Invalid url";
+    case NetworkErrorCode.NotImplemented: return "Not implemented";
+    case NetworkErrorCode.SSLConnectFailure: return "SSL connect failure";
+    case NetworkErrorCode.SocketReadError: return "Socket read error";
+    case NetworkErrorCode.SocketWriteError: return "Socket write error";
+    case NetworkErrorCode.Timeout: return "Request timeout";
+    case NetworkErrorCode.Timeout: return "Timeout";
+    case NetworkErrorCode.TooManyRedirects: return "Too many redirects";
+    case NetworkErrorCode.UnknownError: return "Unknown error";
+    case NetworkErrorCode.ZeroLengthWrite: return "Zero length write";
+    }
+}
