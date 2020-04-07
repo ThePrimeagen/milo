@@ -26,4 +26,6 @@
 * don't make a databuffer when output format is arraybuffer/uint8array and data is in chunks
 * consider sockets surviving scriptengine restart or not?
 * handle file:/// and data:/ urls, maybe localcontrol as well.
-* call callbacks when I get errors* Pool more classes, things like HTTP1 and Request should be quite poolable
+* call callbacks when I get errors
+* Pool more classes, things like HTTP1 and Request should be quite poolable
+* Support -X
