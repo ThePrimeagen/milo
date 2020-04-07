@@ -15,7 +15,6 @@ export default class HTTP1 extends EventEmitter implements IHTTP {
     private connection?: string;
     private headersFinished: boolean;
     private chunkyParser?: ChunkyParser;
-    private contentLength?: number;
 
     public networkPipe?: NetworkPipe;
     public request?: IHTTPRequest;
@@ -31,7 +30,6 @@ export default class HTTP1 extends EventEmitter implements IHTTP {
         return `${hostName}${query}`;
     }
     send(networkPipe: NetworkPipe, request: IHTTPRequest): boolean {
-
         this.networkPipe = networkPipe;
         this.request = request;
         let str =
@@ -119,66 +117,8 @@ Host: ${request.url.host}\r\n`;
             this.networkPipe.write(str);
         }
 
-        // BRB, Upping my bits above 3000...
-        const scratch = Platform.scratch;
-        this.networkPipe.on("data", () => {
-            while (true) {
-                assert(this.networkPipe, "Must have network pipe");
-
-                const read = this.networkPipe.read(scratch, 0, scratch.byteLength);
-                Platform.trace("We read some bytes from the pipe", read, this.headersFinished);
-                if (read <= 0) {
-                    break;
-                } else if (!this.headersFinished) {
-                    if (this.headerBuffer) {
-                        this.headerBuffer.bufferLength = this.headerBuffer.byteLength + read;
-                        this.headerBuffer.set(-read, scratch, 0, read);
-                    } else {
-                        this.headerBuffer = scratch.slice(0, read);
-                    }
-                    assert(this.headerBuffer, "must have headerBuffer");
-                    const rnrn = this.headerBuffer.indexOf("\r\n\r\n");
-                    if (rnrn !== -1) {
-                        this._parseHeaders(rnrn);
-                        this.headersFinished = true;
-
-                        const remaining = this.headerBuffer.byteLength - (rnrn + 4);
-                        const hOffset = this.headerBuffer.byteLength - remaining;
-                        if (this.connection === "Upgrade") {
-                            if (remaining) {
-                                this.networkPipe.stash(this.headerBuffer, hOffset, remaining);
-                            }
-
-                            this.upgrade = true;
-                            this.emit("finished");
-
-                            // TODO: Something is off here.  We will have to re
-                            // think this in the near future.  It should be
-                            // better than this, but there is complication with
-                            // empting the pipe and stashing.
-                            //
-                            // TODO: Old Note
-                            // If you don't break, you will
-                            // continue to process what's
-                            // left in the buffer which is
-                            // wrong on upgrade.
-                            this.headerBuffer = undefined;
-                            break;
-                        } else if (remaining) {
-                            this._processResponseData(this.headerBuffer, hOffset, remaining);
-                        }
-
-                        this.headerBuffer = undefined;
-                    }
-                } else {
-                    this._processResponseData(scratch, 0, read);
-                }
-            }
-        });
-        this.networkPipe.on("close", () => {
-            Platform.log("Closed?");
-            this.emit("finished");
-        });
+        this.networkPipe.on("data", this._onData.bind(this));
+        this.networkPipe.on("close", this.emit.bind(this, "finished"));
         return true;
     }
 
@@ -211,6 +151,7 @@ Host: ${request.url.host}\r\n`;
         assert(this.request, "Gotta have request");
         const event = {
             contentLength: undefined,
+            redirectUrl: undefined,
             headers: [],
             headersSize: rnrn + 4,
             method: this.request.method,
@@ -228,6 +169,9 @@ Host: ${request.url.host}\r\n`;
             this.emit("error", new Error("Bad status line " + statusLine));
             return false;
         }
+        const redirectStatus = (event.statusCode >= 300
+                                && event.statusCode < 400
+                                && event.statusCode !== 304);
         // this.requestResponse.headers = new ResponseHeaders;
         let contentLength: string | undefined;
         let transferEncoding: string | undefined;
@@ -252,14 +196,28 @@ Host: ${request.url.host}\r\n`;
             while (end > idx && split[i].charCodeAt(end - 1) === 32)
                 --end;
 
-            const lower = key.toLowerCase();
             const value = split[i].substring(idx, end);
-            if (lower === "content-length") {
+
+            switch (key.length) {
+            case 8:
+                if (redirectStatus && (key === "Location" || key.toLowerCase() === "location")) {
+                    event.redirectUrl = value;
+                }
+                break;
+            case 10:
+                if (key === "Connection" || key.toLowerCase() === "connection")
+                    this.connection = value;
+                break;
+            case 14:
+                if (key === "Content-Length" || key.toLowerCase() === "content-length") {
                 contentLength = value;
-            } else if (lower === "transfer-encoding") {
+                }
+                break;
+            case 17:
+                if (key === "Transfer-Encoding" || key.toLowerCase() === "transfer-encoding") {
                 transferEncoding = value;
-            } else if (lower === "connection") {
-                this.connection = value;
+                }
+                break;
             }
             event.headers.push(key + ": " + value);
         }
@@ -314,7 +272,6 @@ Host: ${request.url.host}\r\n`;
                 this.emit("error", new Error("Bad content length " + contentLength));
                 return false;
             }
-            this.contentLength = len;
             event.contentLength = len;
         }
 
@@ -330,6 +287,64 @@ Host: ${request.url.host}\r\n`;
         } else {
             this.emit("data", data, offset, length);
         }
+    }
+
+    private _onData(): void {
+        assert(this.networkPipe, "Must have network pipe");
+        // BRB, Upping my bits above 3000...
+        const scratch = Platform.scratch;
+        assert(!this.networkPipe.closed, "Shouldn't be closed here");
+        do {
+            const read = this.networkPipe.read(scratch, 0, scratch.byteLength);
+            Platform.trace("We read some bytes from the pipe", read, this.headersFinished);
+            if (read <= 0) {
+                break;
+            } else if (!this.headersFinished) {
+                if (this.headerBuffer) {
+                    const len = this.headerBuffer.byteLength;
+                    this.headerBuffer.bufferLength = len + read;
+                    this.headerBuffer.set(len, scratch, 0, read);
+                } else {
+                    this.headerBuffer = scratch.slice(0, read);
+                }
+                assert(this.headerBuffer, "must have headerBuffer");
+                const rnrn = this.headerBuffer.indexOf("\r\n\r\n");
+                if (rnrn !== -1) {
+                    this._parseHeaders(rnrn);
+                    this.headersFinished = true;
+
+                    const remaining = this.headerBuffer.byteLength - (rnrn + 4);
+                    const hOffset = this.headerBuffer.byteLength - remaining;
+                    if (this.connection === "Upgrade") {
+                        if (remaining) {
+                            this.networkPipe.stash(this.headerBuffer, hOffset, remaining);
+                        }
+
+                        this.upgrade = true;
+                        this.emit("finished");
+
+                        // TODO: Something is off here.  We will have to re
+                        // think this in the near future.  It should be
+                        // better than this, but there is complication with
+                        // empting the pipe and stashing.
+                        //
+                        // TODO: Old Note
+                        // If you don't break, you will
+                        // continue to process what's
+                        // left in the buffer which is
+                        // wrong on upgrade.
+                        this.headerBuffer = undefined;
+                        break;
+                    } else if (remaining) {
+                        this._processResponseData(this.headerBuffer, hOffset, remaining);
+                    }
+
+                    this.headerBuffer = undefined;
+                }
+            } else {
+                this._processResponseData(scratch, 0, read);
+            }
+        } while (!this.networkPipe.closed);
     }
 };
 

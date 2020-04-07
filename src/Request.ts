@@ -35,6 +35,12 @@ function requestStateToString(state: RequestState): string {
     }
 }
 
+enum RedirectState {
+    Redirected,
+    NotRedirected,
+    TooManyRedirects
+}
+
 export default class Request {
     state: RequestState;
     requestData: IRequestData;
@@ -53,17 +59,25 @@ export default class Request {
     private http: IHTTP;
     private _onTimeoutTimer?: any;
     private transactionStartTime?: number;
+    private redirected: RedirectState;
 
-    constructor(data: IRequestData) {
+    constructor(data: IRequestData, redirects?: string[]) {
         this.requestData = data;
         this.id = --nextId;
         if (this.id === -2147483648)
             nextId = 0;
 
-        this.requestResponse = new RequestResponse(this.id, this.requestData.url);
+
+        this.requestResponse = new RequestResponse(this.id, redirects ? redirects : this.requestData.url);
+        if (redirects) {
+            assert(redirects[redirects.length - 1] === data.url,
+                   "This should be the same url");
+            assert(redirects.length <= 10, "This should be less than or equal to 10 " + redirects.length);
+        }
         this.requestResponse.reason = NetError.SUCCESS;
         this.transferEncoding = 0;
         this.responseDataLength = 0;
+        this.redirected = RedirectState.NotRedirected;
 
         this.http = new HTTP1();
         this.http.on("headers", this._onHeaders.bind(this));
@@ -87,7 +101,7 @@ export default class Request {
             throw new Error("http2 not implemented yet");
         }
 
-
+        Platform.log("Going to", this.requestData.url);
         this.url = new Url(this.requestData.url, this.requestData.baseUrl || Platform.location);
         this.state = RequestState.Initial;
         return this;
@@ -264,13 +278,15 @@ export default class Request {
                 this._onTimeoutTimer = undefined;
             }
 
+            switch (this.redirected) {
+            case RedirectState.NotRedirected:
             const now = Platform.mono();
             this.requestResponse.duration = now - this.requestResponse.networkStartTime;
             this.requestResponse.transactionTime = now - this.transactionStartTime;
             this.requestResponse.size = this.responseDataLength;
             this.requestResponse.state = "network";
             assert(this.networkPipe, "must have networkPipe");
-            Platform.log(`We're finished ${this.networkPipe.socket} ${this.url} ${this.requestResponse.statusCode}`);
+                Platform.log(`Finished ${this.networkPipe.socket} ${this.url} ${this.requestResponse.statusCode}`);
             this.requestResponse.bytesRead = this.networkPipe.bytesRead;
             if (this.requestData.format !== "none") {
                 let handled = false;
@@ -319,9 +335,14 @@ export default class Request {
                     this.requestResponse.data = this.responseDataToDataBuffer().toString();
                 }
             }
-
-            assert(this.resolve, "Must have resolve");
-            this.resolve(this.requestResponse);
+                break;
+            case RedirectState.Redirected:
+                Platform.log(`Got a redirect ${this.requestResponse.urls}`);
+                this.requestData.url = this.requestResponse.finalURL;
+                break;
+            case RedirectState.TooManyRedirects:
+                break;
+            }
             assert(this.networkPipe, "must have networkpipe");
             Platform.log("got to finished, pipe is closed?", this.networkPipe.closed,
                          this.requestData.format, this.requestResponse.statusCode,
@@ -331,6 +352,19 @@ export default class Request {
             if (!this.http.upgrade || this.networkPipe.closed) {
                 Platform.connectionPool.finish(this.networkPipe);
                 this.networkPipe = undefined;
+            }
+
+            assert(this.resolve && this.reject, "must have resolve and reject");
+            switch (this.redirected) {
+            case RedirectState.Redirected:
+                new Request(this.requestData, this.requestResponse.urls).send().then(this.resolve, this.reject);
+                break;
+            case RedirectState.NotRedirected:
+                this.resolve(this.requestResponse);
+                break;
+            case RedirectState.TooManyRedirects:
+                this.reject(new Error("Too many redirects"));
+                break;
             }
             break;
         }
@@ -345,6 +379,17 @@ export default class Request {
         this.requestResponse.timeToFirstByteRead = event.timeToFirstByteRead;
         this.requestResponse.headersSize = event.headersSize;
         this.requestResponse.httpVersion = event.httpVersion;
+        if (event.redirectUrl) {
+            const count = this.requestResponse.addUrl(event.redirectUrl);
+            if (count <= 10) {
+                this.redirected = RedirectState.Redirected;
+            } else {
+                this.redirected = RedirectState.TooManyRedirects;
+                return;
+            }
+        } else {
+            assert(this.redirected === RedirectState.NotRedirected, "Must be not redirected");
+        }
 
         if (!(this.transferEncoding & HTTPTransferEncoding.Chunked)) {
             this.requestData.onChunk = undefined;

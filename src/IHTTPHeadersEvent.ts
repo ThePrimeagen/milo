@@ -11,4 +11,5 @@ export default interface IHTTPHeadersEvent {
     timeToFirstByteRead: number;
     timeToFirstByteWritten: number;
     transferEncoding: HTTPTransferEncoding;
+    redirectUrl?: string;
 };
