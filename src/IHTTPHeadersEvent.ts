@@ -1,4 +1,4 @@
-import { HTTPMethod, HTTPTransferEncoding } from "./types";
+import { HTTPMethod, HTTPEncoding } from "./types";
 
 export default interface IHTTPHeadersEvent {
     contentLength?: number;
@@ -10,6 +10,8 @@ export default interface IHTTPHeadersEvent {
     statusCode: number;
     timeToFirstByteRead: number;
     timeToFirstByteWritten: number;
-    transferEncoding: HTTPTransferEncoding;
     redirectUrl?: string;
+    transferEncoding?: HTTPEncoding[];
+    contentEncoding?: HTTPEncoding[];
 };
+

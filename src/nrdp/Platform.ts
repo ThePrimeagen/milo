@@ -1,5 +1,7 @@
 import "./polyfills";
+import ConnectionPool from "../ConnectionPool";
 import DataBuffer from "./DataBuffer";
+import ICompressionStream from "../ICompressionStream";
 import ICreateSSLNetworkPipeOptions from "../ICreateSSLNetworkPipeOptions";
 import ICreateTCPNetworkPipeOptions from "../ICreateTCPNetworkPipeOptions";
 import IDataBuffer from "../IDataBuffer";
@@ -11,11 +13,10 @@ import ISHA256Context from "../ISHA256Context";
 import N = nrdsocket;
 import NrdpSSL from "./NrdpSSL";
 import RequestResponse from "../RequestResponse";
+import assert from "../utils/assert.macro";
 import createNrdpSSLNetworkPipe from "./NrdpSSLNetworkPipe";
 import createNrdpTCPNetworkPipe from "./NrdpTCPNetworkPipe";
-import { IpConnectivityMode } from "../types";
-import ConnectionPool from "../ConnectionPool";
-import assert from "../utils/assert.macro";
+import { IpConnectivityMode, CompressionStreamMethod, CompressionStreamType } from "../types";
 
 type NrdpGibbonLoadCallbackSignature = (response: RequestResponse) => void;
 type NrdpGibbonLoadSignature = (data: IRequestData | string, callback?: NrdpGibbonLoadCallbackSignature) => number;
@@ -90,6 +91,7 @@ export class NrdpPlatform implements IPlatform {
             if (currentLanguages && currentLanguages.length) {
                 this.cachedStandardHeaders.Language = currentLanguages.join(",");
             }
+            this.cachedStandardHeaders["Accept-Encoding"] = "gzip,deflate";
         }
         return this.cachedStandardHeaders;
     }
@@ -140,6 +142,11 @@ export class NrdpPlatform implements IPlatform {
 
     createSHA256Context(): ISHA256Context {
         return new nrdp_platform.Hasher("sha256");
+    }
+
+    createCompressionStream(method: CompressionStreamMethod,
+                            compress: boolean | CompressionStreamType): ICompressionStream {
+        return new nrdp_platform.CompressionStream(method, compress);
     }
 
     createTCPNetworkPipe(options: ICreateTCPNetworkPipeOptions): Promise<IPipeResult> {

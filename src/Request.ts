@@ -1,5 +1,6 @@
 import DataBuffer from "./DataBuffer";
 import HTTP1 from "./HTTP1/HTTP1";
+import ICompressionStream from "./ICompressionStream";
 import IConnectionOptions from "./IConnectionOptions";
 import IDataBuffer from "./IDataBuffer";
 import IHTTP from "./IHTTP";
@@ -13,7 +14,7 @@ import Platform from "./Platform";
 import RequestResponse from "./RequestResponse";
 import Url from "url-parse";
 import assert from "./utils/assert.macro";
-import { HTTPTransferEncoding, NetError, NetworkErrorCode } from "./types";
+import { HTTPEncoding, NetError, NetworkErrorCode } from "./types";
 
 let nextId = 0;
 
@@ -57,18 +58,18 @@ export default class Request {
     private responseDataOffset?: number;
     private responseDataArray?: IDataBuffer[];
     private responseDataLength: number;
-    private transferEncoding: HTTPTransferEncoding;
     private http: IHTTP;
     private _onTimeoutTimer?: any;
     private transactionStartTime?: number;
     private redirected: RedirectState;
+    private compressionStream?: ICompressionStream;
+    private chunked: boolean;
 
     constructor(data: IRequestData, redirects?: string[]) {
         this.requestData = data;
         this.id = --nextId;
         if (this.id === -2147483648)
             nextId = 0;
-
 
         this.requestResponse = new RequestResponse(this.id, redirects ? redirects : this.requestData.url);
         if (redirects) {
@@ -77,10 +78,10 @@ export default class Request {
             assert(redirects.length <= 10, "This should be less than or equal to 10 " + redirects.length);
         }
         this.requestResponse.reason = NetError.SUCCESS;
-        this.transferEncoding = 0;
         this.responseDataLength = 0;
         this.redirected = RedirectState.NotRedirected;
 
+        this.chunked = false;
         this.http = new HTTP1();
         this.http.on("headers", this._onHeaders.bind(this));
         this.http.on("data", this._onData.bind(this));
@@ -381,9 +382,9 @@ export default class Request {
     }
 
     private _onHeaders(event: IHTTPHeadersEvent): void {
+        // Platform.log("GOT HEADERS", event);
         this.requestResponse.statusCode = event.statusCode;
         this.requestResponse.headers = event.headers;
-        this.transferEncoding = event.transferEncoding;
         this.requestResponse.requestSize = event.requestSize;
         this.requestResponse.timeToFirstByteWritten = event.timeToFirstByteWritten;
         this.requestResponse.timeToFirstByteRead = event.timeToFirstByteRead;
@@ -401,8 +402,38 @@ export default class Request {
             assert(this.redirected === RedirectState.NotRedirected, "Must be not redirected");
         }
 
-        if (!(this.transferEncoding & HTTPTransferEncoding.Chunked)) {
+        if (event.transferEncoding) {
+            for (const transferEncoding of event.transferEncoding) {
+                switch (transferEncoding) {
+                case HTTPEncoding.Chunked:
+                    this.chunked = true;
+                    break;
+                case HTTPEncoding.Gzip:
+                    if (!this.compressionStream)
+                        this.compressionStream = Platform.createCompressionStream("gzip", false);
+                    break;
+                case HTTPEncoding.Deflate:
+                    if (!this.compressionStream)
+                        this.compressionStream = Platform.createCompressionStream("zlib", false);
+                    break;
+                }
+            }
+        }
+
+        if (!this.chunked) {
             this.requestData.onChunk = undefined;
+        }
+
+        if (!this.compressionStream && event.contentEncoding) {
+            for (const contentEncoding of event.contentEncoding) {
+                if (contentEncoding === HTTPEncoding.Gzip) {
+                    this.compressionStream = Platform.createCompressionStream("gzip", false);
+                    break;
+                } else if (contentEncoding === HTTPEncoding.Deflate) {
+                    this.compressionStream = Platform.createCompressionStream("zlib", false);
+                    break;
+                }
+            }
         }
 
         if (!this.requestData.onData && !this.requestData.onChunk && this.requestData.format !== "none") {
@@ -423,6 +454,23 @@ export default class Request {
         // have to copy data, the buffer will be reused
         this.responseDataLength += length;
         Platform.trace("got some data here", length);
+        if (this.compressionStream) {
+            // Platform.log("got chunk", data.slice(offset, length));
+            // let consumed = 0;
+            // let scratchOffset = 0;
+            // while (true) {
+            //     const outputUsed = this.compressionStream.process(Platform.scratch, scratchOffset, undefined,
+            //                                                       data, offset + consumed, length - consumed);
+            //     scratchOffset += outputUsed;
+            //     const inputUsed = this.compressionStream.inputUsed;
+            //     if (!inputUsed)
+            //         break;
+            //     consumed += inputUsed;
+            //     Platform.log("decompressed", outputUsed);
+            // }
+            // Platform.log("gotta decompress a chunk here", length);
+
+        }
         if (this.requestData.onData) {
             this.requestData.onData(data.toArrayBuffer(offset, length));
         } else if (this.requestData.onChunk) { // this arrayBuffer is created by ChunkyParser
@@ -438,7 +486,7 @@ export default class Request {
                 this._transition(RequestState.Finished);
             }
         } else if (this.responseDataArray) {
-            if (this.transferEncoding & HTTPTransferEncoding.Chunked) {
+            if (this.chunked) {
                 assert(!offset, "No offsets for chunks");
                 assert(length === data.byteLength, "No offsets for chunks");
                 this.responseDataArray.push(data); // whole chunks, created by the chunky parser

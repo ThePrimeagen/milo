@@ -5,20 +5,54 @@ import IDataBuffer from "../IDataBuffer";
 import IHTTP from "../IHTTP";
 import IHTTPHeadersEvent from "../IHTTPHeadersEvent";
 import IHTTPRequest from "../IHTTPRequest";
-import INetworkError from "../INetworkError";
+import NetworkError from "../NetworkError";
 import NetworkPipe from "../NetworkPipe";
 import Platform from "../Platform";
 import assert from "../utils/assert.macro";
-import { HTTPTransferEncoding } from "../types";
+import { HTTPEncoding, NetworkErrorCode } from "../types";
+
+function setEncodings(headerValue: string): undefined | HTTPEncoding[] {
+    const encodings = headerValue.split(",");
+    Platform.trace("got some encodings", headerValue);
+    let ret: undefined | HTTPEncoding[];
+    for (const encoding of encodings) {
+        let enc: HTTPEncoding | undefined;
+        switch (encoding.trim()) {
+        case "chunked":
+            enc = HTTPEncoding.Chunked;
+            break;
+        case "compress":
+            enc = HTTPEncoding.Compress;
+            break;
+        case "deflate":
+            enc = HTTPEncoding.Deflate;
+            break;
+        case "gzip":
+            enc = HTTPEncoding.Gzip;
+            break;
+        case "identity":
+            enc = HTTPEncoding.Identity;
+            break;
+        default:
+            continue;
+        }
+        if (Array.isArray(ret)) {
+            ret.push(enc);
+        } else {
+            ret = [enc];
+        }
+    }
+    return ret;
+}
 
 export default class HTTP1 extends EventEmitter implements IHTTP {
     private headerBuffer?: IDataBuffer;
     private connection?: string;
     private headersFinished: boolean;
-    private chunkyParser?: ChunkyParser;
 
     public networkPipe?: NetworkPipe;
     public request?: IHTTPRequest;
+    public chunkyParser?: ChunkyParser;
 
     public upgrade: boolean;
     constructor() {
@@ -133,7 +167,8 @@ Host: ${request.url.host}\r\n`;
         // Platform.trace("got string\n", split);
         const statusLine = split[0];
         if (statusLine.lastIndexOf("HTTP/1.", 0) !== 0) {
-            this.emit("error", new Error("Bad status line " + statusLine));
+            this.emit("error", new NetworkError(NetworkErrorCode.BadStatusLine,
+                                                "Bad status line " + statusLine));
             return false;
         }
         let httpVersion;
@@ -145,20 +180,18 @@ Host: ${request.url.host}\r\n`;
             httpVersion = "1.0";
             break;
         default:
-            this.emit("error", new Error("Bad status line " + statusLine));
+            this.emit("error", new NetworkError(NetworkErrorCode.BadStatusLine,
+                                                "Bad status line " + statusLine));
             return false;
         }
 
         assert(this.request, "Gotta have request");
         const event = {
-            contentLength: undefined,
-            redirectUrl: undefined,
             headers: [],
             headersSize: rnrn + 4,
             method: this.request.method,
             requestSize: this.networkPipe.bytesWritten,
             statusCode: -1,
-            transferEncoding: 0,
             httpVersion,
             timeToFirstByteRead: this.networkPipe.firstByteRead - this.request.networkStartTime,
             timeToFirstByteWritten: this.networkPipe.firstByteWritten - this.request.networkStartTime
@@ -167,7 +200,8 @@ Host: ${request.url.host}\r\n`;
         const space = statusLine.indexOf(' ', 9);
         event.statusCode = parseInt(statusLine.substring(9, space), 10);
         if (isNaN(event.statusCode) || event.statusCode < 0) {
-            this.emit("error", new Error("Bad status line " + statusLine));
+            this.emit("error", new NetworkError(NetworkErrorCode.BadStatusLine,
+                                                "Bad status line " + statusLine));
             return false;
         }
         const redirectStatus = (event.statusCode >= 300
@@ -176,6 +210,7 @@ Host: ${request.url.host}\r\n`;
         // this.requestResponse.headers = new ResponseHeaders;
         let contentLength: string | undefined;
         let transferEncoding: string | undefined;
+        let contentEncoding: string | undefined;
 
         for (let i = 1; i < split.length; ++i) {
             // split \r\n\r\n by \r\n causes 2 empty lines.
@@ -185,7 +220,8 @@ Host: ${request.url.host}\r\n`;
             }
             let idx = split[i].indexOf(":");
             if (idx <= 0) {
-                this.emit("error", new Error("Bad header " + split[i]));
+                this.emit("error", new NetworkError(NetworkErrorCode.BadHeader,
+                                                    "Bad header " + split[i]));
                 return false;
             }
             const key = split[i].substr(0, idx);
@@ -214,6 +250,11 @@ Host: ${request.url.host}\r\n`;
                     contentLength = value;
                 }
                 break;
+            case 16:
+                if (key === "Content-Encoding" || key.toLowerCase() === "content-encoding") {
+                    contentEncoding = value;
+                }
+                break;
             case 17:
                 if (key === "Transfer-Encoding" || key.toLowerCase() === "transfer-encoding") {
                     transferEncoding = value;
@@ -224,53 +265,37 @@ Host: ${request.url.host}\r\n`;
         }
 
         if (transferEncoding) {
-            let encodings: number = 0;
-            const transferEncodings = transferEncoding.split(",");
-            Platform.trace("got some encodings", transferEncodings);
-            for (const encoding of transferEncodings) {
-                switch (encoding.trim()) {
-                case "chunked":
-                    this.chunkyParser = new ChunkyParser();
-                    this.chunkyParser.on("chunk", (chunk: IDataBuffer) => {
-                        Platform.trace("got a chunk right here", chunk.byteLength);
-                        this.emit("data", chunk, 0, chunk.byteLength);
-                    });
-                    this.chunkyParser.on("error", (err: INetworkError) => {
-                        this.emit("error", err);
-                    });
+            event.transferEncoding = setEncodings(transferEncoding);
+            if (event.transferEncoding && event.transferEncoding.indexOf(HTTPEncoding.Chunked) !== -1) {
+                this.chunkyParser = new ChunkyParser();
+                this.chunkyParser.on("chunk", (chunk: IDataBuffer) => {
+                    Platform.trace("got a chunk right here", chunk.byteLength);
+                    this.emit("data", chunk, 0, chunk.byteLength);
+                });
+                this.chunkyParser.on("error", (err: Error) => {
+                    this.emit("error", err);
+                });
 
-                    this.chunkyParser.on("done", (buffer: IDataBuffer | undefined) => {
-                        if (buffer) {
-                            assert(this.networkPipe, "Must have networkPipe");
-                            this.networkPipe.stash(buffer, 0, buffer.byteLength);
-                        }
-                        this.chunkyParser = undefined;
-                        this.emit("finished");
-                    });
-
-                    encodings |= HTTPTransferEncoding.Chunked;
-                    break;
-                case "compress":
-                    encodings |= HTTPTransferEncoding.Compress;
-                    break;
-                case "deflate":
-                    encodings |= HTTPTransferEncoding.Deflate;
-                    break;
-                case "gzip":
-                    encodings |= HTTPTransferEncoding.Gzip;
-                    break;
-                case "identity":
-                    encodings |= HTTPTransferEncoding.Identity;
-                    break;
-                }
+                this.chunkyParser.on("done", (buffer: IDataBuffer | undefined) => {
+                    if (buffer) {
+                        assert(this.networkPipe, "Must have networkPipe");
+                        this.networkPipe.stash(buffer, 0, buffer.byteLength);
+                    }
+                    this.chunkyParser = undefined;
+                    this.emit("finished");
+                });
             }
-            event.transferEncoding = encodings as HTTPTransferEncoding;
+        }
+
+        if (contentEncoding) {
+            event.contentEncoding = setEncodings(contentEncoding);
         }
 
         if (contentLength) {
             const len = parseInt(contentLength, 10);
             if (len < 0 || isNaN(len)) {
-                this.emit("error", new Error("Bad content length " + contentLength));
+                this.emit("error", new NetworkError(NetworkErrorCode.BadContentLength,
+                                                    "Bad content length " + contentLength));
                 return false;
             }
             event.contentLength = len;

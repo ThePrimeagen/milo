@@ -1,23 +1,24 @@
+import ConnectionPool from "../ConnectionPool";
 import DataBuffer from "./DataBuffer";
+import ICompressionStream from "../ICompressionStream";
 import ICreateSSLNetworkPipeOptions from "../ICreateSSLNetworkPipeOptions";
 import ICreateTCPNetworkPipeOptions from "../ICreateTCPNetworkPipeOptions";
 import IDataBuffer from "../IDataBuffer";
 import IDnsResult from "../IDnsResult";
 import IPipeResult from "../IPipeResult";
 import IPlatform from "../IPlatform";
+import IRequestData from "../IRequestData";
 import ISHA256Context from "../ISHA256Context";
+import RequestResponse from "../RequestResponse";
+import SHA256Context from "./SHA256Context";
 import atob from "atob";
 import btoa from "btoa";
 import createTCPNetworkPipe from "./NodeTCPNetworkPipe";
 import dns from "dns";
 import fs from "fs";
 import sha1 from "sha1";
-import SHA256Context from "./SHA256Context";
-import RequestResponse from "../RequestResponse";
-import IRequestData from "../IRequestData";
-import { IpVersion, HTTPRequestHeaders, IpConnectivityMode } from "../types";
+import { IpVersion, HTTPRequestHeaders, IpConnectivityMode, CompressionStreamMethod, CompressionStreamType } from "../types";
 import { toUint8Array } from "./utils";
-import ConnectionPool from "../ConnectionPool";
 
 type ArrayBufferConcatType = Uint8Array | IDataBuffer | ArrayBuffer;
 
@@ -83,6 +84,11 @@ class NodePlatform implements IPlatform {
 
     createSHA256Context(): ISHA256Context {
         return new SHA256Context() as ISHA256Context;
+    }
+
+    createCompressionStream(method: CompressionStreamMethod,
+                            compress: boolean | CompressionStreamType): ICompressionStream {
+        throw new Error("Gotta implement this");
     }
 
     writeFile(fileName: string, contents: Uint8Array | ArrayBuffer | string): boolean {

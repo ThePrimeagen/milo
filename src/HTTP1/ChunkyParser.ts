@@ -1,9 +1,10 @@
-import Platform from "../Platform";
 import DataBuffer from "../DataBuffer";
-import { escapeData } from "../utils";
 import EventEmitter from "../EventEmitter";
 import IDataBuffer from "../IDataBuffer";
+import NetworkError from "../NetworkError";
 import assert from '../utils/assert.macro';
+import { NetworkErrorCode } from "../types";
+import { escapeData } from "../utils";
 
 export default class ChunkyParser extends EventEmitter {
     private buffers: IDataBuffer[];
@@ -53,7 +54,8 @@ export default class ChunkyParser extends EventEmitter {
                                 if (buf.get(i) === 10) {
                                     const len = parseInt(str, 16);
                                     if (isNaN(len)) {
-                                        this.emit("error", new Error("Failed to chunky parse [" + str + "] " + len));
+                                        const msg = "Failed to chunky parse [" + str + "] " + len;
+                                        this.emit("error", new NetworkError(NetworkErrorCode.ChunkyError, msg));
                                         return;
                                     }
                                     this.dataNeeded = len;
@@ -109,7 +111,7 @@ export default class ChunkyParser extends EventEmitter {
             }
         }
         assert(consumed === bytes,
-                        `Bytes should be nothing by now bytes: ${bytes} consumed: ${consumed} available: ${this.available}`);
+               `Bytes should be nothing by now bytes: ${bytes} consumed: ${consumed} available: ${this.available}`);
         this.available -= consumed;
     }
 

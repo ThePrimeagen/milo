@@ -75,11 +75,10 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
         }
         offset = offset || 0;
         if (!length)
-            throw new Error("0 length write");
+            throw new NetworkError(NetworkErrorCode.ZeroLengthWrite, "0 length write");
 
-        assert(
-            this.writeBuffers.length === this.writeBufferLengths.length,
-            "These should be the same length");
+        assert(this.writeBuffers.length === this.writeBufferLengths.length,
+               "These should be the same length");
         this.writeBuffers.push(buf);
         this.writeBufferOffsets.push(offset);
         this.writeBufferLengths.push(length);
@@ -195,14 +194,16 @@ export default function createTCPNetworkPipe(platform: NrdpPlatform,
                 ipAddress += ":" + options.port;
 
             if (options.ipVersion !== 4 && options.ipVersion !== 6) {
-                reject(new Error("Invalid ip version in options"));
+                reject(new NetworkError(NetworkErrorCode.InvalidIpVersion,
+                                        "Invalid ip version in options"));
             }
 
             let sockAddr: N.Sockaddr;
             try {
                 sockAddr = new N.Sockaddr(ipAddress);
                 if (sockAddr.ipVersion !== options.ipVersion) {
-                    reject(new Error("Invalid ip version in ip address"));
+                    reject(new NetworkError(NetworkErrorCode.InvalidIpVersion,
+                                            "Invalid ip version in ip address"));
                 }
                 dnsType = "literal";
                 innerResolve(sockAddr);
@@ -212,7 +213,8 @@ export default function createTCPNetworkPipe(platform: NrdpPlatform,
                                     options.dnsTimeout, (dnsResult: IDnsResult) => {
                                         // platform.log("got dns result", dnsResult);
                                         if (!dnsResult.addresses.length) {
-                                            reject(new Error("Failed to lookup host"));
+                                            const str = `Failed to lookup host ${options.hostname} ${options.ipVersion}: ${dnsResult.error}`;
+                                            reject(new NetworkError(NetworkErrorCode.DnsError, str));
                                             return;
                                         }
                                         try {
@@ -260,14 +262,15 @@ export default function createTCPNetworkPipe(platform: NrdpPlatform,
                         N.clearFD(sock);
                         N.close(sock);
                         sock = -1;
-                        reject(new Error("Timed out connecting to host"));
+                        reject(new NetworkError(NetworkErrorCode.ConnectTimeout,
+                                                "Timed out connecting to host " + options.hostname));
                     }, options.connectTimeout);
                     /* tslint:disable:no-shadowed-variable */
                     N.setFD(sock, N.WRITE, (sock: number, mode: number) => {
-                        // ### should use DataBuffer
                         const ret = N.getsockopt(sock, N.SOL_SOCKET, N.SO_ERROR, platform.scratch);
                         if (ret === -1) {
-                            reject(new Error(`Failed to connect to host ${N.errno}`));
+                            reject(new NetworkError(NetworkErrorCode.ConnectFailure,
+                                                    `Failed to connect to host ${options.hostname}:${options.port} errno: ${N.errno}`));
                             return;
                         }
 
@@ -282,7 +285,8 @@ export default function createTCPNetworkPipe(platform: NrdpPlatform,
                             connected();
                             break;
                         default:
-                            reject(new Error(`Failed to connect to host ${options.hostname}:${options.port} ${errno}`));
+                            reject(new NetworkError(NetworkErrorCode.ConnectFailure,
+                                                    `Failed to connect to host ${options.hostname}:${options.port} errno: ${N.errno}`));
                             break;
                         }
                     });

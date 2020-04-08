@@ -1,3 +1,5 @@
+import ConnectionPool from "./ConnectionPool";
+import ICompressionStream from "./ICompressionStream";
 import ICreateSSLNetworkPipeOptions from "./ICreateSSLNetworkPipeOptions";
 import ICreateTCPNetworkPipeOptions from "./ICreateTCPNetworkPipeOptions";
 import IDataBuffer from "./IDataBuffer";
@@ -7,8 +9,7 @@ import IRequestData from "./IRequestData";
 import IRequestTimeouts from "./IRequestTimeouts";
 import ISHA256Context from "./ISHA256Context";
 import RequestResponse from "./RequestResponse";
-import { IpConnectivityMode, IpVersion, } from "./types";
-import ConnectionPool from "./ConnectionPool";
+import { IpConnectivityMode, IpVersion, CompressionStreamType, CompressionStreamMethod } from "./types";
 
 type ArrayBufferConcatType = Uint8Array | IDataBuffer | ArrayBuffer;
 
@@ -63,6 +64,8 @@ export default interface IPlatform {
     createTCPNetworkPipe(options: ICreateTCPNetworkPipeOptions): Promise<IPipeResult>;
     createSSLNetworkPipe(options: ICreateSSLNetworkPipeOptions): Promise<IPipeResult>;
     createSHA256Context(): ISHA256Context;
+    createCompressionStream(method: CompressionStreamMethod,
+                            compress: boolean | CompressionStreamType): ICompressionStream;
 
     lookupDnsHost(host: string,
                   ipVersion: IpVersion,

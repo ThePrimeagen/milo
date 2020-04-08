@@ -6,6 +6,8 @@ export type HTTPRequestHeaders = { [key: string]: any };
 export type HashType = "sha1" | "sha256" | "sha512" | "md5";
 export type IpConnectivityMode = 4 | 6 | 10 | 0; // 0 is invalid, 10 is dual
 export type IpVersion = 4 | 6;
+export type CompressionStreamMethod = "zlib" | "gzip";
+export type CompressionStreamType = "compress" | "uncompress";
 
 export enum ErrorCode {
     None = 0
@@ -13,13 +15,12 @@ export enum ErrorCode {
 
 export type EventListenerCallback = (...args: any[]) => void;
 
-export enum HTTPTransferEncoding {
-    None = 0x00,
-    Chunked = 0x01,
-    Compress = 0x02,
-    Deflate = 0x04,
-    Gzip = 0x08,
-    Identity = 0x10
+export enum HTTPEncoding {
+    Chunked = 1,
+    Compress = 2,
+    Deflate = 3,
+    Gzip = 4,
+    Identity = 5
 };
 
 export enum RequestResponseDnsType {
@@ -67,10 +68,14 @@ export enum NetError {
 }
 
 export enum NetworkErrorCode {
+    BadContentLength,
+    BadHeader,
+    BadStatusLine,
+    ChunkyError,
     ConnectFailure,
     ConnectTimeout,
     ContentLengthTooLong,
-    HostLookupFailure,
+    DnsError,
     InvalidIpAddress,
     InvalidIpVersion,
     InvalidUrl,
@@ -86,10 +91,14 @@ export enum NetworkErrorCode {
 
 export function networkErrorCodeToString(code: NetworkErrorCode): string {
     switch (code) {
+    case NetworkErrorCode.BadContentLength: return "Bad content length";
+    case NetworkErrorCode.BadHeader: return "Bad header";
+    case NetworkErrorCode.BadStatusLine: return "Bad HTTP1x status line";
+    case NetworkErrorCode.ChunkyError: return "Chunky error";
     case NetworkErrorCode.ConnectFailure: return "Connect failure";
     case NetworkErrorCode.ConnectTimeout: return "Connect timeout";
     case NetworkErrorCode.ContentLengthTooLong: return "Content length too long";
-    case NetworkErrorCode.HostLookupFailure: return "Host lookup failure";
+    case NetworkErrorCode.DnsError: return "Dns error";
     case NetworkErrorCode.InvalidIpAddress: return "Invalid ip address";
     case NetworkErrorCode.InvalidIpVersion: return "Invalid ip version";
     case NetworkErrorCode.InvalidUrl: return "Invalid url";

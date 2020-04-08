@@ -22,6 +22,22 @@ declare namespace nrdp_platform {
     namespace JSON {
         function parse(data: string | IDataBuffer): any[] | undefined;
     }
+    class CompressionStream {
+        constructor(method: "zlib" | "gzip", type: boolean | "compress" | "uncompress");
+
+        process(output: Uint8Array | ArrayBuffer | IDataBuffer,
+                outputOffset: number,
+                outputLength: number | undefined,
+                input: Uint8Array | ArrayBuffer | IDataBuffer | string,
+                inputOffset?: number,
+                inputLength?: number): number;
+
+        readonly inputUsed: number;
+        readonly method: string;
+        readonly type: string;
+    }
+
+    function utf8Length(str: string): number;
 
     function parseXML(data: string | IDataBuffer): any;
 }
