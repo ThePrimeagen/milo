@@ -3,7 +3,6 @@
     "exclude": [ "**/*flycheck_*.ts" ],
     "compilerOptions": {
         "moduleResolution": "node",
-        "sourceMap": true,
         "noImplicitAny": true,
         "esModuleInterop": true,
         "allowJs": true,
@@ -12,6 +11,7 @@
         "downlevelIteration": true,
         "strict": true,
         "target": "es6",
+        "outDir": "build",
         "typeRoots": [
             "./node_modules/@types",
             "./typings"

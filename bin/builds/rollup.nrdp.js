@@ -17,6 +17,8 @@ const getPluginsConfig = (prod) => {
         babel({
             exclude: "node_modules/**",
             babelrc: false,
+            inputSourceMap: false,
+            sourceMaps: false,
             presets: [
                 [
                     '@babel/preset-env',

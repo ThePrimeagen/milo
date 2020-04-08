@@ -1,6 +1,8 @@
 {
     "extends": "../../tsconfig.json",
     "exclude": [
+        "**/node_modules",
+        "**/.*/",
         "../../examples",
         "../../autobahn",
         "../../src/node",
@@ -9,6 +11,7 @@
     ],
     "compilerOptions": {
         "incremental": true,
+        "sourceMap": true,
         "outDir": "../../build/nrdp",
         "module": "es6",
         "target": "esnext", // target esnext to keep async/await
