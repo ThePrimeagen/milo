@@ -4,6 +4,7 @@ declare namespace nrdp {
     type IDnsResult = import("../src/IDnsResult").default;
     type RequestResponse = import("../src/RequestResponse").default;
     type IRequestData = import("../src/IRequestData").default;
+    type IMilo = import("../src/IMilo").default;
 
     namespace dns {
         function lookupHost(host: string,
@@ -74,4 +75,6 @@ declare namespace nrdp {
     function atob(buffer: Uint8Array | ArrayBuffer | IDataBuffer | string): string;
 
     const js_options: any;
+
+    let milo: IMilo | undefined;
 }

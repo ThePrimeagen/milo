@@ -4,6 +4,7 @@ import ICompressionStream from "../ICompressionStream";
 import ICreateSSLNetworkPipeOptions from "../ICreateSSLNetworkPipeOptions";
 import ICreateTCPNetworkPipeOptions from "../ICreateTCPNetworkPipeOptions";
 import IDataBuffer from "../IDataBuffer";
+import IMilo from "../IMilo";
 import IPipeResult from "../IPipeResult";
 import IPlatform from "../IPlatform";
 import IRequestData from "../IRequestData";
@@ -178,13 +179,39 @@ export class NrdpPlatform implements IPlatform {
         return undefined;
     }
 
-    polyfillGibbonLoad(mode: "all" | "optin", polyfill: NrdpGibbonLoadSignature): void {
-        this.log("POLYFILLING", mode);
-        this.polyfillAll = mode === "all";
-        this.miloLoad = polyfill;
-        nrdp.gibbon.load = this.polyfilledGibbonLoad.bind(this);
-        // nrdp.gibbon.loadScript = this.polyfilledGibbonLoadScript.bind(this);
-        nrdp.gibbon.stopLoad = this.polyfilledGibbonStopLoad.bind(this);
+    loadMilo(milo: IMilo): boolean {
+        this.log("CALLED", this.location, typeof nrdp.milo);
+        if (typeof nrdp.milo !== "undefined")
+            return false;
+        nrdp.milo = milo;
+
+        let poly: any = this.options("polyfill-milo");
+        switch (typeof poly) {
+        case "boolean":
+            if (!poly) {
+                break;
+            }
+            poly = "optin";
+            // fall through
+        case "string":
+            if (poly !== "optin" && poly !== "all") {
+                throw new Error("Invalid polyfill string " + poly);
+            } else {
+                this.polyfillAll = poly === "all";
+                this.miloLoad = milo.load;
+                nrdp.gibbon.load = this.polyfilledGibbonLoad.bind(this);
+                // nrdp.gibbon.loadScript = this.polyfilledGibbonLoadScript.bind(this);
+                nrdp.gibbon.stopLoad = this.polyfilledGibbonStopLoad.bind(this);
+                // this.polyfillGibbonLoad(poly, milo.load);
+            }
+            break;
+        case "undefined":
+            break;
+        default:
+            throw new Error("Invalid polyfill type " + typeof poly);
+        }
+
+        return true;
     }
 
     private polyfilledGibbonLoad(data: IRequestData | string,

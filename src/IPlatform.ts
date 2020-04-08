@@ -4,11 +4,10 @@ import ICreateSSLNetworkPipeOptions from "./ICreateSSLNetworkPipeOptions";
 import ICreateTCPNetworkPipeOptions from "./ICreateTCPNetworkPipeOptions";
 import IDataBuffer from "./IDataBuffer";
 import IDnsResult from "./IDnsResult";
+import IMilo from "./IMilo";
 import IPipeResult from "./IPipeResult";
-import IRequestData from "./IRequestData";
 import IRequestTimeouts from "./IRequestTimeouts";
 import ISHA256Context from "./ISHA256Context";
-import RequestResponse from "./RequestResponse";
 import { IpConnectivityMode, IpVersion, CompressionStreamType, CompressionStreamMethod } from "./types";
 
 type ArrayBufferConcatType = Uint8Array | IDataBuffer | ArrayBuffer;
@@ -87,7 +86,5 @@ export default interface IPlatform {
 
     options(key: string): any;
 
-    polyfillGibbonLoad(mode: "all" | "optin",
-                       polyfill: (data: IRequestData | string,
-                                  callback?: (response: RequestResponse) => void) => number): void;
+    loadMilo(milo: IMilo): boolean;
 };

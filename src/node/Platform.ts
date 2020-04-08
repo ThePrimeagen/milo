@@ -5,6 +5,7 @@ import ICreateSSLNetworkPipeOptions from "../ICreateSSLNetworkPipeOptions";
 import ICreateTCPNetworkPipeOptions from "../ICreateTCPNetworkPipeOptions";
 import IDataBuffer from "../IDataBuffer";
 import IDnsResult from "../IDnsResult";
+import IMilo from "../IMilo";
 import IPipeResult from "../IPipeResult";
 import IPlatform from "../IPlatform";
 import IRequestData from "../IRequestData";
@@ -19,6 +20,11 @@ import fs from "fs";
 import sha1 from "sha1";
 import { IpVersion, HTTPRequestHeaders, IpConnectivityMode, CompressionStreamMethod, CompressionStreamType } from "../types";
 import { toUint8Array } from "./utils";
+
+declare var global: any;
+declare global {
+    let milo: IMilo | undefined
+}
 
 type ArrayBufferConcatType = Uint8Array | IDataBuffer | ArrayBuffer;
 
@@ -314,9 +320,9 @@ class NodePlatform implements IPlatform {
     }
 
 
-    polyfillGibbonLoad(mode: "all" | "optin",
-                       polyfill: (data: IRequestData, callback: (response: RequestResponse) => void) => number): void {
-        throw new Error("Dude!");
+    loadMilo(milo: IMilo): boolean {
+        global.milo = milo;
+        return true;
     }
 }
 
