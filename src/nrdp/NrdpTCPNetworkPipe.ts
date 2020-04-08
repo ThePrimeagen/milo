@@ -13,7 +13,7 @@ import { NrdpPlatform } from "./Platform";
 
 export class NrdpTCPNetworkPipe extends NetworkPipe {
     private sock: number;
-    private writeBuffers: (Uint8Array | ArrayBuffer | IDataBuffer | string)[];
+    private writeBuffers: (Uint8Array | ArrayBuffer | IDataBuffer)[];
     private writeBufferOffsets: number[];
     private writeBufferLengths: number[];
     private selectMode: number;
@@ -68,7 +68,7 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
         this.firstByteWritten = 0;
     }
 
-    write(buf: IDataBuffer | string, offset?: number, length?: number): void {
+    write(buf: IDataBuffer | ArrayBuffer | Uint8Array | string, offset?: number, length?: number): void {
         if (typeof buf === "string") {
             buf = new DataBuffer(buf);
             length = buf.byteLength;
@@ -79,13 +79,14 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
 
         assert(this.writeBuffers.length === this.writeBufferLengths.length,
                "These should be the same length");
-        this.writeBuffers.push(buf);
-        this.writeBufferOffsets.push(offset);
-        this.writeBufferLengths.push(length);
-        if (this.writeBuffers.length === 1) { // don't really need these arrays when writebuffers is empty
-            this._write();
-        } else {
+        this.platform.log("write called with buffers being", this.writeBuffers.length);
+        if (this.writeBuffers.length) {
+            this.writeBuffers.push(buf);
+            this.writeBufferOffsets.push(offset);
+            this.writeBufferLengths.push(length);
             assert(this.selectMode === N.READWRITE, "select mode must be readwrite");
+        } else {
+            this._writeBuffer(buf, offset, length);
         }
     }
 
@@ -123,6 +124,45 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
         N.close(this.sock); // ### error checking?
         this.sock = -1;
         this.emit("close");
+    }
+
+    // this logic is mostly duplicated from _write.
+    // Since this is the core of the whole networking operation I
+    // think it's worth optimizing for both cases.
+    private _writeBuffer(buf: Uint8Array | ArrayBuffer | IDataBuffer, off: number, len: number): void {
+        assert(!this.writeBuffers.length, "This function shouldn't be called if you have writeBuffers");
+        assert(len > 0, "Nothing to write");
+        while (len) {
+            assert(len > 0, "Nothing to write");
+            const written = N.write(this.sock, buf, off, len);
+            this.platform.trace("wrote", written, "of", len, "for", this.sock);
+            if (written > 0) {
+                if (!this.firstByteWritten)
+                    this.firstByteWritten = this.platform.mono();
+                this.bytesWritten += written;
+                off += written;
+                len -= written;
+            } else if (N.errno === N.EWOULDBLOCK) {
+                break;
+            } else {
+                this._error(new NetworkError(NetworkErrorCode.SocketWriteError,
+                                             `write error, errno: ${N.errno} ${N.strerror()}`));
+                return;
+            }
+        }
+        let mode = N.READ;
+        this.platform.log("_writeBuffer finished with", len);
+        if (len) {
+            this.writeBuffers.push(buf);
+            this.writeBufferOffsets.push(off);
+            this.writeBufferLengths.push(len);
+            mode = N.READWRITE;
+        }
+        if (mode !== this.selectMode) {
+            this.selectMode = mode;
+            N.setFD(this.sock, mode, this._onSelect.bind(this));
+            assert(!(mode & N.WRITE) || this.writeBuffers.length, "Should have write buffers now");
+        }
     }
 
     private _write(): void {
