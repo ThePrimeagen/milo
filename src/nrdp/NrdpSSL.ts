@@ -125,12 +125,9 @@ export default class NrdpSSL {
     ERR_error_string(error: number): string {
         this.g.ERR_error_string_n(error, this.ERRstringBuf, this.ERRstringBuf.byteLength);
         // nrdp.l.success("error", error, ERRstringBuf);
-        let i;
-        for (i = 0; i < this.ERRstringBuf.byteLength; ++i) {
-            if (!this.ERRstringBuf.get(i)) {
-                break;
-            }
-        }
+        let i = this.ERRstringBuf.indexOf(0);
+        if (i === -1)
+            i = this.ERRstringBuf.byteLength;
         // nrdp.l.success("balle", i);
         return nrdp.utf8toa(this.ERRstringBuf, 0, i);
     }
