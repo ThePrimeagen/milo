@@ -201,6 +201,16 @@
             "type": "(struct: N.Struct, idx: number) => N.Struct | undefined"
         },
         {
+            "signature": "int X509_STORE_CTX_get_error(Struct *struct);",
+            "name": "X509_STORE_CTX_get_error",
+            "type": "(struct: N.Struct) => number"
+        },
+        {
+            "signature": "const char *X509_verify_cert_error_string(long n);",
+            "name": "X509_verify_cert_error_string",
+            "type": "(n: number) => N.ConstDataPointer"
+        },
+        {
             "signature": "int X509_STORE_add_cert(X509_STORE *ctx, X509 *x);",
             "name": "X509_STORE_add_cert",
             "type": "(ctx: N.Struct, x: N.Struct) => number"
@@ -246,19 +256,24 @@
             "type": "(a: N.Struct) => N.Struct | undefined"
         },
         {
-            "signature": "ASN1_TIME *X509_getm_notBefore(const X509 *x);",
-            "name": "X509_getm_notBefore",
+            "signature": "ASN1_TIME *X509_get0_notBefore(const X509 *x);",
+            "name": "X509_get0_notBefore",
             "type": "(a: N.Struct) => N.Struct | undefined"
         },
         {
-            "signature": "ASN1_TIME *X509_getm_notAfter(const X509 *x);",
-            "name": "X509_getm_notAfter",
+            "signature": "ASN1_TIME *X509_get0_notAfter(const X509 *x);",
+            "name": "X509_get0_notAfter",
             "type": "(a: N.Struct) => N.Struct | undefined"
+        },
+        {
+            "signature": "int ASN1_UTCTIME_print(BIO *fp, const ASN1_UTCTIME *a);",
+            "name": "ASN1_UTCTIME_print",
+            "type": "(fp: N.Struct, a: N.Struct) => number"
         },
         {
             "signature": "BIGNUM *ASN1_INTEGER_to_BN(const ASN1_INTEGER *ai, BIGNUM *bn);",
             "name": "ASN1_INTEGER_to_BN",
-            "type": "(ai: N.Struct, bn: N.Struct) => N.Struct | undefined"
+            "type": "(ai: N.Struct, bn: N.Struct | undefined) => N.Struct | undefined"
         },
         {
             "signature": "char *BN_bn2hex(const BIGNUM *a);",
@@ -279,10 +294,16 @@
             "signature": "char *X509_NAME_oneline(const X509_NAME *a, char *buf, int size);",
             "name": "X509_NAME_oneline",
             "type": "(a: N.Struct, buf: ArrayBuffer | Uint8Array | IDataBuffer, size: number) => N.DataPointer | undefined"
+        },
+        {
+            "signature": "int ASN1_UTCTIME_check(const ASN1_UTCTIME *a);",
+            "name": "ASN1_UTCTIME_check",
+            "type": "(a: N.Struct) => number"
         }
     ],
 
     "constants": [
+        { "name": "BIO_CTRL_INFO", "value": 3 },
         { "name": "BIO_C_SET_BUF_MEM_EOF_RETURN", "value": 130 },
         { "name": "SSL_CTRL_BUILD_CERT_CHAIN", "value": 105, "disabled": true },
         { "name": "SSL_CTRL_CERT_FLAGS", "value": 99, "disabled": true },

@@ -10,9 +10,17 @@ import NetworkPipe from "../NetworkPipe";
 import assert from '../utils/assert.macro';
 import { NetworkErrorCode } from "../types";
 import { NrdpPlatform } from "./Platform";
+import { X509Data } from "./NrdpSSL";
+
+interface SSLVerifyErrorMessage {
+    traceArea: string;
+    type: string;
+    tags: { [key: string]: any };
+};
 
 class NrdpSSLNetworkPipe extends NetworkPipe {
     private sslInstance: N.Struct;
+    private trustStoreHash: string;
     private inputBio: N.Struct;
     private outputBio: N.Struct;
     private pipe: NetworkPipe;
@@ -34,31 +42,56 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
         this.writeBufferLengths = [];
 
         this.pipe = options.pipe;
+        const memMethod = platform.ssl.g.BIO_s_mem();
+        assert(memMethod, "gotta have memMethod");
+        this.trustStoreHash = nrdp.trustStoreHash;
         this.sslInstance = platform.ssl.createSSL(options, (preverifyOk: number, x509StoreContext: N.Struct) => {
+            platform.log("got preverifyOk", preverifyOk);
             if (preverifyOk !== 1) {
-                const message = {
+                const chain = [];
+                const message: SSLVerifyErrorMessage = {
+                    traceArea: "RESOURCEMANAGER",
+                    type: "certstatuserror",
                     tags: {
-                        "nwerr": "untrustedcert",
-                        "ipAddress": this.pipe.ipAddress
-                    }
+                        nwerr: "untrustedcert",
+                        ipAddress: this.pipe.ipAddress,
+                        truststorehash: this.trustStoreHash
+                    },
                 };
+
                 const xChain = platform.ssl.g.X509_STORE_CTX_get0_chain(x509StoreContext);
                 if (xChain) {
-                    const chain = [];
-                    const num = platform.ssl.g.OPENSSL_sk_num(xChain);
-                    for (let i = 0; i < num; ++i) {
-                        const x509 = platform.ssl.g.OPENSSL_sk_value(xChain, i);
-                        if (x509) {
-                            chain.push(platform.ssl.x509Data(x509));
+                    const b = platform.ssl.g.BIO_new(memMethod);
+                    if (b) {
+                        const num = platform.ssl.g.OPENSSL_sk_num(xChain);
+
+                        for (let i = 0; i < num; ++i) {
+                            const x509 = platform.ssl.g.OPENSSL_sk_value(xChain, i);
+                            if (x509) {
+                                const x509Data = platform.ssl.x509Data(x509, b, platform.scratch);
+                                chain.push(x509Data);
+                                if (!i) {
+                                    Object.assign(message.tags, x509Data);
+                                    const err: number = platform.ssl.g.X509_STORE_CTX_get_error(x509StoreContext);
+                                    const errorString = platform.ssl.g.X509_verify_cert_error_string(err);
+                                    message.tags.errreason = `${errorString.stringify()} code: ${err}`;
+                                    errorString.release();
+                                }
+                            }
                         }
+                        b.release();
                     }
+                    xChain.release();
+                }
+                message.tags.chain = JSON.stringify(chain);
+                nrdp.l.error(message);
+                if (!nrdp.options.ssl_peer_verification) {
+                    preverifyOk = 1;
                 }
             }
             return preverifyOk;
         });
 
-        const memMethod = platform.ssl.g.BIO_s_mem();
-        assert(memMethod, "gotta have memMethod");
         let bio = platform.ssl.g.BIO_new(memMethod);
         assert(bio, "gotta have inputBio");
         this.inputBio = bio;
@@ -271,7 +304,7 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
             platform.trace("got data", read);
             const written = platform.ssl.g.BIO_write(this.inputBio, platform.scratch, 0, read);
             platform.trace("wrote", read, "bytes to inputBio =>", written);
-            if (!this.connected) {
+            if (!this.connected && this.connectedCallback) {
                 this._connect();
             }
             if (this.connected) {
