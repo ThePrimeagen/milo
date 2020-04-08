@@ -7,7 +7,7 @@ import NetworkPipe from "../NetworkPipe";
 import net from "net";
 import { Pool, PoolItem, PoolFreeFunction, } from '../Pool';
 
-enum State {
+const enum State {
     Connecting = "Connecting",
     Alive = "Alive",
     Destroyed = "Destroyed",

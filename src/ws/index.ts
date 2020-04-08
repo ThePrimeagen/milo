@@ -38,7 +38,7 @@ export type CallbackMap = {
     error: ErrorCallback[];
 };
 
-export enum ConnectionState {
+export const enum ConnectionState {
     Connecting = 1,
     Connected = 2,
     Closed = 3,

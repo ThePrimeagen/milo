@@ -1,5 +1,5 @@
 // Don't know what this is?
-export enum FrameType {
+export const enum FrameType {
     HEADERS = 0x1,
     PRIORITY = 0x2,
     RST_STREAM = 0x3,
@@ -11,7 +11,7 @@ export enum FrameType {
     CONTINUATION = 0x9,
 };
 
-export enum Settings {
+export const enum Settings {
     HEADER_TABLE_SIZE = 0x1,
     ENABLE_PUSH = 0x2,
     MAX_CONCURRENT_STREAMS = 0x3,
@@ -20,7 +20,7 @@ export enum Settings {
     MAX_HEADER_LIST_SIZE = 0x6,
 }
 
-export enum Flag {
+export const enum Flag {
     ACK = 0x1,
     END_STREAM = 0x1,
     PRIORITY = 0x2,

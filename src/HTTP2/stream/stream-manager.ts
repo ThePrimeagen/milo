@@ -15,7 +15,7 @@ import IDataBuffer from "../../IDataBuffer";
 // TODO: Happy case only implementation, please fixme.
 const BUFFER_SIZE = 1024 * 16;
 
-export enum SMState {
+export const enum SMState {
     WAITING_ON_SETTINGS = 0x1,
     WAITING_ON_SETTINGS_ACK = 0x2,
     OPEN = 0x4,

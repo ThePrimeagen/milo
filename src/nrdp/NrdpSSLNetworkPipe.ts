@@ -85,6 +85,7 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
                 }
                 message.tags.chain = JSON.stringify(chain);
                 nrdp.l.error(message);
+
                 if (!nrdp.options.ssl_peer_verification) {
                     preverifyOk = 1;
                 }

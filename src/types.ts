@@ -9,13 +9,13 @@ export type IpVersion = 4 | 6;
 export type CompressionStreamMethod = "zlib" | "gzip";
 export type CompressionStreamType = "compress" | "uncompress";
 
-export enum ErrorCode {
+export const enum ErrorCode {
     None = 0
 };
 
 export type EventListenerCallback = (...args: any[]) => void;
 
-export enum HTTPEncoding {
+export const enum HTTPEncoding {
     Chunked = 1,
     Compress = 2,
     Deflate = 3,
@@ -23,7 +23,7 @@ export enum HTTPEncoding {
     Identity = 5
 };
 
-export enum RequestResponseDnsType {
+export const enum RequestResponseDnsType {
     DNS_Unknown = 0,
     DNS_Literal = 1,
     DNS_HostsFile = 2,
@@ -32,7 +32,7 @@ export enum RequestResponseDnsType {
     DNS_Preresolved = 5
 };
 
-export enum NetError {
+export const enum NetError {
     // Should be in sync with NetErrorInternal.h
     SUCCESS = 0,
     NO_IP_ADDRESS = 1,
@@ -67,7 +67,7 @@ export enum NetError {
     SSLGENERICERROR = 23
 }
 
-export enum NetworkErrorCode {
+export const enum NetworkErrorCode {
     BadContentLength,
     BadHeader,
     BadStatusLine,

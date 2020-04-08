@@ -18,7 +18,7 @@ import { HTTPEncoding, NetError, NetworkErrorCode } from "./types";
 
 let nextId = 0;
 
-enum RequestState {
+const enum RequestState {
     Initial = 0,
     Connected = 1,
     ReceivedHeaders = 2,
@@ -38,7 +38,7 @@ function requestStateToString(state: RequestState): string {
     }
 }
 
-enum RedirectState {
+const enum RedirectState {
     Redirected,
     NotRedirected,
     TooManyRedirects

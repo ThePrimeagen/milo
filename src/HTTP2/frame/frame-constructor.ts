@@ -17,7 +17,7 @@ import * as FrameUtils from "./utils";
    +---------------------------------------------------------------+
 */
 
-enum State {
+const enum State {
     WaitingOnHeadersLength = 0x1,
     WaitingOnHeadersType = 0x2,
     WaitingOnHeadersFlags = 0x4,

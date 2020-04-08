@@ -29,7 +29,7 @@
  *                            +--------+
  */
 
-export enum StreamState {
+export const enum StreamState {
     idle,
     reservedLocal,
     reservedRemote,

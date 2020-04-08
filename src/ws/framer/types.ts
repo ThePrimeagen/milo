@@ -1,6 +1,6 @@
 import IDataBuffer from "../../IDataBuffer";
 
-export enum FramerState {
+export const enum FramerState {
     ParsingHeader = 1,
     ParsingBody,
 };

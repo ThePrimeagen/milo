@@ -1,4 +1,4 @@
-export enum Opcodes {
+export const enum Opcodes {
     ContinuationFrame = 0x0, // denotes a continuation frame
     TextFrame = 0x1, // denotes a text frame
     BinaryFrame = 0x2, // denotes a binary frame
@@ -8,7 +8,7 @@ export enum Opcodes {
 };
 
 // TODO: Fill in values
-export enum CloseValues {
+export const enum CloseValues {
     Shutdown = 1000,
     GoAway = 1002,
     NoStatusCode = 1005,
