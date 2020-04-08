@@ -79,7 +79,6 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
 
         assert(this.writeBuffers.length === this.writeBufferLengths.length,
                "These should be the same length");
-        this.platform.log("write called with buffers being", this.writeBuffers.length);
         if (this.writeBuffers.length) {
             this.writeBuffers.push(buf);
             this.writeBufferOffsets.push(offset);
@@ -151,7 +150,6 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
             }
         }
         let mode = N.READ;
-        this.platform.log("_writeBuffer finished with", len);
         if (len) {
             this.writeBuffers.push(buf);
             this.writeBufferOffsets.push(off);
