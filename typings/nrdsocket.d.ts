@@ -57,10 +57,11 @@ declare namespace nrdsocket {
         readonly size: number;
 
         set(index: number, value: number): void;
-        get(index: number): void;
+        get(index: number): number;
 
         stringify(maxLen?: number): string | undefined;
         free(): void;
+        release(): void;
 
         null: boolean;
 
@@ -77,6 +78,7 @@ declare namespace nrdsocket {
 
         stringify(maxLen?: number): string | undefined;
         free(): void;
+        release(): void;
 
         clear(): void;
     }
