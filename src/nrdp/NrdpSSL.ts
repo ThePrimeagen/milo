@@ -3,7 +3,7 @@ import IDataBuffer from "../IDataBuffer";
 import IPlatform from "../IPlatform";
 import IUnorderedMap from "../IUnorderedMap";
 import N = nrdsocket;
-import NrdpSSLBoundFunctions from "./NrdpSSLBoundFunctions";
+import NrdpBoundSSLFunctions from "./NrdpBoundSSLFunctions";
 import UnorderedMap from "./UnorderedMap";
 import ICreateSSLNetworkPipeOptions from "../ICreateSSLNetworkPipeOptions";
 import assert from '../utils/assert.macro';

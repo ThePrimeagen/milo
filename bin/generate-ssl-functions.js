@@ -16,7 +16,7 @@ function stat(file)
     }
 }
 
-const outputFile = path.join(__dirname, "../src/nrdp/NrdpSSLBoundFunctions.ts");
+const outputFile = path.join(__dirname, "../src/nrdp/NrdpBoundSSLFunctions.ts");
 const statGenerate = stat(path.join(__dirname, "generate-ssl-functions.js"));
 const statJson = stat(path.join(__dirname, "../src/nrdp/bound_ssl_functions.json"));
 const statOutput = stat(outputFile);
@@ -63,7 +63,7 @@ data.functions.forEach((func) => {
 
 ts += `
 
-export default class NrdpSSLBoundFunctions {
+export default class NrdpBoundSSLFunctions {
     /* tslint:disable:variable-name */
 `;
 

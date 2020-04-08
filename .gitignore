@@ -5,4 +5,4 @@ build
 dist
 .milo-test-env
 
-/src/nrdp/NrdpSSLBoundFunctions.ts
+/src/nrdp/NrdpBoundSSLFunctions.ts
