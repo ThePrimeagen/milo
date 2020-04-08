@@ -10,7 +10,6 @@ import assert from "./utils/assert.macro";
 import { NetworkErrorCode } from "./types";
 import { headerValue } from "./utils";
 
-export default
 (function miloMain() {
     function load(data: IRequestData | string, callback?: (response: RequestResponse) => void): number {
         if (typeof data === "string")
