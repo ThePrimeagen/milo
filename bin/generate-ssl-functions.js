@@ -68,7 +68,7 @@ export default class NrdpSSLBoundFunctions {
 `;
 
 data.functions.forEach((func) => {
-    ts += layout(`    public ${func.name} : ${func.name}_type`);
+    ts += layout(`    public ${func.name}: ${func.name}_type`);
 });
 
 ts += "\n";

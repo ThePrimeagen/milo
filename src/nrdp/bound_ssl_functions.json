@@ -273,7 +273,7 @@
         {
             "signature": "void CRYPTO_free(void *ptr, const char *file, int line);",
             "name": "CRYPTO_free",
-            "type": "(ptr: N.DataPointer|N.ConstDataPointer|N.Struct, file: string, line: number) => void"
+            "type": "(ptr: N.DataPointer | N.ConstDataPointer | N.Struct, file: string, line: number) => void"
         },
         {
             "signature": "char *X509_NAME_oneline(const X509_NAME *a, char *buf, int size);",
