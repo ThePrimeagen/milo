@@ -39,17 +39,18 @@ declare namespace nrdp {
 
     namespace options {
         /* tslint:disable:variable-name */
-        let default_network_connect_timeout: number;
-        let default_network_delay: number;
-        let default_network_dns_fallback_timeout_wait_for_4: number;
-        let default_network_dns_fallback_timeout_wait_for_6: number;
-        let default_network_dns_timeout: number;
-        let default_network_happy_eyeballs_head_start: number;
-        let default_network_low_speed_limit: number;
-        let default_network_low_speed_time: number;
-        let default_network_max_recv_speed: number;
-        let default_network_max_send_speed: number;
-        let default_network_timeout: number;
+        const default_network_connect_timeout: number;
+        const default_network_delay: number;
+        const default_network_dns_fallback_timeout_wait_for_4: number;
+        const default_network_dns_fallback_timeout_wait_for_6: number;
+        const default_network_dns_timeout: number;
+        const default_network_happy_eyeballs_head_start: number;
+        const default_network_low_speed_limit: number;
+        const default_network_low_speed_time: number;
+        const default_network_max_recv_speed: number;
+        const default_network_max_send_speed: number;
+        const default_network_timeout: number;
+        const ssl_peer_verification: boolean;
     }
 
     function exit(exitCode: number): void;
