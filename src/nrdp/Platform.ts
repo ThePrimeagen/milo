@@ -160,12 +160,10 @@ export class NrdpPlatform implements IPlatform {
     get UILanguages(): string[] { return nrdp.device.UILanguages; }
     get location(): string { return nrdp.gibbon.location; }
 
-    quit(exitCode: number = 0): void { nrdp.exit(exitCode); }
+    quit = nrdp.exit.bind(nrdp);
 
-    parseXML(data: string | IDataBuffer): any { return nrdp_platform.parseXML(data); }
-    parseJSONStream(data: string | IDataBuffer): any[] | undefined {
-        return nrdp_platform.JSON.parse(data);
-    }
+    parseXML = nrdp_platform.parseXML;
+    parseJSONStream = nrdp_platform.JSON.parse;
     parseJSON(data: string | IDataBuffer): any | undefined {
         const ret = nrdp_platform.JSON.parse(data);
         if (ret)
