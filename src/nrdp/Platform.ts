@@ -1,4 +1,3 @@
-import "./polyfills";
 import ConnectionPool from "../ConnectionPool";
 import DataBuffer from "./DataBuffer";
 import ICompressionStream from "../ICompressionStream";
