@@ -21,7 +21,6 @@ export default class NrdpSSL {
     private platform: IPlatform;
     private trustStoreHash: string;
     private maxProtoVersion: number;
-    private x509s: N.Struct[];
     private sslCtx?: N.Struct;
     private ERRstringBuf: IDataBuffer;
 
@@ -35,7 +34,6 @@ export default class NrdpSSL {
         this.ERRstringBuf = new DataBuffer(128);
         this.trustStoreHash = "";
         this.maxProtoVersion = 0;
-        this.x509s = [];
         this.g = new NrdpSSLBoundFunctions();
 
         this.sslCtxVerifyCallback = N.setSSLCallback("SSL_verify_cb", (preverifyOk: number, x509Ctx: N.Struct) => {
