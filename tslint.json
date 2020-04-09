@@ -3,6 +3,7 @@
     "rulesDirectory": [],
     "linterOptions": {
       "exclude": [
+          "**/flycheck*.ts",
           "**/runner.ts",
           "**/dist/**",
           "**/build/**"

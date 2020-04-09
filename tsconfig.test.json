@@ -1,6 +1,6 @@
 {
     "extends": "./tsconfig.json",
-    "exclude": [ "**/*flycheck_*.ts" ],
+    "exclude": [ "**/flycheck_*.ts" ],
     "compilerOptions": {
         "outDir": "./build/test",
         "sourceMap": true,

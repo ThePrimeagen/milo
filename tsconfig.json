@@ -1,6 +1,6 @@
 {
     "include": ["**/*.ts", "src/utils/assert.macro/index.js"],
-    "exclude": [ "**/*flycheck_*.ts" ],
+    "exclude": [ "**/flycheck_*.ts" ],
     "compilerOptions": {
         "moduleResolution": "node",
         "noImplicitAny": true,
