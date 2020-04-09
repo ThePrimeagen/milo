@@ -15,7 +15,6 @@
 ### Request
 
 * Don't close TCP socket on SSL_ERROR_ZERO_RETURN
-* Report peer verification errors correctly
 * ssl resumption
 * ssl 0-RTT
 * ssl false start
@@ -23,9 +22,15 @@
 * enforce http connection management
 * transfer-encoding/transport-encoding inflate,gzip etc
 * handle other X-Gibbon-Cache-Control stuff than key=
-* don't make a databuffer when output format is arraybuffer/uint8array and data is in chunks
 * consider sockets surviving scriptengine restart or not?
 * handle file:/// and data:/ urls, maybe localcontrol as well.
 * call callbacks when I get errors
 * Pool more classes, things like HTTP1 and Request should be quite poolable
+* network.js?
+* connection racing
+* happy eyeballs ipv6
+
+### DONE
 * Support -X
+* Report peer verification errors correctly
+* don't make a databuffer when output format is arraybuffer/uint8array and data is in chunks
