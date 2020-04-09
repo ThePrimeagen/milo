@@ -61,14 +61,11 @@ export default class HTTP1 extends EventEmitter implements IHTTP {
         this.upgrade = false;
     }
 
-    private getPathName(hostName: string, query: string): string {
-        return `${hostName}${query}`;
-    }
     send(networkPipe: NetworkPipe, request: IHTTPRequest): boolean {
         this.networkPipe = networkPipe;
         this.request = request;
         let str =
-            `${request.method} ${this.getPathName(request.url.pathname || "/", request.url.query as unknown as string)} HTTP/1.1\r
+            `${request.method} ${request.url.path || "/"}${request.url.query || ""} HTTP/1.1\r
 Host: ${request.url.host}\r\n`;
 
         const standardHeaders = Platform.standardHeaders;

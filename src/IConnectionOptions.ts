@@ -1,4 +1,4 @@
-import Url from "url-parse";
+import Url from "./Url";
 import ICreateSSLNetworkPipeOptions from "./ICreateSSLNetworkPipeOptions";
 
 export default interface IConnectionOptions extends ICreateSSLNetworkPipeOptions {

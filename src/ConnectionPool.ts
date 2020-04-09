@@ -189,20 +189,14 @@ export default class ConnectionPool {
     // what to do for people who need to wait?, need an id
     requestConnection(options: IConnectionOptions): Promise<IPendingConnection> {
         return new Promise((resolve, reject) => {
-            let port: number = 0;
-            if (options.url.port) {
-                port = parseInt(options.url.port, 10);
-            }
+            let port = options.url.portNumber;
 
             // Platform.trace("Request#send port", port);
             let ssl = false;
-            switch (options.url.protocol) {
+            switch (options.url.scheme) {
             case "https:":
             case "wss:":
                 ssl = true;
-                if (!port) {
-                    port = 443;
-                }
                 break;
             default:
                 if (!port)
@@ -210,8 +204,8 @@ export default class ConnectionPool {
                 break;
             }
 
-            const hostname = options.url.hostname;
-            if (!hostname || port < 1 || port > 65535) {
+            const hostname = options.url.host;
+            if (!hostname) {
                 reject(new NetworkError(NetworkErrorCode.InvalidUrl, "Invalid url " + options.url));
                 return;
             }

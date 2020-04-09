@@ -6,6 +6,7 @@ import Platform from "./Platform";
 import Request from "./Request";
 import RequestResponse from "./RequestResponse";
 import WS from "./ws";
+import Url from "./Url";
 import assert from "./utils/assert.macro";
 import { NetworkErrorCode } from "./types";
 import { headerValue } from "./utils";
@@ -95,6 +96,14 @@ import { headerValue } from "./utils";
         // @ts-ignore
         headerValue
     };
+
+    // console.log("shit", typeof Url);
+    // let u = new Url("HTTP://fOo.eXaMPle.com");
+    const u = new Url("HTTP://X.COM/Y/Z");
+    Platform.log(u.href);
+    Platform.log("path", u.path);
+    Platform.log("hostname", u.hostname);
+    Platform.log("host", u.host);
 
     if (!Platform.loadMilo(milo))
         return;

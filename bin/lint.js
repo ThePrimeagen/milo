@@ -9,6 +9,7 @@ child_process.execFile(path.join(__dirname, "../node_modules/.bin/tslint"),
                            //     console.error("Failed to run tslint", error);
                            // }
                            if (stdout) {
+                               const root = path.resolve(__dirname, "..") + "/";
                                let file;
                                console.log(stdout.split("\n").map(line => {
                                    if (!line)
@@ -17,6 +18,9 @@ child_process.execFile(path.join(__dirname, "../node_modules/.bin/tslint"),
                                    const match = /^(\/.*):[0-9]+:[0-9]+$/.exec(line);
                                    if (match) {
                                        file = match[1];
+                                       if (file.lastIndexOf(root, 0) === 0) {
+                                           file = file.substring(root.length);
+                                       }
                                        return undefined;
                                    }
 

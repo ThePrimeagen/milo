@@ -12,7 +12,7 @@ import NetworkError from "./NetworkError";
 import NetworkPipe from "./NetworkPipe";
 import Platform from "./Platform";
 import RequestResponse from "./RequestResponse";
-import Url from "url-parse";
+import Url from "./Url";
 import assert from "./utils/assert.macro";
 import { HTTPEncoding, NetError, NetworkErrorCode } from "./types";
 
