@@ -29,6 +29,10 @@
 * network.js?
 * connection racing
 * happy eyeballs ipv6
+* fix location setting, gotta always load it
+* fix images, gotta always load it first
+* disallow non-const enums somehow (eslint, tsconfig)
+* handling of format === "none" is not right with content length and compression stream and so on
 
 ### DONE
 * Support -X
