@@ -46,7 +46,7 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
         assert(memMethod, "gotta have memMethod");
         this.trustStoreHash = nrdp.trustStoreHash;
         this.sslInstance = platform.ssl.createSSL(options, (preverifyOk: number, x509StoreContext: N.Struct) => {
-            platform.log("got preverifyOk", preverifyOk);
+            // platform.log("got preverifyOk", preverifyOk);
             if (preverifyOk !== 1) {
                 const chain = [];
                 const message: SSLVerifyErrorMessage = {

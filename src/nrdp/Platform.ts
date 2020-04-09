@@ -216,12 +216,12 @@ export class NrdpPlatform implements IPlatform {
 
     private polyfilledGibbonLoad(data: IRequestData | string,
                                  callback?: NrdpGibbonLoadCallbackSignature): number {
-        nrdp.l.success("LOAD", JSON.stringify(data, (key: string, value: any) => {
-            if (key === "data" || key === "body" || key === "source") {
-                return key;
-            }
-            return value;
-        }));
+        // nrdp.l.success("LOAD", JSON.stringify(data, (key: string, value: any) => {
+        //     if (key === "data" || key === "body" || key === "source") {
+        //         return key;
+        //     }
+        //     return value;
+        // }));
         if (typeof data === "string") {
             data = { url: this.resolveUrl(data) };
         } else {
@@ -244,12 +244,12 @@ export class NrdpPlatform implements IPlatform {
 
     private polyfilledGibbonLoadScript(data: IRequestData | string,
                                        callback?: NrdpGibbonLoadCallbackSignature): number {
-        nrdp.l.success("LOADSCRIPT", JSON.stringify(data, (key: string, value: any) => {
-            if (key === "data" || key === "body" || key === "source") {
-                return key;
-            }
-            return value;
-        }));
+        // nrdp.l.success("LOADSCRIPT", JSON.stringify(data, (key: string, value: any) => {
+        //     if (key === "data" || key === "body" || key === "source") {
+        //         return key;
+        //     }
+        //     return value;
+        // }));
         if (typeof data === "string") {
             data = { url: this.resolveUrl(data) };
         } else {
