@@ -27,6 +27,10 @@ const enum RequestState {
     Error = -1
 };
 
+const enum CompressionBuffer {
+    Length = 8192
+};
+
 function requestStateToString(state: RequestState): string {
     switch (state) {
     case RequestState.Initial: return "Initial";
@@ -56,6 +60,7 @@ export default class Request {
     private requestResponse: RequestResponse;
     private responseData?: IDataBuffer;
     private responseDataOffset?: number;
+    private contentLength?: number;
     private responseDataArray?: IDataBuffer[];
     private responseDataLength: number;
     private http: IHTTP;
@@ -63,6 +68,9 @@ export default class Request {
     private transactionStartTime?: number;
     private redirected: RedirectState;
     private compressionStream?: ICompressionStream;
+    private compressionBuffer?: IDataBuffer;
+    private compressionBufferOffset?: number;
+    private compressionContentReceived?: number;
     private chunked: boolean;
 
     constructor(data: IRequestData, redirects?: string[]) {
@@ -84,7 +92,6 @@ export default class Request {
         this.chunked = false;
         this.http = new HTTP1();
         this.http.on("headers", this._onHeaders.bind(this));
-        this.http.on("data", this._onData.bind(this));
         this.http.on("error", this._onError.bind(this));
         this.http.on("finished", () => {
             if (this.state !== RequestState.Finished)
@@ -289,6 +296,15 @@ export default class Request {
                 this._onTimeoutTimer = undefined;
             }
 
+            if (typeof this.compressionBuffer !== "undefined") {
+                assert(this.compressionStream, "Must have compression stream");
+                assert(this.compressionBufferOffset, "Must have compression buffer offset");
+                this.compressionBuffer.byteLength = this.compressionBufferOffset;
+                this._onData(this.compressionBuffer, 0, this.compressionBufferOffset);
+                this.compressionBuffer = undefined;
+                this.compressionBufferOffset = undefined;
+            }
+
             switch (this.redirected) {
             case RedirectState.NotRedirected:
                 const now = Platform.mono();
@@ -297,7 +313,7 @@ export default class Request {
                 this.requestResponse.size = this.responseDataLength;
                 this.requestResponse.state = "network";
                 assert(this.networkPipe, "must have networkPipe");
-                Platform.log(`Finished ${this.networkPipe.socket} ${this.url} ${this.requestResponse.statusCode}`);
+                // Platform.log(`Finished ${this.networkPipe.socket} ${this.url} ${this.requestResponse.statusCode}`);
                 this.requestResponse.bytesRead = this.networkPipe.bytesRead;
                 if (this.requestData.format !== "none") {
                     let handled = false;
@@ -355,9 +371,10 @@ export default class Request {
                 break;
             }
             assert(this.networkPipe, "must have networkpipe");
-            Platform.log("got to finished, pipe is closed?", this.networkPipe.closed,
-                         this.requestData.format, this.requestResponse.statusCode,
-                         this.responseDataLength);
+            // Platform.log("got to finished, pipe is closed?", this.networkPipe.closed,
+            //              this.requestData.format, this.requestResponse.statusCode,
+            //              this.responseDataLength, this.compressionBufferOffset || -1,
+            //              typeof this.compressionBuffer || "<nothing>");
             // this.requestResponse.json);
             this.networkPipe.removeEventHandlers();
             if (!this.http.upgrade || this.networkPipe.closed) {
@@ -444,33 +461,72 @@ export default class Request {
                     this._onError(new NetworkError(NetworkErrorCode.ContentLengthTooLong));
                     return;
                 }
-                this.responseDataOffset = 0;
-                this.responseData = new DataBuffer(event.contentLength);
+                this.contentLength = event.contentLength;
+                // The content length of the response is the length
+                // compressed contents so we can't allocate the
+                // responseData buffer if we're doing compression
+                if (this.compressionStream) {
+                    this.compressionContentReceived = 0;
+                } else {
+                    this.responseDataOffset = 0;
+                    this.responseData = new DataBuffer(event.contentLength);
+                }
             }
+        }
+        if (this.compressionStream) {
+            this.http.on("data", this._onCompressedData.bind(this));
+        } else {
+            this.http.on("data", this._onData.bind(this));
+        }
+    }
+
+    private _onCompressedData(data: IDataBuffer, offset: number, length: number): void {
+        assert(this.compressionStream, "Must have compressionStream");
+        assert(typeof this.compressionContentReceived !== "undefined",
+               "Must have compressionContentReceived");
+        this.compressionContentReceived += length;
+        do {
+            if (!this.compressionBuffer) {
+                this.compressionBuffer = new DataBuffer(CompressionBuffer.Length);
+                this.compressionBufferOffset = 0;
+            }
+            assert(typeof this.compressionBufferOffset !== "undefined", "This should always be set");
+
+            // Platform.log("calling it", "out", CompressionBuffer.Length - this.compressionBufferOffset,
+            //              "in", length - offset);
+            const ret = this.compressionStream.process(this.compressionBuffer,
+                                                       this.compressionBufferOffset,
+                                                       undefined,
+                                                       data,
+                                                       offset,
+                                                       length - offset);
+            // Platform.log("return", "out", ret, "in", this.compressionStream.inputUsed);
+            this.compressionBufferOffset += ret;
+            if (CompressionBuffer.Length - this.compressionBufferOffset < 6) {
+                this.compressionBuffer.byteLength = this.compressionBufferOffset;
+                this._onData(this.compressionBuffer, 0, this.compressionBufferOffset);
+                this.compressionBuffer = undefined;
+            }
+            const used = this.compressionStream.inputUsed;
+            if (used) {
+                offset += used;
+            } else {
+                assert(offset === length, "Can this happen? " + offset + " " + length);
+                break;
+            }
+            // Platform.log("gotta decompress a chunk here", length);
+        } while (offset < length);
+
+        if (typeof this.contentLength !== "undefined" && this.compressionContentReceived === this.contentLength) {
+            this._transition(RequestState.Finished);
         }
     }
 
     private _onData(data: IDataBuffer, offset: number, length: number): void {
-        // have to copy data, the buffer will be reused
+        // have to copy data, the buffer will be reused unless this.compressionStream || this.chunked
         this.responseDataLength += length;
         Platform.trace("got some data here", length);
-        if (this.compressionStream) {
-            // Platform.log("got chunk", data.slice(offset, length));
-            // let consumed = 0;
-            // let scratchOffset = 0;
-            // while (true) {
-            //     const outputUsed = this.compressionStream.process(Platform.scratch, scratchOffset, undefined,
-            //                                                       data, offset + consumed, length - consumed);
-            //     scratchOffset += outputUsed;
-            //     const inputUsed = this.compressionStream.inputUsed;
-            //     if (!inputUsed)
-            //         break;
-            //     consumed += inputUsed;
-            //     Platform.log("decompressed", outputUsed);
-            // }
-            // Platform.log("gotta decompress a chunk here", length);
-
-        }
+        // Platform.log(`_onData ${offset} ${length} ${typeof this.responseData} ${typeof this.responseDataArray}`);
         if (this.requestData.onData) {
             this.requestData.onData(data.toArrayBuffer(offset, length));
         } else if (this.requestData.onChunk) { // this arrayBuffer is created by ChunkyParser
@@ -479,6 +535,10 @@ export default class Request {
             this.requestData.onChunk(data.toArrayBuffer());
         } else if (this.responseData) {
             assert(typeof this.responseDataOffset !== "undefined", "Must have responseDataOffset");
+            Platform.log("gotting shit", this.responseData.byteLength, this.responseDataOffset, offset, length);
+            if (this.responseDataOffset + length > this.responseData.byteLength) {
+                Platform.log("too far", this.responseDataOffset + length - this.responseData.byteLength);
+            }
             this.responseData.set(this.responseDataOffset, data, offset, length);
             this.responseDataOffset += length;
             // Platform.log("GOT DATA", this.responseDataOffset, "of", this.responseData.byteLength);
@@ -486,12 +546,17 @@ export default class Request {
                 this._transition(RequestState.Finished);
             }
         } else if (this.responseDataArray) {
-            if (this.chunked) {
+            if (this.compressionStream) {
+                assert(!offset, "No offsets for compressionStream");
+                assert(data.byteLength <= CompressionBuffer.Length, "Should be <== CompressionBuffer.Length")
+                // if (length <= CompressionBuffer.Length, "should
+                this.responseDataArray.push(data); // whole chunks, created by the chunky parser
+            } else if (this.chunked) {
                 assert(!offset, "No offsets for chunks");
                 assert(length === data.byteLength, "No offsets for chunks");
                 this.responseDataArray.push(data); // whole chunks, created by the chunky parser
             } else {
-                this.responseDataArray.push(data.slice(offset, offset + length));
+                this.responseDataArray.push(data.slice(offset, length));
             }
         } // else format === "none"
     }
