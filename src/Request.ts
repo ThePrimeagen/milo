@@ -467,6 +467,7 @@ export default class Request {
                 // responseData buffer if we're doing compression
                 if (this.compressionStream) {
                     this.compressionContentReceived = 0;
+                    this.responseDataArray = [];
                 } else {
                     this.responseDataOffset = 0;
                     this.responseData = new DataBuffer(event.contentLength);
