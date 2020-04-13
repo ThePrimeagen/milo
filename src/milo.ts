@@ -96,6 +96,15 @@ import { headerValue } from "./utils";
         headerValue
     };
 
-    if (!Platform.loadMilo(milo))
+    if (!Platform.loadMilo(milo)) {
         return;
+    }
+
 })();
+
+// Note: If we wish to use this library as a third party, it needs to export
+// WS and platform
+export {
+    Platform,
+    WS,
+}

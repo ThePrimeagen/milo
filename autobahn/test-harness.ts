@@ -67,7 +67,7 @@ async function run() {
         });
     }
 
-    console.error("XXX examining reports");
+    Platform.log("examining reports");
     const reports = await getReports(agent);
 
     if (reports.length < cases) {
@@ -83,7 +83,7 @@ async function run() {
         return false;
     }).filter(x => x) as string[];
 
-    Platform.error("XXX examining reports finished, failures are ", fails);
+    Platform.error("examining reports finished, failures are ", fails);
     if (fails.length) {
         Platform.log(fails.length, "Test cases have failed:", fails.join(', '));
         process.exit(1);

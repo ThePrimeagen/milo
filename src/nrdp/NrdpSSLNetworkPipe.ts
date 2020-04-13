@@ -170,11 +170,12 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
         }
     }
 
-    read(buf: IDataBuffer, offset: number, length: number, noStash?: boolean): number {
-        if (!noStash) {
+    read(buf: IDataBuffer, offset: number, length: number): number {
+        if (this.hasStash()) {
             const ret = this.unstash(buf, offset, length);
-            if (ret !== -1)
+            if (ret !== -1) {
                 return ret;
+            }
         }
 
         const platform: NrdpPlatform = this.platform as NrdpPlatform;

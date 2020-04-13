@@ -138,19 +138,14 @@ export default class WS {
         });
 
         // The pipe is ready to read.
-        const readData = (fromStash: boolean = false) => {
+        const readData = () => {
             let bytesRead;
             while (1) {
                 if (this.pipe.closed) {
                     return;
                 }
 
-                if (fromStash) {
-                    bytesRead = pipe.unstash(readView, 0, readView.byteLength);
-                } else {
-                    bytesRead = pipe.read(readView, 0, readView.byteLength);
-                }
-
+                bytesRead = pipe.read(readView, 0, readView.byteLength);
                 if (bytesRead <= 0) {
                     break;
                 }
@@ -213,7 +208,6 @@ export default class WS {
 
         this.callCallback(open, this.onopen);
 
-        readData(true);
         readData();
         setTimeout(readData, 32);
     }
