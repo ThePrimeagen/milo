@@ -43,7 +43,7 @@ export abstract class NetworkPipe extends EventEmitter {
     abstract removeEventHandlers(): void;
     abstract write(buf: IDataBuffer | Uint8Array | ArrayBuffer | string, offset: number, length: number): void;
     abstract write(buf: string): void;
-    abstract read(buf: ArrayBuffer | IDataBuffer, offset: number, length: number, nostash?: boolean): number;
+    abstract read(buf: ArrayBuffer | IDataBuffer, offset: number, length: number): number;
 
     abstract close(): void;
     abstract clearStats(): void;

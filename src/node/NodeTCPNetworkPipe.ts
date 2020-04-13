@@ -158,11 +158,12 @@ class NodeTCPNetworkPipe extends NetworkPipe {
         this.sock.write(write);
     }
 
-    read(buf: IDataBuffer | ArrayBuffer, offset: number, length: number, noStash?: boolean): number {
-        if (!noStash) {
+    read(buf: IDataBuffer | ArrayBuffer, offset: number, length: number): number {
+        if (this.hasStash()) {
             const ret = this.unstash(buf, offset, length);
-            if (ret > 0)
+            if (ret > 0) {
                 return ret;
+            }
         }
         return this.readFromPool(this.bufferPool, buf, offset, length);
     }

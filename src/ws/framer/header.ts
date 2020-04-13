@@ -130,10 +130,6 @@ export function parseHeader(header: IDataBuffer, state: WSState): number {
 
     const opcode = byte1 & 0xF;
 
-    // if (opcode !== Opcodes.ContinuationFrame &&
-    //     opcode !== Opcodes.BinaryFrame) {
-    // }
-
     if (opcode !== Opcodes.ContinuationFrame) {
         state.opcode = opcode;
     }
@@ -164,6 +160,4 @@ export function parseHeader(header: IDataBuffer, state: WSState): number {
 
     return ptr;
 }
-
-
 

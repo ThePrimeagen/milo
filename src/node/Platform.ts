@@ -30,7 +30,7 @@ type ArrayBufferConcatType = Uint8Array | IDataBuffer | ArrayBuffer;
 
 function toBuffer(buf: Uint8Array | ArrayBuffer | string | IDataBuffer) {
     if (buf instanceof DataBuffer) {
-        return buf.buffer;
+        return buf.buffer.slice(buf.byteOffset, buf.byteLength - buf.byteOffset);
     }
     // @ts-ignore
     return Buffer.from(buf);

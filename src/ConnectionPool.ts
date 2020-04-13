@@ -382,7 +382,7 @@ export default class ConnectionPool {
             // to monitor if the pipe has been closed
             const buf = new DataBuffer(32);
             assert(!pipe.closed, "Should not be closed yet");
-            const read = pipe.read(buf, 0, 32, true);
+            const read = pipe.read(buf, 0, 32);
             if (read <= 0) {
                 break;
             }

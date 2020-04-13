@@ -48,9 +48,11 @@ export async function runAutobahnTests(WebSocketClass: any, {
             webSocket.onopen = () => {
                 Platform.log("getCaseCount#onopen");
             }
+
             webSocket.onerror = (e: any) => {
                 Platform.log("getCaseCount#onerror", e);
             }
+
             webSocket.onmessage = (e: { data: any }) => {
                 caseCount = JSON.parse(e.data);
                 Platform.log("getCaseCount#onmessage", caseCount);
@@ -59,7 +61,7 @@ export async function runAutobahnTests(WebSocketClass: any, {
 
             // @ts-ignore
             webSocket.onclose = () => {
-                Platform.log("getCaseCount#close");
+                Platform.log("getCaseCount#close", caseCount);
                 cont();
             }
         }
@@ -82,6 +84,7 @@ export async function runAutobahnTests(WebSocketClass: any, {
                 updateStatus("Reports updated.");
                 updateStatus("Test suite finished!");
 
+                Platform.log("webSocket#close Is autobahn runner completed?", currentCaseId, caseCount);
                 // Last socket closed.
                 if (currentCaseId >= caseCount) {
                     res(caseCount);
@@ -90,6 +93,10 @@ export async function runAutobahnTests(WebSocketClass: any, {
         }
 
         function runNextCase() {
+            if (isNaN(+caseCount)) {
+                throw new Error(`CaseCount for autobahn is not a number: ${caseCount}`);
+            }
+
             const wsUri = wsuri + "/runCase?case=" + currentCaseId + "&agent=" + agent;
             const webSocket = openWebSocket(wsUri);
 
