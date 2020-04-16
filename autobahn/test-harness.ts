@@ -48,7 +48,7 @@ async function run() {
     setAgent(agent);
 
     await wait(1000);
-    clearReports();
+    clearReports(Platform);
 
     if (process.env.SELF_MANAGED_AUTOBAHN !== 'true') {
         await autobahnTestSuite();
