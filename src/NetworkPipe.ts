@@ -54,7 +54,6 @@ export abstract class NetworkPipe extends EventEmitter {
             length = buf.byteLength - offset;
         }
         assert(length > 0, "Must have length");
-        this.platform.log("NetworkPipe#stash", offset, length);
         if (this.stashBuffer) {
             this.stashBuffer.bufferLength = this.stashBuffer.bufferLength + length;
             this.stashBuffer.set(this.stashBuffer.bufferLength - length, buf, offset, length);
@@ -71,12 +70,11 @@ export abstract class NetworkPipe extends EventEmitter {
             if (length >= byteLength) {
                 this.platform.bufferSet(buf, offset, this.stashBuffer, 0, byteLength);
                 this.stashBuffer = undefined;
-                // this.platform.log("NetworkPipe#unstash#ALL", offset, length, byteLength);
                 return byteLength;
             }
 
             this.platform.bufferSet(buf, offset, this.stashBuffer, 0, length);
-            this.stashBuffer.setView(this.stashBuffer.byteOffset + length, this.stashBuffer.byteLength - length);
+            this.stashBuffer.setView(length, this.stashBuffer.byteLength - length);
             this.platform.log("NetworkPipe#unstash#PARTIAL", offset, length, this.stashBuffer.byteLength);
             return length;
         }

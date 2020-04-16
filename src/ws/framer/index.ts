@@ -114,7 +114,7 @@ export default class WSFramer {
 
     // TODO: Handle Continuation.
     processStreamData(packet: IDataBuffer, offset: number, endIdx: number) {
-        // @ts-ignore
+
         if (this.closed) {
             throw new Error("Hey, closed for business bud.");
         }
