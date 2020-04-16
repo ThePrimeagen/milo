@@ -30,7 +30,7 @@ type ArrayBufferConcatType = Uint8Array | IDataBuffer | ArrayBuffer;
 
 function toBuffer(buf: Uint8Array | ArrayBuffer | string | IDataBuffer) {
     if (buf instanceof DataBuffer) {
-        return buf.buffer.slice(buf.byteOffset, buf.byteLength - buf.byteOffset);
+        return buf.buffer.slice(buf.byteOffset, buf.byteLength + buf.byteOffset);
     }
     // @ts-ignore
     return Buffer.from(buf);
@@ -190,11 +190,13 @@ class NodePlatform implements IPlatform {
         // @ts-ignore
         return String.fromCharCode.apply(null, buf);
     }
+
     bufferSet(dest: Uint8Array | ArrayBuffer | IDataBuffer, destOffset: number,
               src: Uint8Array | ArrayBuffer | IDataBuffer | string,
               srcOffset?: number, srcLength?: number): void {
 
         const destBuf = toBuffer(dest);
+
         const srcBuf = toBuffer(src);
 
         srcBuf.copy(destBuf, destOffset, srcOffset, srcLength);

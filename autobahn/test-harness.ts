@@ -14,7 +14,7 @@ import getAgent, { setAgent, getVersion } from './runner/get-agent';
 import autobahnTestSuite from './start';
 import { killContext, GlobalContext } from './context';
 import { killDocker } from './runner/docker/kill';
-import { getReports, testPass, getId } from './autobahn-reports';
+import { clearReports, getReports, testPass, getId } from './autobahn-reports';
 import getNrdpAgent from './runner/nrdp/agent';
 import testNrdp from './runner/nrdp';
 
@@ -47,8 +47,9 @@ async function run() {
 
     setAgent(agent);
 
-    console.error("XXX starting test");
     await wait(1000);
+    clearReports();
+
     if (process.env.SELF_MANAGED_AUTOBAHN !== 'true') {
         await autobahnTestSuite();
     }

@@ -1,9 +1,26 @@
 import fs from 'fs';
 import path from 'path';
+import shelljs from 'shelljs';
 
 import { root } from './runner/paths';
+import { IPlatform } from './types';
 
 export const reportsDir = path.join(root, 'autobahn-testsuite/docker/reports/clients');
+export function clearReports(platform: IPlatform) {
+    shelljs.pushd(reportsDir);
+    try {
+        shelljs.exec(`rm -rf ${reportsDir}`);
+    } catch (e) {
+        platform.error(`Erro executing "rm -rf ${reportsDir}" ${e}`);
+    }
+    try {
+        shelljs.exec(`mkdir ${reportsDir}`);
+    } catch (e) {
+        platform.error(`Erro executing "mkdir ${reportsDir}" ${e}`);
+    }
+    shelljs.popd();
+}
+
 export function getReports(agentName: string): Promise<string[]> {
     return new Promise((res, rej) => {
         fs.readdir(reportsDir, (err, items) => {

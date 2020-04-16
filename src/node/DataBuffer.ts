@@ -554,7 +554,24 @@ string value for the second parameter, offset.`);
     setUIntBE(offset: number, value: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number { throw new Error("Not Implemented"); }
     setUIntLE(offset: number, value: number, byteLength?: 1 | 2 | 3 | 4 | 5 | 6): number { throw new Error("Not Implemented"); }
 
-    setView(byteOffset: number, byteLength: number): void { throw new Error("Not Implemented"); }
+    setView(byteOffset: number, byteLength: number): void {
+        const startIdx = this.byteOffset + byteOffset;
+        const endIdx = startIdx + byteLength;
+
+        // resize the buffer itself as oppose to reducing the view.
+        if (byteOffset + byteLength > this.byteLength) {
+            /* tslint:disable:no-console */
+            const previousBuffer = this.buffer;
+            this.buffer = Buffer.alloc(byteLength);
+            previousBuffer.copy(this.buffer, 0, this.byteOffset, this.byteLength);
+
+            this.byteOffset = 0;
+        } else {
+            this.byteOffset = byteOffset;
+            this.byteLength = byteLength
+            this.byteLength = byteLength
+        }
+    }
 
     static concat(args: DataBufferConcatArrayArgs[]): IDataBuffer {
         const normalizedArr: Uint8Array[] = [];
