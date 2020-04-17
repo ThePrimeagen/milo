@@ -8,6 +8,7 @@ import IMilo from "./IMilo";
 import IPipeResult from "./IPipeResult";
 import IRequestTimeouts from "./IRequestTimeouts";
 import ISHA256Context from "./ISHA256Context";
+import { CookieJar } from "cookiejar";
 import { IpConnectivityMode, IpVersion, CompressionStreamType, CompressionStreamMethod } from "./types";
 
 type ArrayBufferConcatType = Uint8Array | IDataBuffer | ArrayBuffer;
@@ -76,6 +77,7 @@ export default interface IPlatform {
     scratch: IDataBuffer;
 
     readonly connectionPool: ConnectionPool;
+    readonly cookieJar: CookieJar;
     defaultRequestTimeouts: IRequestTimeouts;
 
     quit(exitCode?: number): void;

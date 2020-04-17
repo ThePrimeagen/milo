@@ -31,8 +31,10 @@
     "test:autobahn:nrdp": "ts-node ./autobahn/test-harness.ts nrdp"
   },
   "dependencies": {
+    "@types/cookiejar": "^2.1.1",
     "atob": "^2.1.2",
     "btoa": "^1.2.1",
+    "cookiejar": "^2.1.2",
     "network-byte-order": "^0.2.0",
     "sha1": "^1.1.1",
     "url-parse": "^1.4.7",
