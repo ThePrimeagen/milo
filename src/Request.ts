@@ -251,6 +251,7 @@ export default class Request {
                         hasher.add(this.requestData.body);
 
                     for (const header in this.requestData.headers) {
+                        // ### this is not alphabetized
                         if (this.requestData.headers.hasOwnProperty(header)) {
                             switch (header) {
                             case "If-None-Match":
