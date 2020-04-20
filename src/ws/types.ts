@@ -7,6 +7,21 @@ export const enum Opcodes {
     Pong = 0xA, // denotes a pong
 };
 
+export function isValidOpcode(code: Opcodes): boolean {
+    let valid = false;
+    switch (code) {
+        case Opcodes.ContinuationFrame:
+        case Opcodes.TextFrame:
+        case Opcodes.BinaryFrame:
+        case Opcodes.CloseConnection:
+        case Opcodes.Ping:
+        case Opcodes.Pong:
+            valid = true;
+    }
+
+    return valid;
+}
+
 // TODO: Fill in values
 export const enum CloseValues {
     Shutdown = 1000,

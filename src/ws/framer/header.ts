@@ -1,7 +1,7 @@
 import DataBuffer from "../../DataBuffer";
 import IDataBuffer from "../../IDataBuffer";
 import { Opcodes } from "../types";
-import { WSState, FramerState, MAX_HEADER_SIZE, MASK_SIZE, } from "./types";
+import { WSState, MASK_SIZE, } from "./types";
 
 /*
  *
@@ -98,7 +98,6 @@ export function isHeaderParsable(packet: IDataBuffer, len: number): boolean {
         return false;
     }
 
-    const byte1 = packet.getUInt8(0);
     const byte2 = packet.getUInt8(1);
 
     const isMasked = (byte2 & 0x80) >>> 7 === 1;
