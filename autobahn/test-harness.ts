@@ -10,7 +10,7 @@ import mergeCustomConfig from './merge-custom-config';
 mergeCustomConfig(Platform);
 
 import autobahn from './runner';
-import getAgent, { setAgent, getVersion } from './runner/get-agent';
+import { setAgent, getVersion } from './runner/get-agent';
 import autobahnTestSuite from './start';
 import { killContext, GlobalContext } from './context';
 import { killDocker } from './runner/docker/kill';
@@ -23,7 +23,7 @@ const isNrdpRun = process.argv[2] === 'nrdp';
 const ON_DEATH = death({ uncaughtException: true });
 
 // Attempts to kill all autobahn testsuites
-ON_DEATH((...args: any[]) => {
+ON_DEATH(() => {
     if (process.env.SELF_MANAGED_AUTOBAHN !== 'true') {
         killDocker();
     }
@@ -73,7 +73,6 @@ async function run() {
 
     if (reports.length < cases) {
         throw new Error(`Expected ${cases} to be reported, but got ${reports.length}`);
-        process.exit(1);
     }
 
     const fails = reports.map(r => {

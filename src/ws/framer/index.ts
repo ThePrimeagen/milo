@@ -8,19 +8,25 @@ import { createDefaultState } from "./state";
 import { isHeaderParsable, parseHeader, constructFrameHeader, generateMask, } from "./header";
 import assert from "../../utils/assert.macro";
 
+let _id = -1;
 export default class WSFramer {
+    private id: number;
     private callbacks: WSCallback[];
     private maxFrameSize: number;
     private maxPacketSize: number;
     private msgState: WSState;
     private controlState: WSState;
-    private closed: boolean;
     private pipe: NetworkPipe;
     private sendHeader: IDataBuffer;
     private header: IDataBuffer;
     private headerLen: number;
 
+    private closed: boolean;
+
     constructor(pipe: NetworkPipe, maxFrameSize = 8096, maxPacketSize = 1024 * 1024 * 4) {
+        this.id = ++_id;
+        this.closed = false;
+
         this.sendHeader = new DataBuffer(MAX_HEADER_SIZE);
         this.header = new DataBuffer(MAX_HEADER_SIZE);
         this.headerLen = 0;
@@ -31,7 +37,6 @@ export default class WSFramer {
         this.maxPacketSize = maxPacketSize;
         this.msgState = createDefaultState();
         this.controlState = createDefaultState(true);
-        this.closed = false;
     }
 
     getActiveState(): WSState | null {
@@ -50,8 +55,12 @@ export default class WSFramer {
     send(buf: IDataBuffer, offset: number,
          length: number, frameType: Opcodes = Opcodes.BinaryFrame) {
 
+
         if (length > 2 ** 32) {
             throw new Error("You are dumb");
+        }
+        if (this.closed) {
+            throw new Error("The frame has been closed and now you are attempting to send some data.  This is no longer possible.");
         }
 
         const endIdx = offset + length;
@@ -88,7 +97,12 @@ export default class WSFramer {
             // TODO if fullBuf is just to slow to send upgrade the socket
             // library to handle the same reference to the buf with different
             // offsets.
-            this.pipe.write(fullBuf, 0, fullBuf.byteLength);
+            try {
+                this.pipe.write(fullBuf, 0, fullBuf.byteLength);
+            } catch (e) {
+                /* tslint:disable-next-line */
+                debugger;
+            }
 
             ptrLength += ptr - ptrStart;
 
@@ -114,10 +128,6 @@ export default class WSFramer {
 
     // TODO: Handle Continuation.
     processStreamData(packet: IDataBuffer, offset: number, endIdx: number) {
-
-        if (this.closed) {
-            throw new Error("Hey, closed for business bud.");
-        }
 
         let ptr = offset;
         let state = this.getActiveState();
@@ -155,7 +165,16 @@ export default class WSFramer {
             this.tryFinishFrame(state);
 
             // TODO: we about to go into contiuation mode, so get it baby!
-        } while (ptr < endIdx);
+        } while (ptr < endIdx && !this.closed);
+    }
+
+    // Simple flag to tell the parser that no matter where they are at in the
+    // parsing of spare data, it should be ignore at this point.  There are no
+    // more frames to parse.
+    //
+    // This can happen when a rsv bit is set, bad opt code, etc etc.
+    public close() {
+        this.closed = true;
     }
 
     private tryFinishFrame(state: WSState | null) {
@@ -168,10 +187,6 @@ export default class WSFramer {
         if (endOfPayload) {
             if (state.isFinished) {
                 this.pushFrame(state);
-
-                if (state.opcode === Opcodes.CloseConnection) {
-                    this.closed = true;
-                }
             } else {
                 state.payloads.push(state.payload);
             }

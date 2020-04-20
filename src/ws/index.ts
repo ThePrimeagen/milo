@@ -3,7 +3,7 @@ import IDataBuffer from "../IDataBuffer";
 import NetworkPipe from "../NetworkPipe";
 import Platform from "../Platform";
 import WSFramer from './framer';
-import { UrlObject, Opcodes, WSOptions, CloseValues, } from './types';
+import { UrlObject, isValidOpcode, Opcodes, WSOptions, CloseValues, } from './types';
 import { WSState } from './framer/types';
 import { upgrade } from "./upgrade";
 
@@ -44,7 +44,7 @@ export const enum ConnectionState {
     Closed = 3,
 };
 
-let debugId = 0;
+let _id = -1;
 export default class WS {
     private id: number;
 
@@ -62,9 +62,10 @@ export default class WS {
     public onopen?: OpenCallback;
     public onerror?: ErrorCallback;
     constructor(url: string | UrlObject, opts: WSOptions = defaultOptions) {
+        this.id = ++_id;
+
         this.state = ConnectionState.Connecting;
         this.opts = opts;
-        this.id = debugId++;
 
         this.callbacks = {
             message: [],
@@ -122,6 +123,7 @@ export default class WS {
 
         this.frame = new WSFramer(pipe, this.opts.maxFrameSize);
         this.pipe = pipe;
+        this.state = ConnectionState.Connected;
 
         pipe.on("error", (err: Error): void => {
             this.callCallback(error, this.onerror, err);
@@ -131,6 +133,7 @@ export default class WS {
             if (this.state === ConnectionState.Closed) {
                 return;
             }
+            // Platform.trace(`${this.id} WS#index#close`);
             this.state = ConnectionState.Closed;
 
             // TODO: Pipe closes with no error codes.
@@ -140,7 +143,7 @@ export default class WS {
         // The pipe is ready to read.
         const readData = () => {
             let bytesRead;
-            while (1) {
+            while (this.state === ConnectionState.Connected) {
                 if (this.pipe.closed) {
                     return;
                 }
@@ -149,19 +152,15 @@ export default class WS {
                 if (bytesRead <= 0) {
                     break;
                 }
-
                 this.frame.processStreamData(readView, 0, bytesRead);
             }
         }
 
-        pipe.on("data", () => {
-            readData();
-            setTimeout(readData, 0);
-        });
+        pipe.on("data", readData);
 
         this.frame.onFrame((buffer: IDataBuffer, state: WSState) => {
 
-            if (!this.validateControlFrame(buffer, state)) {
+            if (!this.validateFrame(state)) {
                 return;
             }
 
@@ -178,13 +177,7 @@ export default class WS {
                 if (buffer.byteLength > 2) {
                     restOfData = buffer.subarray(2);
                 }
-
-                this.callCallback(close, this.onclose, code, restOfData);
-
-                // attempt to close the sockfd.
-                this.frame.send(buffer, 0, buffer.byteLength, Opcodes.CloseConnection);
-                this.pipe.close();
-
+                this.close(restOfData, buffer, code);
                 break;
 
             case Opcodes.Ping:
@@ -200,39 +193,47 @@ export default class WS {
                 const out = this.readyEvent(buffer, state);
                 this.callCallback(message, this.onmessage, out);
                 break;
-
-            default:
-                throw new Error("Unknown Websocket code");
             }
         });
 
         this.callCallback(open, this.onopen);
 
         readData();
-        setTimeout(readData, 32);
     }
 
     ping() {
-        /**/
+        /* */
     }
 
-
-    private validateControlFrame(buffer: IDataBuffer, state: WSState): boolean {
+    private validateFrame(state: WSState): boolean {
 
         // TODO: There is message deflate that I believe is used as part
         // of these reserved bits, but not for autobahn tests 3.* series.
         const rsv = state.rsv1 + state.rsv2 + state.rsv3;
 
+        // Unknown opt codes
+        const unkownOpt = !isValidOpcode(state.opcode);
+
         // A control frame is considered a bad if the payload length is greater
         // than 125.
-        if (state.isControlFrame && state.payloadLength > 125 || rsv) {
-            this.frame.send(CLOSE_1002_BUFFER, 0, 2, Opcodes.CloseConnection);
+        if (state.isControlFrame && state.payloadLength > 125
+            || rsv || unkownOpt) {
+
+            this.close(CLOSE_1002_BUFFER, CLOSE_1002_BUFFER, CloseValues.GoAway);
             return false;
         }
 
         return true;
     }
 
+    private close(inData: IDataBuffer, outData: IDataBuffer, code: number) {
+        this.callCallback(this.callbacks.close, this.onclose, code, inData);
+
+        // attempt to close the sockfd.
+        this.frame.send(outData, 0, outData.byteLength, Opcodes.CloseConnection);
+        this.frame.close();
+        this.pipe.close();
+    }
 
     private callCallback(callbacks: AnyCallback[],
                          secondCallback: AnyCallback | undefined, arg1?: any, arg2?: any) {

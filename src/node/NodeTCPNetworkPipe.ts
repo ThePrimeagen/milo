@@ -96,9 +96,17 @@ class NodeTCPNetworkPipe extends NetworkPipe {
                         return true;
                     }
                 }
-            }, () => {
+            });
+
+            this.sock.on('connect', () => {
                 this.state = State.Alive;
                 res(this);
+                this.emit("open");
+            });
+
+            this.sock.on('close', () => {
+                this.state = State.Destroyed;
+                this.emit("close");
             });
 
             this.sock.on('end', () => {
@@ -128,7 +136,9 @@ class NodeTCPNetworkPipe extends NetworkPipe {
     }
 
     write(buf: IDataBuffer | ArrayBuffer | string, offset: number = 0, length?: number): void {
-        if (this.state !== State.Alive) {
+        // @ts-ignore
+        // sock.destroyed is a property of sock.  net.connect returns a net.Socket
+        if (this.state !== State.Alive || this.sock.destroyed) {
             throw new Error(`Unable to write sockets in current state, ${this.state}`);
         }
 
@@ -173,6 +183,7 @@ class NodeTCPNetworkPipe extends NetworkPipe {
             throw new Error("Must have sock");
         }
 
+        this.sock.removeAllListeners();
         this.sock.destroy();
     }
 
