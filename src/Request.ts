@@ -466,7 +466,6 @@ export default class Request {
                 // compressed contents so we can't allocate the
                 // responseData buffer if we're doing compression
                 if (this.compressionStream) {
-                    this.compressionContentReceived = 0;
                     this.responseDataArray = [];
                 } else {
                     this.responseDataOffset = 0;
@@ -475,6 +474,7 @@ export default class Request {
             }
         }
         if (this.compressionStream) {
+            this.compressionContentReceived = 0;
             this.http.on("data", this._onCompressedData.bind(this));
         } else {
             this.http.on("data", this._onData.bind(this));
@@ -486,6 +486,7 @@ export default class Request {
         assert(typeof this.compressionContentReceived !== "undefined",
                "Must have compressionContentReceived");
         this.compressionContentReceived += length;
+        let written = 0;
         do {
             if (!this.compressionBuffer) {
                 this.compressionBuffer = new DataBuffer(CompressionBuffer.Length);
@@ -499,8 +500,8 @@ export default class Request {
                                                        this.compressionBufferOffset,
                                                        undefined,
                                                        data,
-                                                       offset,
-                                                       length - offset);
+                                                       offset + written,
+                                                       length - written);
             // Platform.log("return", "out", ret, "in", this.compressionStream.inputUsed);
             this.compressionBufferOffset += ret;
             if (CompressionBuffer.Length - this.compressionBufferOffset < 6) {
@@ -510,13 +511,13 @@ export default class Request {
             }
             const used = this.compressionStream.inputUsed;
             if (used) {
-                offset += used;
+                written += used;
             } else {
-                assert(offset === length, "Can this happen? " + offset + " " + length);
+                assert(offset + written === length, "Can this happen? " + offset + " + " + written + " != " + length);
                 break;
             }
             // Platform.log("gotta decompress a chunk here", length);
-        } while (offset < length);
+        } while (offset + written < length);
 
         if (typeof this.contentLength !== "undefined" && this.compressionContentReceived === this.contentLength) {
             this._transition(RequestState.Finished);
