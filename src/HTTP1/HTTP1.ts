@@ -205,8 +205,8 @@ Host: ${request.url.host}\r\n`;
             return false;
         }
         const redirectStatus = (event.statusCode >= 300
-                                && event.statusCode < 400
-                                && event.statusCode !== 304);
+            && event.statusCode < 400
+            && event.statusCode !== 304);
         // this.requestResponse.headers = new ResponseHeaders;
         let contentLength: string | undefined;
         let transferEncoding: string | undefined;
@@ -242,8 +242,28 @@ Host: ${request.url.host}\r\n`;
                 }
                 break;
             case 10:
-                if (key === "Connection" || key.toLowerCase() === "connection")
+                let setCookie = false;
+                if (key === "Connection") {
                     this.connection = value;
+                } else if (key === "Set-Cookie") {
+                    setCookie = true;
+                } else {
+                    const lower = key.toLowerCase();
+                    if (lower === "connection") {
+                        this.connection = value;
+                    } else if (lower === "set-cookie") {
+                        setCookie = true;
+                    }
+                }
+                if (setCookie) {
+                    if (!event.setCookie) {
+                        event.setCookie = value;
+                    } else if (typeof event.setCookie === "string") {
+                        event.setCookie = [event.setCookie, value];
+                    } else {
+                        event.setCookie.push(value);
+                    }
+                }
                 break;
             case 14:
                 if (key === "Content-Length" || key.toLowerCase() === "content-length") {

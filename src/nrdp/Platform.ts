@@ -16,7 +16,7 @@ import RequestResponse from "../RequestResponse";
 import assert from "../utils/assert.macro";
 import createNrdpSSLNetworkPipe from "./NrdpSSLNetworkPipe";
 import createNrdpTCPNetworkPipe from "./NrdpTCPNetworkPipe";
-import { CookieJar } from "cookiejar";
+import { CookieAccessInfo, CookieJar } from "cookiejar";
 import { IpConnectivityMode, CompressionStreamMethod, CompressionStreamType } from "../types";
 
 type NrdpGibbonLoadCallbackSignature = (response: RequestResponse) => void;
@@ -34,6 +34,7 @@ export class NrdpPlatform implements IPlatform {
         this.userAgent = `Gibbon/${sdkVersion.versionString}/${sdkVersion.versionString}: Netflix/${sdkVersion.versionString} (DEVTYPE=${nrdp.device.ESNPrefix}; CERTVER=${nrdp.device.certificationVersion})`;
         this.connectionPool = new ConnectionPool();
         this.cookieJar = new CookieJar();
+        this.cookieAccessInfo = new CookieAccessInfo("");
         this.cachedLocation = "";
         this.cachedLocationBase = "";
     }
@@ -44,6 +45,7 @@ export class NrdpPlatform implements IPlatform {
     public readonly ssl: NrdpSSL;
     public readonly connectionPool: ConnectionPool;
     public readonly cookieJar: CookieJar;
+    public readonly cookieAccessInfo: CookieAccessInfo;
 
     log(...args: any[]): void {
         args.unshift({ traceArea: "MILO" });

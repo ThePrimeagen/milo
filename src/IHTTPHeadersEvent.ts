@@ -13,5 +13,6 @@ export default interface IHTTPHeadersEvent {
     redirectUrl?: string;
     transferEncoding?: HTTPEncoding[];
     contentEncoding?: HTTPEncoding[];
+    setCookie?: string[] | string;
 };
 

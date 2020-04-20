@@ -14,6 +14,7 @@ import Platform from "./Platform";
 import RequestResponse from "./RequestResponse";
 import Url from "url-parse";
 import assert from "./utils/assert.macro";
+import { CookieJar, CookieAccessInfo } from "cookiejar";
 import { HTTPEncoding, NetError, NetworkErrorCode } from "./types";
 
 let nextId = 0;
@@ -208,6 +209,31 @@ export default class Request {
             //     this.requestResponse.cname = this.networkPipe.cname;
             if (!this.requestData.headers)
                 this.requestData.headers = {};
+
+            if (this.requestResponse.cname) {
+                let hasCookie = false;
+                for (const key in this.requestData.headers) {
+                    if (this.requestData.headers.hasOwnProperty(key)) {
+                        if (key.length === 6 && (key === "Cookie" || key.toLowerCase() === "cookie")) {
+                            hasCookie = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!hasCookie) {
+                    // const info = new
+                    const info = Platform.cookieAccessInfo;
+                    info.domain = this.requestResponse.cname;
+                    info.path = this.url.pathname;
+                    info.secure = typeof this.requestResponse.sslVersion !== undefined;
+                    info.script = false;
+                    const cookies = Platform.cookieJar.getCookies(Platform.cookieAccessInfo).toValueString();
+                    if (cookies) {
+                        this.requestData.headers.Cookie = cookies;
+                    }
+                }
+            }
 
             if (this.requestData.cache) {
                 if ("X-Gibbon-Cache-Control" in this.requestData.headers) {
@@ -408,6 +434,11 @@ export default class Request {
         this.requestResponse.timeToFirstByteRead = event.timeToFirstByteRead;
         this.requestResponse.headersSize = event.headersSize;
         this.requestResponse.httpVersion = event.httpVersion;
+        if (event.setCookie) {
+            const domain = this.url.hostname;
+            const path = this.url.pathname;
+            Platform.cookieJar.setCookies(event.setCookie, domain, path);
+        }
         if (event.redirectUrl) {
             const count = this.requestResponse.addUrl(event.redirectUrl);
             if (count <= 10) {

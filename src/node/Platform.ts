@@ -18,7 +18,7 @@ import createTCPNetworkPipe from "./NodeTCPNetworkPipe";
 import dns from "dns";
 import fs from "fs";
 import sha1 from "sha1";
-import { CookieJar } from "cookiejar";
+import { CookieAccessInfo, CookieJar } from "cookiejar";
 import { IpVersion, HTTPRequestHeaders, IpConnectivityMode, CompressionStreamMethod, CompressionStreamType } from "../types";
 import { toUint8Array } from "./utils";
 
@@ -66,6 +66,7 @@ class NodePlatform implements IPlatform {
     public tlsv13StreamingEnabled: boolean = true;
     public readonly connectionPool: ConnectionPool;
     public readonly cookieJar: CookieJar;
+    public readonly cookieAccessInfo: CookieAccessInfo;
 
     constructor() {
         this.scratch = new DataBuffer(1024 * 32);
@@ -75,6 +76,7 @@ class NodePlatform implements IPlatform {
         this.ipConnectivityMode = 4;
         this.connectionPool = new ConnectionPool();
         this.cookieJar = new CookieJar();
+        this.cookieAccessInfo = new CookieAccessInfo("");
     }
 
     quit(code: number) {
