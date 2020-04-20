@@ -128,11 +128,10 @@ export default class WSFramer {
 
     // TODO: Handle Continuation.
     processStreamData(packet: IDataBuffer, offset: number, endIdx: number) {
-
         let ptr = offset;
         let state = this.getActiveState();
 
-        do {
+        while (ptr < endIdx && !this.closed) {
             if (state === null || state.state === FramerState.ParsingHeader) {
                 const startingLen = this.headerLen;
 
@@ -165,7 +164,7 @@ export default class WSFramer {
             this.tryFinishFrame(state);
 
             // TODO: we about to go into contiuation mode, so get it baby!
-        } while (ptr < endIdx && !this.closed);
+        }
     }
 
     // Simple flag to tell the parser that no matter where they are at in the
