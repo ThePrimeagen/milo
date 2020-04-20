@@ -144,7 +144,9 @@ export default class WSFramer {
                 }
 
                 state = this.getActiveState();
-                assert(state, "There should be an active state once the header is parsed.");
+                if (!state) {
+                    throw new Error("State should always be defined at this point.");
+                }
 
                 const parsedAmount = parseHeader(this.header, state);
                 ptr += parsedAmount - startingLen;
