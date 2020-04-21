@@ -344,52 +344,53 @@ export default class Request {
                 assert(this.networkPipe, "must have networkPipe");
                 // Platform.log(`Finished ${this.networkPipe.socket} ${this.url} ${this.requestResponse.statusCode}`);
                 this.requestResponse.bytesRead = this.networkPipe.bytesRead;
-                if (this.requestData.format !== "none") {
-                    let handled = false;
-                    switch (this.requestData.format) {
-                    case "xml":
-                        const xml = Platform.parseXML(this.responseDataToDataBuffer());
-                        if (xml) {
-                            handled = true;
-                            this.requestResponse.xml = xml;
-                        }
-                        break;
-                    case "json":
-                        const json = Platform.parseJSON(this.responseDataToDataBuffer());
-                        if (!json) {
-                            this.requestResponse.jsonError = true;
-                        } else {
-                            handled = true;
-                            this.requestResponse.json = json;
-                        }
-                        break;
-                    case "jsonstream":
-                        const jsonstream = Platform.parseJSONStream(this.responseDataToDataBuffer());
-                        if (!jsonstream) {
-                            this.requestResponse.jsonError = true;
-                        } else {
-                            handled = true;
-                            this.requestResponse.json = jsonstream;
-                        }
-                        break;
-                    case "arraybuffer":
-                        this.requestResponse.data = this.responseDataToArrayBuffer();
+                let handled = false;
+                switch (this.requestData.format) {
+                case "none":
+                    handled = true;
+                    break;
+                case "xml":
+                    const xml = Platform.parseXML(this.responseDataToDataBuffer());
+                    if (xml) {
                         handled = true;
-                        break;
-                    case "uint8array":
-                        this.requestResponse.data = new Uint8Array(this.responseDataToArrayBuffer());
-                        handled = true;
-                        break;
-                    case "databuffer":
-                        this.requestResponse.data = this.responseDataToDataBuffer();
-                        handled = true;
-                        break;
-                    default:
-                        break;
+                        this.requestResponse.xml = xml;
                     }
-                    if (!handled) {
-                        this.requestResponse.data = this.responseDataToDataBuffer().toString();
+                    break;
+                case "json":
+                    const json = Platform.parseJSON(this.responseDataToDataBuffer());
+                    if (!json) {
+                        this.requestResponse.jsonError = true;
+                    } else {
+                        handled = true;
+                        this.requestResponse.json = json;
                     }
+                    break;
+                case "jsonstream":
+                    const jsonstream = Platform.parseJSONStream(this.responseDataToDataBuffer());
+                    if (!jsonstream) {
+                        this.requestResponse.jsonError = true;
+                    } else {
+                        handled = true;
+                        this.requestResponse.json = jsonstream;
+                    }
+                    break;
+                case "arraybuffer":
+                    this.requestResponse.data = this.responseDataToArrayBuffer();
+                    handled = true;
+                    break;
+                case "uint8array":
+                    this.requestResponse.data = new Uint8Array(this.responseDataToArrayBuffer());
+                    handled = true;
+                    break;
+                case "databuffer":
+                    this.requestResponse.data = this.responseDataToDataBuffer();
+                    handled = true;
+                    break;
+                default:
+                    break;
+                }
+                if (!handled) {
+                    this.requestResponse.data = this.responseDataToDataBuffer().toString();
                 }
                 break;
             case RedirectState.Redirected:
