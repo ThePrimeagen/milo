@@ -20,11 +20,9 @@
 * ssl false start
 * http pipelining
 * enforce http connection management
-* transfer-encoding/transport-encoding inflate,gzip etc
 * handle other X-Gibbon-Cache-Control stuff than key=
 * consider sockets surviving scriptengine restart or not?
 * handle file:/// and data:/ urls, maybe localcontrol as well.
-* call callbacks when I get errors
 * Pool more classes, things like HTTP1 and Request should be quite poolable
 * network.js?
 * connection racing
@@ -33,8 +31,11 @@
 * fix images, gotta always load it first
 * disallow non-const enums somehow (eslint, tsconfig)
 * handling of format === "none" is not right with content length and compression stream and so on
+* nrdp.gibbon.cookie must be polyfilled
 
 ### DONE
 * Support -X
 * Report peer verification errors correctly
 * don't make a databuffer when output format is arraybuffer/uint8array and data is in chunks
+* call callbacks when I get errors
+* transfer-encoding/transport-encoding inflate,gzip etc
