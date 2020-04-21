@@ -112,7 +112,7 @@ export default class Request {
             throw new NetworkError(NetworkErrorCode.NotImplemented, "http2 is not implemented yet");
         }
 
-        Platform.log("Going to", this.requestData.url);
+        // Platform.log("Going to", this.requestData.url);
         this.url = new Url(this.requestData.url, this.requestData.baseUrl || Platform.location);
         this.state = RequestState.Initial;
         return this;
