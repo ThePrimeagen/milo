@@ -19,18 +19,19 @@ export default interface IPlatform {
 
     sha1(input: string): Uint8Array;
     // base64 encode
-    btoa(buffer: Uint8Array | ArrayBuffer | string, returnUint8Array: true): Uint8Array;
-    btoa(buffer: Uint8Array | ArrayBuffer | string, returnUint8Array?: false): string;
+    btoa(buffer: Uint8Array | ArrayBuffer | IDataBuffer | string, returnUint8Array: true): Uint8Array;
+    btoa(buffer: Uint8Array | ArrayBuffer | IDataBuffer | string, returnUint8Array?: false): string;
 
     // base64 decode
-    atob(buffer: Uint8Array | ArrayBuffer | string, returnUint8Array: true): Uint8Array;
-    atob(buffer: Uint8Array | ArrayBuffer | string, returnUint8Array?: false): string;
+    atob(buffer: Uint8Array | ArrayBuffer | IDataBuffer | string, returnUint8Array: true): Uint8Array;
+    atob(buffer: Uint8Array | ArrayBuffer | IDataBuffer | string, returnUint8Array?: false): string;
 
     // string to uint8array
-    atoutf8(input: Uint8Array | ArrayBuffer | string): Uint8Array;
+    atoutf8(input: Uint8Array | ArrayBuffer | IDataBuffer | string): Uint8Array;
 
     // uint8array to string
-    utf8toa(input: IDataBuffer | Uint8Array | ArrayBuffer | string, offset?: number, length?: number): string;
+    utf8toa(input: IDataBuffer | Uint8Array | ArrayBuffer | IDataBuffer | string,
+            offset?: number, length?: number): string;
 
     bufferSet(dest: Uint8Array | ArrayBuffer | IDataBuffer,
               destOffset: number,
@@ -55,9 +56,12 @@ export default interface IPlatform {
 
     mono(): number;
 
-    ipConnectivityMode: IpConnectivityMode;
+    serverTime(): number | undefined; // can return undefined if it hasn't been validated yet
 
-    standardHeaders: { [key: string]: string };
+    readonly ipConnectivityMode: IpConnectivityMode;
+    readonly sendSecureCookies: boolean;
+
+    readonly standardHeaders: { [key: string]: string };
 
     readonly tlsv13SmallAssetsEnabled: boolean;
     readonly tlsv13StreamingEnabled: boolean;
@@ -72,14 +76,14 @@ export default interface IPlatform {
                   timeout: number,
                   callback: (result: IDnsResult) => void): void;
 
-    UILanguages: string[];
-    location: string;
-    scratch: IDataBuffer;
+    readonly UILanguages: string[];
+    readonly location: string;
+    readonly scratch: IDataBuffer;
 
     readonly connectionPool: ConnectionPool;
     readonly cookieJar: CookieJar;
     readonly cookieAccessInfo: CookieAccessInfo;
-    defaultRequestTimeouts: IRequestTimeouts;
+    readonly defaultRequestTimeouts: IRequestTimeouts;
 
     quit(exitCode?: number): void;
 
