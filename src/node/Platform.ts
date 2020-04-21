@@ -113,6 +113,15 @@ class NodePlatform implements IPlatform {
         return true;
     }
 
+    appendFile(fileName: string, contents: Uint8Array | ArrayBuffer | string): boolean {
+        try {
+            fs.appendFileSync(fileName, contents);
+        } catch (err) {
+            return false;
+        }
+        return true;
+    }
+
     cookies(url: Url): string | undefined { return undefined; }
     processCookie(url: Url, value: string): void {
         /* */
