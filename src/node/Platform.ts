@@ -128,7 +128,8 @@ class NodePlatform implements IPlatform {
     }
 
     // @ts-ignore
-    btoa(buffer: Uint8Array | ArrayBuffer | string, returnUint8Array?: boolean): string | Uint8Array {
+    btoa(buffer: Uint8Array | ArrayBuffer | IDataBuffer | string,
+         returnUint8Array?: boolean): string | Uint8Array {
         let out;
         if (typeof buffer === 'string') {
             out = btoa(buffer);
@@ -147,7 +148,8 @@ class NodePlatform implements IPlatform {
 
     // base64 decode
     // @ts-ignore
-    atob(buffer: Uint8Array | ArrayBuffer | string, returnUint8Array: false | undefined): string | Uint8Array {
+    atob(buffer: Uint8Array | ArrayBuffer | IDataBuffer | string,
+         returnUint8Array: false | undefined): string | Uint8Array {
         let out;
         if (typeof buffer === 'string') {
             out = atob(buffer);
