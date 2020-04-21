@@ -234,7 +234,7 @@ export default class Request {
                     // info.script = false;
                     // const cookies = Platform.cookieJar.getCookies(Platform.cookieAccessInfo).toValueString();
                     const cookies = Platform.cookies(this.url);
-                    Platform.log(`checking for cookies for ${this.url} => ${cookies}`);
+                    // Platform.log(`checking for cookies for ${this.url} => ${cookies}`);
                     if (cookies) {
                         this.requestData.headers.Cookie = cookies;
                     }
