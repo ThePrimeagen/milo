@@ -230,7 +230,7 @@ export default class Request {
                     // info.script = false;
                     // const cookies = Platform.cookieJar.getCookies(Platform.cookieAccessInfo).toValueString();
                     const cookies = Platform.cookies(this.url);
-                    Platform.log(`checking for cookies for ${this.url} => ${cookies}`);
+                    // Platform.log(`checking for cookies for ${this.url} => ${cookies}`);
                     if (cookies) {
                         this.requestData.headers.Cookie = cookies;
                     }
@@ -436,7 +436,7 @@ export default class Request {
         this.requestResponse.timeToFirstByteRead = event.timeToFirstByteRead;
         this.requestResponse.headersSize = event.headersSize;
         this.requestResponse.httpVersion = event.httpVersion;
-        Platform.log(`Got headers for cookies ${this.url} => ${event.setCookie}`);
+        // Platform.log(`Got headers for cookies ${this.url} => ${event.setCookie}`);
         if (typeof event.setCookie === "string") {
             // const domain = this.url.hostname;
             // const path = this.url.pathname;
