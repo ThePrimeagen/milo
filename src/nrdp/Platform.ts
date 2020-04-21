@@ -129,6 +129,7 @@ export class NrdpPlatform implements IPlatform {
             this.cachedStandardHeaders["User-Agent"] = this.userAgent;
             this.cachedStandardHeaders.Accept = "*/*";
             this.cachedStandardHeaders.Referer = this.location;
+            this.cachedStandardHeaders.Connection = "Keep-Alive";
             if (currentLanguages && currentLanguages.length) {
                 this.cachedStandardHeaders.Language = currentLanguages.join(",");
             }
