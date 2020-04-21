@@ -25,9 +25,6 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
     private outputBio: N.Struct;
     private pipe: NetworkPipe;
     private connected: boolean;
-    private writeBuffers: (Uint8Array | ArrayBuffer | string | IDataBuffer)[];
-    private writeBufferOffsets: number[];
-    private writeBufferLengths: number[];
     private connectedCallback?: (error?: INetworkError, connData?: IConnectionDataSSL) => void;
     private connectStartTime: number;
 
@@ -37,9 +34,7 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
 
         this.connectedCallback = callback;
         this.connected = false;
-        this.writeBuffers = [];
-        this.writeBufferOffsets = [];
-        this.writeBufferLengths = [];
+        this.bytesRead = this.bytesWritten = 0;
 
         this.pipe = options.pipe;
         const memMethod = platform.ssl.g.BIO_s_mem();
@@ -118,12 +113,14 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
     get port() { return this.pipe.port; }
     get ssl() { return true; }
     get socket() { return this.pipe.socket; }
-    get bytesRead() { return this.pipe.bytesRead; }
-    get bytesWritten() { return this.pipe.bytesWritten; }
     get firstByteRead() { return this.pipe.firstByteRead; }
     get firstByteWritten() { return this.pipe.firstByteWritten; }
 
+    public bytesRead: number;
+    public bytesWritten: number;
+
     clearStats() {
+        this.bytesRead = this.bytesWritten = 0;
         this.pipe.clearStats();
     }
 
@@ -151,23 +148,17 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
             throw new Error("SSLNetworkPipe is not connected");
         }
 
-        const written = (this.writeBuffers.length
-                         ? -1
-                         : platform.ssl.g.SSL_write(this.sslInstance, buf, offset, length));
-        platform.trace("wrote to output bio", length, "=>", written);
+        do {
+            const written = platform.ssl.g.SSL_write(this.sslInstance, buf, offset, length);
+            platform.trace("wrote to output bio", length, "=>", written);
+            assert(written > 0, "If this happens we gotta write some code for it");
 
-        if (written === -1) {
-            this.writeBuffers.push(buf);
-            this.writeBufferOffsets.push(offset || 0);
-            this.writeBufferLengths.push(length);
-        } else {
-            if (written < length) {
-                this.writeBuffers.push(buf);
-                this.writeBufferOffsets.push((offset || 0) + written);
-                this.writeBufferLengths.push(length - written);
-            }
+            this.bytesWritten += written;
             this._flushOutputBio();
-        }
+            assert(written <= length, "Can't write more than we have");
+            offset += written;
+            length -= written;
+        } while (length > 0);
     }
 
     read(buf: IDataBuffer, offset: number, length: number): number {
@@ -229,7 +220,10 @@ class NrdpSSLNetworkPipe extends NetworkPipe {
                 platform.error("got error other", err);
                 break;
             }
+        } else {
+            this.bytesRead += read;
         }
+
 
         // platform.trace("SSL_read called", read);
         return read;
