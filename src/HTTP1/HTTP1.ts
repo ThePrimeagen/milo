@@ -100,7 +100,8 @@ Host: ${request.url.host}\r\n`;
         }
         if (hasBody) {
             if (!hasContentType) {
-                str += "Content-Type: application/octet-stream\r\n";
+                // curl defaults tot x-www-form-urlencoded
+                str += "Content-Type: application/x-www-form-urlencoded\r\n";
             }
             switch (typeof request.body) {
             case "string":
