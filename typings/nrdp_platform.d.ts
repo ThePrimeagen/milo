@@ -40,4 +40,6 @@ declare namespace nrdp_platform {
     function utf8Length(str: string): number;
 
     function parseXML(data: string | IDataBuffer): any;
+
+    const hasServerTime: boolean;
 }

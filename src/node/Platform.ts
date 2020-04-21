@@ -12,13 +12,14 @@ import IRequestData from "../IRequestData";
 import ISHA256Context from "../ISHA256Context";
 import RequestResponse from "../RequestResponse";
 import SHA256Context from "./SHA256Context";
+import Url from "url-parse";
 import atob from "atob";
 import btoa from "btoa";
 import createTCPNetworkPipe from "./NodeTCPNetworkPipe";
 import dns from "dns";
 import fs from "fs";
 import sha1 from "sha1";
-import { CookieAccessInfo, CookieJar } from "cookiejar";
+// import { CookieAccessInfo, CookieJar } from "cookiejar";
 import { IpVersion, HTTPRequestHeaders, IpConnectivityMode, CompressionStreamMethod, CompressionStreamType } from "../types";
 import { toUint8Array } from "./utils";
 
@@ -65,8 +66,8 @@ class NodePlatform implements IPlatform {
     public readonly tlsv13SmallAssetsEnabled: boolean = true;
     public readonly tlsv13StreamingEnabled: boolean = true;
     public readonly connectionPool: ConnectionPool;
-    public readonly cookieJar: CookieJar;
-    public readonly cookieAccessInfo: CookieAccessInfo;
+    // public readonly cookieJar: CookieJar;
+    // public readonly cookieAccessInfo: CookieAccessInfo;
     public readonly sendSecureCookies = false;
 
     constructor() {
@@ -76,8 +77,8 @@ class NodePlatform implements IPlatform {
         // TODO: Pipe this through to net
         this.ipConnectivityMode = 4;
         this.connectionPool = new ConnectionPool();
-        this.cookieJar = new CookieJar();
-        this.cookieAccessInfo = new CookieAccessInfo("");
+        // this.cookieJar = new CookieJar();
+        // this.cookieAccessInfo = new CookieAccessInfo("");
     }
 
     quit(code: number) {
@@ -112,7 +113,17 @@ class NodePlatform implements IPlatform {
         return true;
     }
 
+    cookies(url: Url): string | undefined { return undefined; }
+    processCookie(url: Url, value: string): void {
+        /* */
+    }
+
+
     mono() {
+        return Date.now();
+    }
+
+    serverTime() {
         return Date.now();
     }
 

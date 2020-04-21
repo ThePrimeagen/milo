@@ -13,14 +13,46 @@ import ISHA256Context from "../ISHA256Context";
 import N = nrdsocket;
 import NrdpSSL from "./NrdpSSL";
 import RequestResponse from "../RequestResponse";
+import Url from "url-parse";
 import assert from "../utils/assert.macro";
 import createNrdpSSLNetworkPipe from "./NrdpSSLNetworkPipe";
 import createNrdpTCPNetworkPipe from "./NrdpTCPNetworkPipe";
-import { CookieAccessInfo, CookieJar } from "cookiejar";
+// import { CookieAccessInfo, CookieJar } from "cookiejar";
 import { IpConnectivityMode, CompressionStreamMethod, CompressionStreamType } from "../types";
 
 type NrdpGibbonLoadCallbackSignature = (response: RequestResponse) => void;
 type NrdpGibbonLoadSignature = (data: IRequestData | string, callback?: NrdpGibbonLoadCallbackSignature) => number;
+
+const enum PolyfillMode { None, All, Optin, Check };
+
+function compareResults(platform: IPlatform, miloResp: RequestResponse, nrdpResp: RequestResponse) {
+    if (typeof miloResp.data !== typeof nrdpResp.data) {
+        platform.log("WRONG TYPE", miloResp.url, typeof miloResp.data, typeof nrdpResp.data);
+        platform.quit(1);
+        return;
+    }
+
+    if (typeof miloResp.data === "string" && typeof nrdpResp.data === "string") {
+        if (miloResp.data !== nrdpResp.data) {
+            platform.log("different response\n", miloResp.url, "\n",
+                         miloResp.data, "\nvs\n", nrdpResp.data);
+
+            platform.quit(1);
+        }
+    }
+
+    if (typeof miloResp.data === "object" && typeof nrdpResp.data === "object") {
+        if (platform.btoa(miloResp.data) !== platform.btoa(nrdpResp.data)) {
+            platform.log("different response\n", miloResp.url, "\n",
+                         platform.btoa(miloResp.data), "\nvs\n",
+                         platform.btoa(nrdpResp.data));
+
+            platform.quit(1);
+        }
+    }
+
+}
+
 export class NrdpPlatform implements IPlatform {
     constructor() {
         this.scratch = new DataBuffer(16 * 1024);
@@ -28,15 +60,16 @@ export class NrdpPlatform implements IPlatform {
         this.realLoad = nrdp.gibbon.load;
         this.realLoadScript = nrdp.gibbon.loadScript;
         this.realStopLoad = nrdp.gibbon.stopLoad;
-        this.polyfillAll = false;
+        this.polyfillMode = PolyfillMode.None;
         const sdkVersion = nrdp.device.SDKVersion;
 
         this.userAgent = `Gibbon/${sdkVersion.versionString}/${sdkVersion.versionString}: Netflix/${sdkVersion.versionString} (DEVTYPE=${nrdp.device.ESNPrefix}; CERTVER=${nrdp.device.certificationVersion})`;
         this.connectionPool = new ConnectionPool();
-        this.cookieJar = new CookieJar();
-        this.cookieAccessInfo = new CookieAccessInfo("");
+        // this.cookieJar = new CookieJar();
+        // this.cookieAccessInfo = new CookieAccessInfo("");
         this.cachedLocation = "";
         this.cachedLocationBase = "";
+        this.sendSecureCookies = nrdp.options.send_secure_cookies;
     }
 
     sha1(input: string): Uint8Array { return nrdp.hash("sha1", input); }
@@ -44,8 +77,10 @@ export class NrdpPlatform implements IPlatform {
     public readonly scratch: IDataBuffer;
     public readonly ssl: NrdpSSL;
     public readonly connectionPool: ConnectionPool;
-    public readonly cookieJar: CookieJar;
-    public readonly cookieAccessInfo: CookieAccessInfo;
+    // public readonly cookieJar: CookieJar;
+    // public readonly cookieAccessInfo: CookieAccessInfo;
+
+    public readonly sendSecureCookies: boolean;
 
     log(...args: any[]): void {
         args.unshift({ traceArea: "MILO" });
@@ -116,6 +151,19 @@ export class NrdpPlatform implements IPlatform {
         };
     }
 
+    processCookie(url: Url, value?: string): void {
+        nrdp.resourcemanager.processCookie(url.toString(), value);
+    }
+
+    cookies(url: Url): string | undefined {
+        return nrdp.resourcemanager.cookies(url.toString()) || undefined;
+    }
+
+    serverTime(): number | undefined {
+        if (nrdp_platform.hasServerTime)
+            return nrdp.now();
+        return undefined;
+    }
     mono = nrdp.mono;
     btoa = nrdp.btoa;
     atob = nrdp.atob;
@@ -199,10 +247,22 @@ export class NrdpPlatform implements IPlatform {
             poly = "optin";
             // fall through
         case "string":
-            if (poly !== "optin" && poly !== "all") {
+            if (poly !== "optin" && poly !== "all" && poly !== "check") {
                 throw new Error("Invalid polyfill string " + poly);
             } else {
-                this.polyfillAll = poly === "all";
+                switch (poly) {
+                case "optin":
+                    this.polyfillMode = PolyfillMode.Optin;
+                    break;
+                case "all":
+                    this.polyfillMode = PolyfillMode.All;
+                    break;
+                case "check":
+                    this.polyfillMode = PolyfillMode.Check;
+                    break;
+                default:
+                    throw new Error("Invalid polyfill string " + poly);
+                }
                 this.miloLoad = milo.load;
                 nrdp.gibbon.load = this.polyfilledGibbonLoad.bind(this);
                 // nrdp.gibbon.loadScript = this.polyfilledGibbonLoadScript.bind(this);
@@ -232,8 +292,7 @@ export class NrdpPlatform implements IPlatform {
         } else {
             data.url = this.resolveUrl(data.url);
         }
-
-        if ((!this.polyfillAll && !data.milo)
+        if ((this.polyfillMode !== PolyfillMode.All && this.polyfillMode !== PolyfillMode.Check && !data.milo)
             || !this.miloLoad
             || data.url.lastIndexOf("http://localcontrol.netflix.com/", 0) === 0
             || data.url.lastIndexOf("file://", 0) === 0
@@ -244,12 +303,42 @@ export class NrdpPlatform implements IPlatform {
             // });
             return this.realLoad(data, callback);
         }
-        return this.miloLoad(data, callback);
+
+        if (this.polyfillMode === PolyfillMode.Check) {
+            let miloResp: RequestResponse | undefined;
+            let nrdpResp: RequestResponse | undefined;
+            const check = () => {
+                if (miloResp === undefined || nrdpResp === undefined)
+                    return;
+                const miloLen = typeof miloResp.data === "string"
+                    ? miloResp.data.length
+                    : (typeof miloResp.data === "undefined" ? -1 : miloResp.data.byteLength);
+                const nrdpLen = typeof nrdpResp.data === "string"
+                    ? nrdpResp.data.length
+                    : (typeof nrdpResp.data === "undefined" ? -1 : nrdpResp.data.byteLength);
+
+                assert(typeof data === "object", "This must be an object");
+                this.log(`got both ${data.url} ${miloLen} ${nrdpLen}`);
+                compareResults(this, miloResp, nrdpResp);
+            };
+            this.miloLoad(data, (response: RequestResponse) => {
+                miloResp = response;
+                check();
+            });
+            return this.realLoad(data, (response: RequestResponse) => {
+                nrdpResp = response;
+                if (callback)
+                    callback(response);
+                check();
+            });
+        } else {
+            return this.miloLoad(data, callback);
+        }
     }
 
     private polyfilledGibbonLoadScript(data: IRequestData | string,
                                        callback?: NrdpGibbonLoadCallbackSignature): number {
-        // nrdp.l.success("LOADSCRIPT", JSON.stringify(data, (key: string, value: any) => {
+        // nrdp.l.success("LOAD", JSON.stringify(data, (key: string, value: any) => {
         //     if (key === "data" || key === "body" || key === "source") {
         //         return key;
         //     }
@@ -260,7 +349,7 @@ export class NrdpPlatform implements IPlatform {
         } else {
             data.url = this.resolveUrl(data.url);
         }
-        if ((!this.polyfillAll && !data.milo)
+        if ((this.polyfillMode !== PolyfillMode.All && this.polyfillMode !== PolyfillMode.Check && !data.milo)
             || !this.miloLoad
             || data.url.lastIndexOf("http://localcontrol.netflix.com/", 0) === 0
             || data.url.lastIndexOf("file://", 0) === 0
@@ -269,25 +358,66 @@ export class NrdpPlatform implements IPlatform {
             // return this.realLoad(data, (response: RequestResponse) => {
             //     callback(response);
             // });
-            return this.realLoadScript(data, callback);
-        }
-        if (!data.format) {
-            data.format = "databuffer";
+            return this.realLoad(data, callback);
         }
 
-        return this.miloLoad(data, (response: RequestResponse) => {
-            if (response.statusCode === 200 && response.data) {
-                assert(typeof data === "object", "Must be an object now");
-                try {
-                    nrdp.gibbon.eval(response.data, data.url);
-                } catch (err) {
-                    response.exception = err;
+        if (this.polyfillMode === PolyfillMode.Check) {
+            let miloResp: RequestResponse | undefined;
+            let nrdpResp: RequestResponse | undefined;
+            const check = () => {
+                if (miloResp === undefined || nrdpResp === undefined)
+                    return;
+                const miloLen = typeof miloResp.data === "string"
+                    ? miloResp.data.length
+                    : (typeof miloResp.data === "undefined" ? -1 : miloResp.data.byteLength);
+                const nrdpLen = typeof nrdpResp.data === "string"
+                    ? nrdpResp.data.length
+                    : (typeof nrdpResp.data === "undefined" ? -1 : nrdpResp.data.byteLength);
+
+                assert(typeof data === "object", "This must be an object");
+                this.log(`got both ${data.url} ${miloLen} ${nrdpLen}`);
+
+                if (miloLen !== nrdpLen) {
+                    this.log("got wrong len", miloLen, nrdpLen);
+                    if (miloResp.data)
+                        this.writeFile("/tmp/milo", miloResp.data);
+                    if (nrdpResp.data)
+                        this.writeFile("/tmp/nrdp", nrdpResp.data);
+
+                    this.quit(1);
+                    return;
                 }
+
+                if (callback)
+                    callback(nrdpResp);
+            };
+            this.miloLoad(data, (response: RequestResponse) => {
+                miloResp = response;
+                check();
+            });
+            return this.realLoadScript(data, (response: RequestResponse) => {
+                nrdpResp = response;
+                check();
+            });
+        } else {
+            if (!data.format) {
+                data.format = "databuffer";
             }
-            if (callback) {
-                callback(response);
-            }
-        });
+
+            return this.miloLoad(data, (response: RequestResponse) => {
+                if (response.statusCode === 200 && response.data) {
+                    assert(typeof data === "object", "Must be an object now");
+                    try {
+                        nrdp.gibbon.eval(response.data, data.url);
+                    } catch (err) {
+                        response.exception = err;
+                    }
+                }
+                if (callback) {
+                    callback(response);
+                }
+            });
+        }
     }
 
     private polyfilledGibbonStopLoad(id: number): void {
@@ -336,7 +466,7 @@ export class NrdpPlatform implements IPlatform {
     private realLoadScript: NrdpGibbonLoadSignature;
     private realStopLoad: (id: number) => void;
     private miloLoad?: NrdpGibbonLoadSignature;
-    private polyfillAll: boolean;
+    private polyfillMode: PolyfillMode;
     private userAgent: string;
     private cachedLocation: string;
     private cachedLocationBase: string;

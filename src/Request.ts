@@ -223,12 +223,14 @@ export default class Request {
 
                 if (!hasCookie) {
                     // const info = new
-                    const info = Platform.cookieAccessInfo;
-                    info.domain = this.requestResponse.cname;
-                    info.path = this.url.pathname;
-                    info.secure = typeof this.requestResponse.sslVersion !== undefined;
-                    info.script = false;
-                    const cookies = Platform.cookieJar.getCookies(Platform.cookieAccessInfo).toValueString();
+                    // const info = Platform.cookieAccessInfo;
+                    // info.domain = this.requestResponse.cname;
+                    // info.path = this.url.pathname;
+                    // info.secure = typeof this.requestResponse.sslVersion !== undefined;
+                    // info.script = false;
+                    // const cookies = Platform.cookieJar.getCookies(Platform.cookieAccessInfo).toValueString();
+                    const cookies = Platform.cookies(this.url);
+                    Platform.log(`checking for cookies for ${this.url} => ${cookies}`);
                     if (cookies) {
                         this.requestData.headers.Cookie = cookies;
                     }
@@ -434,10 +436,17 @@ export default class Request {
         this.requestResponse.timeToFirstByteRead = event.timeToFirstByteRead;
         this.requestResponse.headersSize = event.headersSize;
         this.requestResponse.httpVersion = event.httpVersion;
-        if (event.setCookie) {
-            const domain = this.url.hostname;
-            const path = this.url.pathname;
-            Platform.cookieJar.setCookies(event.setCookie, domain, path);
+        Platform.log(`Got headers for cookies ${this.url} => ${event.setCookie}`);
+        if (typeof event.setCookie === "string") {
+            // const domain = this.url.hostname;
+            // const path = this.url.pathname;
+            // Platform.cookieJar.setCookies(event.setCookie, domain, path);
+            // Platform.log("set some cookies\n", JSON.stringify(Platform.cookieJar, null, 4));
+            Platform.processCookie(this.url, event.setCookie);
+        } else if (event.setCookie) {
+            for (const cookie of event.setCookie) {
+                Platform.processCookie(this.url, cookie);
+            }
         }
         if (event.redirectUrl) {
             const count = this.requestResponse.addUrl(event.redirectUrl);
@@ -569,7 +578,6 @@ export default class Request {
             this.requestData.onChunk(data.toArrayBuffer());
         } else if (this.responseData) {
             assert(typeof this.responseDataOffset !== "undefined", "Must have responseDataOffset");
-            Platform.log("gotting shit", this.responseData.byteLength, this.responseDataOffset, offset, length);
             if (this.responseDataOffset + length > this.responseData.byteLength) {
                 Platform.log("too far", this.responseDataOffset + length - this.responseData.byteLength);
             }

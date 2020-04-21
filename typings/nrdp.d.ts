@@ -31,6 +31,11 @@ declare namespace nrdp {
         const eval: (data: string | Uint8Array | IDataBuffer | ArrayBuffer, url: string) => any;
     }
 
+    namespace resourcemanager {
+        function processCookie(url: string, value?: string): void;
+        function cookies(url: string): string;
+    }
+
     namespace l {
         function success(...args: any[]): void;
         function error(...args: any[]): void;
@@ -51,6 +56,7 @@ declare namespace nrdp {
         const default_network_max_send_speed: number;
         const default_network_timeout: number;
         const ssl_peer_verification: boolean;
+        const send_secure_cookies: boolean;
     }
 
     function exit(exitCode: number): void;
