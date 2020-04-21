@@ -61,12 +61,13 @@ class NodePlatform implements IPlatform {
     public standardHeaders: HTTPRequestHeaders = {};
     public scratch: IDataBuffer;
     public UILanguages: string[] = ['en'];
-    public ipConnectivityMode: IpConnectivityMode;
-    public tlsv13SmallAssetsEnabled: boolean = true;
-    public tlsv13StreamingEnabled: boolean = true;
+    public readonly ipConnectivityMode: IpConnectivityMode;
+    public readonly tlsv13SmallAssetsEnabled: boolean = true;
+    public readonly tlsv13StreamingEnabled: boolean = true;
     public readonly connectionPool: ConnectionPool;
     public readonly cookieJar: CookieJar;
     public readonly cookieAccessInfo: CookieAccessInfo;
+    public readonly sendSecureCookies = false;
 
     constructor() {
         this.scratch = new DataBuffer(1024 * 32);
