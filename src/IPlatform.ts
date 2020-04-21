@@ -47,8 +47,10 @@ export default interface IPlatform {
     arrayBufferConcat(...buffers: ArrayBufferConcatType[]): ArrayBuffer;
     randomBytes(len: number): Uint8Array
 
-    writeFile(fileName: string, contents: Uint8Array | ArrayBuffer | IDataBuffer | string): boolean;
-
+    writeFile(fileName: string,
+              contents: Uint8Array | ArrayBuffer | IDataBuffer | string): boolean;
+    appendFile(fileName: string,
+               contents: Uint8Array | ArrayBuffer | IDataBuffer | string): boolean;
     stacktrace(): string;
 
     trace(...args: any[]): void;

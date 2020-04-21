@@ -25,6 +25,7 @@ type NrdpGibbonLoadSignature = (data: IRequestData | string, callback?: NrdpGibb
 
 const enum PolyfillMode { None, All, Optin, Check };
 
+let disallow = 20;
 function compareResults(platform: IPlatform, miloResp: RequestResponse, nrdpResp: RequestResponse) {
     if (typeof miloResp.data !== typeof nrdpResp.data) {
         platform.log("WRONG TYPE", miloResp.url, typeof miloResp.data, typeof nrdpResp.data);
@@ -177,8 +178,11 @@ export class NrdpPlatform implements IPlatform {
 
     utf8Length = nrdp_platform.utf8Length;
 
-    writeFile(fileName: string, contents: Uint8Array | IDataBuffer | ArrayBuffer | string): boolean {
-        const fd = N.open(fileName, N.O_CREAT | N.O_WRONLY, 0o0664);
+    writeFile(fileName: string,
+              contents: Uint8Array | IDataBuffer | ArrayBuffer | string,
+              append?: boolean): boolean {
+        const flags = N.O_CREAT | N.O_WRONLY | N.O_TRUNC;
+        const fd = N.open(fileName, flags, 0o0664);
         if (fd === -1) {
             this.error(`Failed to open ${fileName} for writing`, N.errno, N.strerror());
             return false;
@@ -187,7 +191,25 @@ export class NrdpPlatform implements IPlatform {
         const w = N.write(fd, contents);
         N.close(fd);
         if (w !== len) {
-            this.error(`Failed to write to ${fileName} for writing ${w} vs ${len}`, N.errno, N.strerror());
+            this.error(`Failed to write to ${fileName} ${w} vs ${len}`, N.errno, N.strerror());
+            return false;
+        }
+        return true;
+    }
+
+    appendFile(fileName: string,
+               contents: Uint8Array | IDataBuffer | ArrayBuffer | string): boolean {
+        const flags = N.O_CREAT | N.O_WRONLY | N.O_APPEND;
+        const fd = N.open(fileName, flags, 0o0664);
+        if (fd === -1) {
+            this.error(`Failed to open ${fileName} for appending`, N.errno, N.strerror());
+            return false;
+        }
+        const len = typeof contents === "string" ? nrdp_platform.utf8Length(contents) : contents.byteLength;
+        const w = N.write(fd, contents);
+        N.close(fd);
+        if (w !== len) {
+            this.error(`Failed to append to ${fileName} ${w} vs ${len}`, N.errno, N.strerror());
             return false;
         }
         return true;
@@ -233,10 +255,12 @@ export class NrdpPlatform implements IPlatform {
     }
 
     loadMilo(milo: IMilo): boolean {
-        this.log("CALLED", this.location, typeof nrdp.milo);
+        // this.log("CALLED", this.location, typeof nrdp.milo);
         if (typeof nrdp.milo !== "undefined")
             return false;
         nrdp.milo = milo;
+
+        disallow = parseInt(this.options("polyfill-milo-suppress"), 10);
 
         let poly: any = this.options("polyfill-milo");
         switch (typeof poly) {
@@ -292,16 +316,87 @@ export class NrdpPlatform implements IPlatform {
         } else {
             data.url = this.resolveUrl(data.url);
         }
+        const u = new Url(data.url);
+
         if ((this.polyfillMode !== PolyfillMode.All && this.polyfillMode !== PolyfillMode.Check && !data.milo)
             || !this.miloLoad
+            // || data.format === "jsonstream"
+            // || data.body
+            // || data.method === "POST"
             || data.url.lastIndexOf("http://localcontrol.netflix.com/", 0) === 0
             || data.url.lastIndexOf("file://", 0) === 0
             || data.url.lastIndexOf("data:", 0) === 0) {
-            // this.log("got req", realData.url, typeof realData.body);
+            this.log("disallowing policy", u.host, u.pathname, typeof data.body);
             // return this.realLoad(data, (response: RequestResponse) => {
             //     callback(response);
             // });
             return this.realLoad(data, callback);
+        }
+
+        if (disallow > 0) {
+            --disallow;
+            this.log("disallowing poly", disallow, u.host, u.pathname);
+            return this.realLoad(data, callback);
+        }
+
+        switch (u.host) {
+        case "api-global.netflix.com":
+            // this.log("piece of shit", data);
+            // break;
+        case "nrdp.prod.ftl.netflix.com":
+        case "uiboot.netflix.com":
+            // this.log("disallowing host", u.host, u.pathname);
+            // return this.realLoad(data, callback);
+        }
+
+        switch (typeof data.body) {
+        case "object":
+            // if (u.host === "api-global.netflix.com") {
+            //     this.log("disallowing body", u.host, u.pathname, data.body instanceof Uint8Array);
+            //     return this.realLoad(data, callback);
+            // }
+
+            if (u.host === "api-global.netflix.com" && data.format === "jsonstream") {
+                this.log("mofokker", data.url, data.format);
+                // this.log("disallowing poly", disallow, u.host, u.pathname);
+                // let count = 2;
+                const miloId = this.miloLoad(data, (response: RequestResponse) => {
+                    const shit: any = {};
+                    Object.keys(response).sort().forEach((key) => {
+                        // @ts-ignore
+                        shit[key] = response[key];
+                    });
+
+                    this.writeFile("/tmp/milo.json", JSON.stringify(shit, null, 4));
+                    // this.quit(0);
+                    if (callback)
+                        callback(response);
+                    // if (!--count)
+                    //     this.quit();
+                });
+                const nrdpId = this.realLoad(data, (response: RequestResponse) => {
+                    const shit: any = {};
+                    Object.keys(response).sort().forEach((key) => {
+                        // @ts-ignore
+                        shit[key] = response[key];
+                    });
+
+                    this.writeFile("/tmp/real.json", JSON.stringify(shit, null, 4));
+                    // if (callback)
+                    //     callback(response);
+                    // if (!--count)
+                    //     this.quit();
+                });
+                this.trace(miloId, nrdpId);
+                return miloId;
+            }
+            break;
+        case "undefined":
+        case "string":
+        default:
+            // this.log("GOT A BODY TYPE", typeof data.body, data.body instanceof Uint8Array,
+            //          data.body instanceof ArrayBuffer);
+            break;
         }
 
         if (this.polyfillMode === PolyfillMode.Check) {
@@ -332,6 +427,7 @@ export class NrdpPlatform implements IPlatform {
                 check();
             });
         } else {
+            this.log("allowing", u.host, u.pathname);
             return this.miloLoad(data, callback);
         }
     }
