@@ -59,7 +59,7 @@ declare namespace nrdp {
         const send_secure_cookies: boolean;
     }
 
-    function exit(exitCode: number): void;
+    function exit(exitCode?: number): void;
     function stacktrace(): string;
     function now(): number;
     const trustStoreHash: string;
