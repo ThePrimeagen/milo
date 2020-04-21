@@ -164,43 +164,6 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
         }
     }
 
-    private _write(): void {
-        assert(this.writeBuffers.length, "Should have write buffers " + this.sock);
-        assert(this.writeBuffers.length === this.writeBufferOffsets.length,
-               `writeBuffers and writeBufferOffsets should have the same length ${this.writeBuffers.length} vs ${this.writeBufferOffsets}.length`);
-        assert(this.writeBuffers.length === this.writeBufferLengths.length,
-               `writeBuffers and writeBufferLengths have the same length ${this.writeBuffers.length} vs ${this.writeBufferLengths}.length`);
-        while (this.writeBuffers.length) {
-            assert(this.writeBufferLengths[0] > 0, "Nothing to write");
-            const written = N.write(this.sock, this.writeBuffers[0],
-                                    this.writeBufferOffsets[0], this.writeBufferLengths[0]);
-            this.platform.trace("wrote", written, "of", this.writeBufferLengths[0], "for", this.sock);
-            if (written > 0) {
-                if (!this.firstByteWritten)
-                    this.firstByteWritten = this.platform.mono();
-                this.bytesWritten += written;
-                this.writeBufferOffsets[0] += written;
-                this.writeBufferLengths[0] -= written;
-                if (!this.writeBufferLengths[0]) {
-                    this.writeBuffers.shift();
-                    this.writeBufferOffsets.shift();
-                    this.writeBufferLengths.shift();
-                }
-            } else if (N.errno === N.EWOULDBLOCK) {
-                break;
-            } else {
-                this._error(new NetworkError(NetworkErrorCode.SocketWriteError, `write error, errno: ${N.errno} ${N.strerror()}`));
-                return;
-            }
-        }
-        const mode = this.writeBuffers.length ? N.READWRITE : N.READ;
-        if (mode !== this.selectMode) {
-            this.selectMode = mode;
-            N.setFD(this.sock, mode, this._onSelect.bind(this));
-            assert(!(mode & N.WRITE) || this.writeBuffers.length, "Should have write buffers now");
-        }
-    }
-
     private _onSelect(sock: number, mode: number): void {
         this.platform.trace(`NrdpTCPNetworkPipe(${this.id}._onSelect(${sock}, ${mode}`);
         if (mode & N.READ) {
@@ -208,7 +171,40 @@ export class NrdpTCPNetworkPipe extends NetworkPipe {
         }
 
         if (mode & N.WRITE) {
-            this._write();
+            assert(this.writeBuffers.length, "Should have write buffers " + this.sock);
+            assert(this.writeBuffers.length === this.writeBufferOffsets.length,
+                   `writeBuffers and writeBufferOffsets should have the same length ${this.writeBuffers.length} vs ${this.writeBufferOffsets}.length`);
+            assert(this.writeBuffers.length === this.writeBufferLengths.length,
+                   `writeBuffers and writeBufferLengths have the same length ${this.writeBuffers.length} vs ${this.writeBufferLengths}.length`);
+            while (this.writeBuffers.length) {
+                assert(this.writeBufferLengths[0] > 0, "Nothing to write");
+                const written = N.write(this.sock, this.writeBuffers[0],
+                                        this.writeBufferOffsets[0], this.writeBufferLengths[0]);
+                this.platform.trace("wrote", written, "of", this.writeBufferLengths[0], "for", this.sock);
+                if (written > 0) {
+                    if (!this.firstByteWritten)
+                        this.firstByteWritten = this.platform.mono();
+                    this.bytesWritten += written;
+                    this.writeBufferOffsets[0] += written;
+                    this.writeBufferLengths[0] -= written;
+                    if (!this.writeBufferLengths[0]) {
+                        this.writeBuffers.shift();
+                        this.writeBufferOffsets.shift();
+                        this.writeBufferLengths.shift();
+                    }
+                } else if (N.errno === N.EWOULDBLOCK) {
+                    break;
+                } else {
+                    this._error(new NetworkError(NetworkErrorCode.SocketWriteError, `write error, errno: ${N.errno} ${N.strerror()}`));
+                    return;
+                }
+            }
+            const newMode = this.writeBuffers.length ? N.READWRITE : N.READ;
+            if (newMode !== this.selectMode) {
+                this.selectMode = newMode;
+                N.setFD(this.sock, newMode, this._onSelect.bind(this));
+                assert(!(newMode & N.WRITE) || this.writeBuffers.length, "Should have write buffers now");
+            }
         }
     }
 
