@@ -81,8 +81,8 @@ class NodePlatform implements IPlatform {
         // this.cookieAccessInfo = new CookieAccessInfo("");
     }
 
-    quit(code: number) {
-        process.exit(code);
+    quit(code?: number) {
+        process.exit(code || 0);
     }
 
     utf8Length(str: string): number {
