@@ -11,6 +11,7 @@ export type WSState = {
     rsv2: number;
     rsv3: number;
     opcode: number;
+    currentOpcode: number;
 
     isMasked: boolean;
     currentMask: IDataBuffer;
@@ -27,4 +28,5 @@ export type WSState = {
 export const MASK_SIZE = 4;
 export const MAX_HEADER_SIZE = 14;
 export type WSCallback = (buffer: IDataBuffer, state: WSState) => void;
+export type WSErrorCallback = (e: Error) => void;
 

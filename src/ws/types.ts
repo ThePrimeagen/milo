@@ -7,6 +7,25 @@ export const enum Opcodes {
     Pong = 0xA, // denotes a pong
 };
 
+export function stringifyOpcode(code: Opcodes): string {
+    switch (code) {
+        case Opcodes.ContinuationFrame:
+            return "ContinuationFrame";
+        case Opcodes.TextFrame:
+            return "TextFrame";
+        case Opcodes.BinaryFrame:
+            return "BinaryFrame";
+        case Opcodes.CloseConnection:
+            return "CloseConnection";
+        case Opcodes.Ping:
+            return "Ping";
+        case Opcodes.Pong:
+            return "Pong";
+        default:
+            return "Unknown";
+    }
+}
+
 export function isValidOpcode(code: Opcodes): boolean {
     let valid = false;
     switch (code) {

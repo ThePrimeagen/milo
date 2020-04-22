@@ -1,19 +1,32 @@
+import Platform from "../../Platform";
 import DataBuffer from "../../DataBuffer";
 import IDataBuffer from "../../IDataBuffer";
 import NetworkPipe from "../../NetworkPipe";
 import maskFn from "../mask";
-import { FramerState, WSState, WSCallback, MAX_HEADER_SIZE, } from "./types";
-import { Opcodes } from "../types";
+import {
+    FramerState,
+    WSState,
+    WSErrorCallback,
+    WSCallback,
+    MAX_HEADER_SIZE,
+} from "./types";
+import { Opcodes, stringifyOpcode } from "../types";
 import { createDefaultState } from "./state";
 import { isHeaderParsable, parseHeader, constructFrameHeader, generateMask, } from "./header";
-import assert from "../../utils/assert.macro";
+
+export const FrameErrorString =
+    "Control frames must completed within a single packet, received a control packet without a finish flag.";
+export const ContinuationErrorString =
+    "Received first frame as a continuation frame.  This is illegal.";
+export const ShouldBeContinuationFrame =
+    "Received a non continuation opcode on what should be a continuation frame.";
 
 let _id = -1;
 export default class WSFramer {
     private id: number;
-    private callbacks: WSCallback[];
+    private onFrames: WSCallback[];
+    private onFrameErrors: WSErrorCallback[];
     private maxFrameSize: number;
-    private maxPacketSize: number;
     private msgState: WSState;
     private controlState: WSState;
     private pipe: NetworkPipe;
@@ -23,7 +36,7 @@ export default class WSFramer {
 
     private closed: boolean;
 
-    constructor(pipe: NetworkPipe, maxFrameSize = 8096, maxPacketSize = 1024 * 1024 * 4) {
+    constructor(pipe: NetworkPipe, maxFrameSize = 8096) {
         this.id = ++_id;
         this.closed = false;
 
@@ -31,10 +44,10 @@ export default class WSFramer {
         this.header = new DataBuffer(MAX_HEADER_SIZE);
         this.headerLen = 0;
 
-        this.callbacks = [];
+        this.onFrames = [];
+        this.onFrameErrors = [];
         this.pipe = pipe;
         this.maxFrameSize = maxFrameSize;
-        this.maxPacketSize = maxPacketSize;
         this.msgState = createDefaultState();
         this.controlState = createDefaultState(true);
     }
@@ -48,7 +61,11 @@ export default class WSFramer {
     }
 
     onFrame(cb: WSCallback) {
-        this.callbacks.push(cb);
+        this.onFrames.push(cb);
+    }
+
+    onFrameError(cb: WSErrorCallback) {
+        this.onFrameErrors.push(cb);
     }
 
     // TODO: Contiuation frames, spelt wrong
@@ -57,8 +74,9 @@ export default class WSFramer {
 
 
         if (length > 2 ** 32) {
-            throw new Error("You are dumb");
+            throw new Error("Unable to send packets that large.  It really is insane as a client.");
         }
+
         if (this.closed) {
             throw new Error("The frame has been closed and now you are attempting to send some data.  This is no longer possible.");
         }
@@ -72,6 +90,8 @@ export default class WSFramer {
 
         header.setUInt8(0, 0);
 
+        // Closed is due to a frame error or an error being sent it.  To prevent
+        // any follow up errors, we close
         do {
             const ptrStart = ptr;
 
@@ -97,16 +117,11 @@ export default class WSFramer {
             // TODO if fullBuf is just to slow to send upgrade the socket
             // library to handle the same reference to the buf with different
             // offsets.
-            try {
-                this.pipe.write(fullBuf, 0, fullBuf.byteLength);
-            } catch (e) {
-                /* tslint:disable-next-line */
-                debugger;
-            }
+            this.pipe.write(fullBuf, 0, fullBuf.byteLength);
 
             ptrLength += ptr - ptrStart;
 
-        } while (ptrLength < length);
+        } while (ptrLength < length && !this.closed);
     }
 
     isControlFrame(): boolean {
@@ -130,6 +145,8 @@ export default class WSFramer {
     processStreamData(packet: IDataBuffer, offset: number, endIdx: number) {
         let ptr = offset;
         let state = this.getActiveState();
+
+        Platform.log("processStreamData", packet.slice(offset, endIdx - offset));
 
         while (ptr < endIdx && !this.closed) {
             if (state === null || state.state === FramerState.ParsingHeader) {
@@ -178,6 +195,17 @@ export default class WSFramer {
         this.closed = true;
     }
 
+    private debug(state: WSState): void {
+        Platform.log("Debug Frame ----");
+        if (this.isControlFrame() && !state.isFinished) {
+            Platform.log("This frame will throw an error about non finished control frames.");
+        }
+
+        Platform.log(`State(${stringifyOpcode(state.currentOpcode)} / ${stringifyOpcode(state.opcode)}): ${state.payloadPtr} / ${state.payloadLength}`);
+        Platform.log(`payloads(${state.payloads.length}): ${state.payloads.reduce((acc, p) => acc + p.byteLength, 0)} bytes`);
+        Platform.log(`header: ${this.header.slice(0, this.headerLen)}`);
+    }
+
     private tryFinishFrame(state: WSState | null) {
         if (state === null) {
             return;
@@ -185,18 +213,40 @@ export default class WSFramer {
 
         const endOfPayload = state.payloadLength === state.payloadPtr;
 
+        // The control frame that does not have a finish flag does break the
+        // entire connection.
+        if (this.isControlFrame() && !state.isFinished) {
+            this.pushFramingError(new Error(FrameErrorString));
+            return;
+        }
+
+        if (state.currentOpcode !== Opcodes.ContinuationFrame &&
+            state.payloads.length > 0) {
+            this.pushFramingError(new Error(ShouldBeContinuationFrame));
+            return;
+        }
+
+        // First frame of the socket is a continuation frame, this is a failure.
+        if (state.opcode === Opcodes.ContinuationFrame &&
+           state.payloads.length === 0) {
+
+            this.pushFramingError(new Error(ContinuationErrorString));
+            return;
+        }
+
         if (endOfPayload) {
             if (state.isFinished) {
                 this.pushFrame(state);
+                this.reset(state);
             } else {
                 state.payloads.push(state.payload);
+                this.softReset(state);
             }
 
-            this.reset(state);
         }
     }
 
-    private reset(state: WSState): void {
+    private softReset(state: WSState): void {
         this.headerLen = 0;
 
         state.state = FramerState.ParsingHeader;
@@ -204,14 +254,13 @@ export default class WSFramer {
 
         state.payloadLength = 0;
         state.payloadPtr = 0;
-
-        if (state.isFinished) {
-            state.payloads.length = 0;
-        }
     }
 
-    private getByteBetween(state: WSState, packet: IDataBuffer, offset: number, endIdx: number): number {
-        return 0;
+    private reset(state: WSState): void {
+        this.softReset(state);
+        state.opcode = Opcodes.ContinuationFrame;
+        state.currentOpcode = Opcodes.ContinuationFrame;
+        state.payloads.length = 0;
     }
 
     private parseBody(
@@ -222,7 +271,6 @@ export default class WSFramer {
         // to read what I need to read, not the whole thing, segfault incoming
 
         // TODO: is this ever needed?
-        const remaining = state.payloadLength - state.payloadPtr;
         const sub = packet.subarray(offset, endIdx - offset);
 
         state.payload.set(state.payloadPtr, sub);
@@ -251,7 +299,11 @@ export default class WSFramer {
             buf = DataBuffer.concat(state.payloads);
         }
 
-        this.callbacks.forEach(cb => cb(buf, state));
+        this.onFrames.forEach(cb => cb(buf, state));
+    }
+
+    private pushFramingError(e: Error) {
+        this.onFrameErrors.forEach(cb => cb(e));
     }
 };
 
