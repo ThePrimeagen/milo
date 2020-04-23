@@ -146,8 +146,6 @@ export default class WSFramer {
         let ptr = offset;
         let state = this.getActiveState();
 
-        Platform.log("processStreamData", packet.slice(offset, endIdx - offset));
-
         while (ptr < endIdx && !this.closed) {
             if (state === null || state.state === FramerState.ParsingHeader) {
                 const startingLen = this.headerLen;

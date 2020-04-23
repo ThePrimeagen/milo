@@ -38,6 +38,7 @@
     "network-byte-order": "^0.2.0",
     "sha1": "^1.1.1",
     "url-parse": "^1.4.7",
+    "utf-8-validate": "^5.0.2",
     "ws": "^7.2.1"
   },
   "devDependencies": {

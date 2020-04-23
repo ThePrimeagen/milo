@@ -182,7 +182,6 @@ export default class WS {
                     restOfData = buffer.subarray(2);
                 }
 
-                Platform.log("Opcodes.CloseConnection", code, restOfData);
                 this.close(restOfData, buffer, code);
                 break;
 
@@ -276,8 +275,6 @@ export default class WS {
 
     send(obj: IDataBuffer | Uint8Array | string) {
 
-        Platform.log("WS#send", obj);
-
         let bufOut: IDataBuffer;
         let opcode = Opcodes.BinaryFrame;
 
@@ -296,7 +293,6 @@ export default class WS {
             opcode = Opcodes.TextFrame;
         }
 
-        Platform.log("WS#send", bufOut.slice(0, bufOut.byteLength), opcode);
         this.frame.send(bufOut, 0, bufOut.byteLength, opcode);
     }
 }
