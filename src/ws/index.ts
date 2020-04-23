@@ -158,6 +158,10 @@ export default class WS {
 
         pipe.on("data", readData);
 
+        this.frame.onFrameError(() => {
+            this.close(CLOSE_1002_BUFFER, CLOSE_1002_BUFFER, CloseValues.GoAway);
+        });
+
         this.frame.onFrame((buffer: IDataBuffer, state: WSState) => {
 
             if (!this.validateFrame(state)) {
@@ -177,6 +181,7 @@ export default class WS {
                 if (buffer.byteLength > 2) {
                     restOfData = buffer.subarray(2);
                 }
+
                 this.close(restOfData, buffer, code);
                 break;
 
