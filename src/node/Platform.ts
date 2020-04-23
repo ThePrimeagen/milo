@@ -188,17 +188,17 @@ class NodePlatform implements IPlatform {
             return input.substr(offset || 0, length || input.length);
         }
 
-        let buf: Uint8Array;
+        let buf: Buffer;
         if (input instanceof ArrayBuffer) {
-            buf = new Uint8Array(input);
+            buf = Buffer.from(input);
         }
 
         else if (input instanceof Uint8Array) {
-            buf = input;
+            buf = Buffer.from(input);
         }
 
         else {
-            buf = new Uint8Array(input.toArrayBuffer());
+            buf = (input as DataBuffer).buffer;
         }
 
         if (offset !== undefined) {
@@ -206,8 +206,7 @@ class NodePlatform implements IPlatform {
             buf = buf.slice(offset, l);
         }
 
-        // @ts-ignore
-        return String.fromCharCode.apply(null, buf);
+        return buf.slice(offset, length).toString("utf8");
     }
 
     bufferSet(dest: Uint8Array | ArrayBuffer | IDataBuffer, destOffset: number,

@@ -129,6 +129,7 @@ export function parseHeader(header: IDataBuffer, state: WSState): number {
 
     const opcode = byte1 & 0xF;
 
+    state.currentOpcode = opcode;
     if (opcode !== Opcodes.ContinuationFrame) {
         state.opcode = opcode;
     }
