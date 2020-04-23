@@ -15,15 +15,19 @@ you need to have.
 Cases determines which tests to run.
 
 *Running a specific case*
+
 CASES=1.1.1
 
 *Running a set of cases*
+
 CASES=1.*
 
 *Running Several Cases*
+
 CASES=1.*,2.*
 
 *Running all cases*
+
 CASES=*
 
 ###### NRDP
@@ -44,7 +48,7 @@ To develop against autobahn, follow these steps.
 4. In a new terminal window start the client.  I would suggest building before
    running. `npm run node && npx ts-node autobahn/test-harness.ts`
 5. When the tests have ran, the output will be saved and viewable at
-   [http://localhost:8080](http://localhost:8080).  Click the `Clients` link.
+   [http://localhost:8080](http://localhost:8080).  Click the `Client Reports` link.
 
 #### Debugger
 If you wish to launch the node debugger, run the `test-harness` with `node
