@@ -561,8 +561,8 @@ export default class Request {
                 assert(offset + written === length, "Can this happen? " + offset + " + " + written + " != " + length);
                 break;
             }
-            // Platform.log("gotta decompress a chunk here", length);
-        } while (offset + written < length);
+            // Platform.log("checking loop cond", offset, written, length);
+        } while (written < length);
 
         if (typeof this.contentLength !== "undefined" && this.compressionContentReceived === this.contentLength) {
             this._transition(RequestState.Finished);
