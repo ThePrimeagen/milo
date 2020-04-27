@@ -17,6 +17,7 @@ const options = {
 };
 
 const file = argv["ports-file"] || path.join(__dirname, "/test-server.ports");
+const host = argv["server"] || "localhost";
 
 let startPort = 59999;
 const maxPort = 65535;
@@ -44,8 +45,9 @@ function createServer(opts)
                     server = http.createServer(app);
                 }
                 server.listen(port, () => {
-                    server.port = port;
-                    console.log(opts ? "https" : "http", "listening on", server.port);
+                    const s = `${opts ? "https" : "http"}://${host}:${port}`;
+                    server.address = s;
+                    console.log("listening on", s);
                     clearTimeout(id);
                     resolve(server);
                 });
@@ -68,7 +70,7 @@ createServer().then(server => {
     return createServer(options);
 }).then(server => {
     httpsServer = server;
-    fs.writeFileSync(file, `http=${httpServer.port},https=${httpsServer.port}`);
+    fs.writeFileSync(file, `MILO_TEST_HTTP_SERVER=${httpServer.address}\nMILO_TEST_HTTPS_SERVER=${httpsServer.address}\n`);
 }).catch(err => {
     console.error(err);
     process.exit(1);
@@ -77,8 +79,7 @@ createServer().then(server => {
 const table = "ABCDEFGHIJKLMNOPQRSTUVWXYZ\n";
 
 app.get("/", (req, res) => {
-
-    const size = req.query.size || 1024;
+    const size = parseInt(req.query.size) || 1024;
     let payload = Buffer.allocUnsafe(size);
     for (let idx=0; idx<size; ++idx) {
         payload[idx] = table.charCodeAt(idx % table.length);
@@ -92,13 +93,15 @@ app.get("/", (req, res) => {
         res.set("Content-Encoding", 'deflate');
     }
 
+    console.log("got request", req.url);
     // console.log("got payload", payload.length, payload.byteLength);
     if ("chunked" in req.query) {
         const random = seedrandom(JSON.stringify(req.query));
         let idx = 0;
         function chunk()
         {
-            let len = Math.min(payload.length - idx, Math.round(1 + (random() * 31)));
+            const val = Math.max(Math.round(payload.length / 20), 32);
+            const len = Math.min(payload.length - idx, Math.round(1 + (random() * val)));
             // console.log("writing chunk", len, idx, payload.length);
             if (!len) {
                 res.end();
