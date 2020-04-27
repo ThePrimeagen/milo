@@ -6,3 +6,4 @@ dist
 .milo-test-env
 
 /src/nrdp/NrdpBoundSSLFunctions.ts
+/tests/test-server.ports
