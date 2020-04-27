@@ -228,7 +228,7 @@ export default function createTCPNetworkPipe(platform: NrdpPlatform,
     let dnsWireTime: number;
     return new Promise<IPipeResult>((resolve, reject) => {
         new Promise<N.Sockaddr>(innerResolve => {
-            let ipAddress = options.hostname;
+            let ipAddress = options.ipAddresses ? options.ipAddresses[0] : options.hostname;
             if (typeof options.port !== "undefined")
                 ipAddress += ":" + options.port;
 
@@ -244,7 +244,7 @@ export default function createTCPNetworkPipe(platform: NrdpPlatform,
                     reject(new NetworkError(NetworkErrorCode.InvalidIpVersion,
                                             "Invalid ip version in ip address"));
                 }
-                dnsType = "literal";
+                dnsType = options.ipAddresses ? "preresolved" : "literal";
                 innerResolve(sockAddr);
             } catch (err) {
                 dnsStartTime = platform.mono();

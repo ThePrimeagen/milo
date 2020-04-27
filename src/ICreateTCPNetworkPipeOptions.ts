@@ -6,4 +6,6 @@ export default interface ICreateTCPNetworkPipeOptions {
     connectTimeout: number;
     dnsTimeout: number;
     ipVersion: IpVersion;
+    ipAddresses?: string[];
+    dnsName?: string;
 };
