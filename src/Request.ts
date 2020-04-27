@@ -432,7 +432,7 @@ export default class Request {
     }
 
     private _onHeaders(event: IHTTPHeadersEvent): void {
-        // Platform.log("GOT HEADERS", event);
+        Platform.trace("Got headers", event);
         this.requestResponse.statusCode = event.statusCode;
         this.requestResponse.headers = event.headers;
         this.requestResponse.requestSize = event.requestSize;
@@ -539,15 +539,17 @@ export default class Request {
             }
             assert(typeof this.compressionBufferOffset !== "undefined", "This should always be set");
 
-            // Platform.log("calling it", "out", CompressionBuffer.Length - this.compressionBufferOffset,
-            //              "in", length - offset);
+            // Platform.log("calling it", "out",
+            //              this.compressionBufferOffset, this.compressionBuffer.byteLength,
+            //              "in", length - written, offset, written);
             const ret = this.compressionStream.process(this.compressionBuffer,
                                                        this.compressionBufferOffset,
                                                        undefined,
                                                        data,
                                                        offset + written,
                                                        length - written);
-            // Platform.log("return", "out", ret, "in", this.compressionStream.inputUsed);
+            // Platform.log("return", "out", ret, "in", this.compressionStream.inputUsed,
+            //              CompressionBuffer.Length - this.compressionBufferOffset);
             this.compressionBufferOffset += ret;
             if (CompressionBuffer.Length - this.compressionBufferOffset < 6) {
                 this.compressionBuffer.byteLength = this.compressionBufferOffset;
