@@ -31,12 +31,15 @@ function runTests(server, loadFunc)
                 clearTimeout(id);
                 if (response.statusCode !== 200) {
                     nrdp.l.error(response);
-                    reject(new Error("Bad status code " + response.statusCode));
+                    reject(new Error("Bad status code " + response.statusCode + " for " + url));
                     return;
                 }
 
                 if (response.data !== payload) {
-                    reject(new Error("Bad payload " + payload.length + " " + response.data.length));
+                    var len = response.data ? response.data.length : -1;
+                    delete response.data;
+                    nrdp.l.error(response);
+                    reject(new Error("Bad payload expected " + payload.length + " bytes, but got " + len + " for " + url));
                     return;
                 }
                 resolve();
