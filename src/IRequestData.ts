@@ -10,6 +10,7 @@ export default interface IRequestData {
     debugThroughput?: boolean;
     dependsOn?: string | ArrayBuffer | Uint8Array | number;
     dnsChannel?: string;
+    dnsName?: string;
     dnsTime?: number;
     dnsType?: DnsType;
     exclusiveDepends?: boolean;

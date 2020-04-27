@@ -241,6 +241,11 @@ export default class ConnectionPool {
                     connectTimeout: options.connectTimeout,
                     ipVersion: 4 // gotta do happy eyeballs and send off multiple tcp network pipe things
                 } as ICreateTCPNetworkPipeOptions;
+                if (options.ipAddresses) {
+                    tcpOpts.ipAddresses = options.ipAddresses;
+                    tcpOpts.dnsName = options.dnsName;
+                }
+
                 Platform.createTCPNetworkPipe(tcpOpts).then((pipeResult: IPipeResult) => {
                     Platform.trace(`Got tcp connection for ${hostPort} with socket ${pipeResult.pipe.socket}`);
                     if (ssl) {
@@ -318,6 +323,10 @@ export default class ConnectionPool {
                 connectTimeout: pending.connectionOptions.connectTimeout,
                 ipVersion: 4 // gotta do happy eyeballs and send off multiple tcp network pipe things
             } as ICreateTCPNetworkPipeOptions;
+            if (pending.connectionOptions.ipAddresses) {
+                tcpOpts.ipAddresses = pending.connectionOptions.ipAddresses;
+                tcpOpts.dnsName = pending.connectionOptions.dnsName;
+            }
 
             ++data.initializing;
             Platform.trace(`Requesting tcp connection for ${data.hostPort}`);

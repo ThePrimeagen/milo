@@ -112,7 +112,6 @@ export default class Request {
             throw new NetworkError(NetworkErrorCode.NotImplemented, "http2 is not implemented yet");
         }
 
-        Platform.log("Going to", this.requestData.url);
         this.url = new Url(this.requestData.url, this.requestData.baseUrl || Platform.location);
         this.state = RequestState.Initial;
         return this;
@@ -149,6 +148,11 @@ export default class Request {
             forbidReuse: this.requestData.forbidReuse,
             tlsv13: this.requestData.tlsv13
         } as IConnectionOptions;
+
+        if (this.requestData.ipAddresses) {
+            connectionOpts.ipAddresses = this.requestData.ipAddresses;
+            connectionOpts.dnsName = this.requestData.dnsName;
+        }
 
         let pendingConnection: IPendingConnection;
         Platform.connectionPool.requestConnection(connectionOpts).then((conn: IPendingConnection) => {
@@ -436,7 +440,7 @@ export default class Request {
         this.requestResponse.timeToFirstByteRead = event.timeToFirstByteRead;
         this.requestResponse.headersSize = event.headersSize;
         this.requestResponse.httpVersion = event.httpVersion;
-        Platform.log(`Got headers for cookies ${this.url} => ${event.setCookie}`);
+        Platform.trace(`Got headers for cookies ${this.url} => ${event.setCookie}`);
         if (typeof event.setCookie === "string") {
             // const domain = this.url.hostname;
             // const path = this.url.pathname;
