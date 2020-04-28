@@ -81,6 +81,12 @@ class PendingConnectionImpl implements IPendingConnection {
         assert(!this.pipe, "must not have pipe");
         assert(!this.error, "must not have error");
 
+        if (this.connectionOptions.freshConnect) {
+            pipe.freshConnect = true;
+        }
+        if (this.connectionOptions.forbidReuse) {
+            pipe.forbidReuse = true;
+        }
         this.pipe = pipe;
         Platform.trace(`resolving with a pipe ${pipe.hostname}:${pipe.port} ${typeof this.resolveFunction}`);
         if (this.resolveFunction) {
@@ -177,6 +183,15 @@ export default class ConnectionPool {
         if (pipe.closed) {
             this.onClose(data, pipe);
         } else {
+            if (pipe.freshConnect) {
+                if (data.pipes.length + data.initializing >= this._maxConnectionsPerHost) {
+                    pipe.close();
+                    return;
+                }
+                assert(data.pipes.indexOf(pipe) === -1, "It should not be in here");
+                data.pipes.push(pipe);
+            }
+
             pipe.on("close", this.onClose.bind(this, data, pipe));
             pipe.on("data", this.onData.bind(this, pipe));
             pipe.idle = true;
@@ -233,6 +248,13 @@ export default class ConnectionPool {
                 this._id = 0;
             }
 
+            if (!data) {
+                data = { pipes: [], initializing: 0, pending: [], ssl, hostPort };
+                this._hosts.set(hostPort, data);
+            }
+
+            if (!options.freshConnect)
+                options.freshConnect = true;
             if (options.freshConnect) {
                 const tcpOpts = {
                     hostname: pending.hostname,
@@ -278,11 +300,6 @@ export default class ConnectionPool {
                 //         pending.reject = reject;
                 //     });
                 // }
-            }
-
-            if (!data) {
-                data = { pipes: [], initializing: 0, pending: [], ssl, hostPort };
-                this._hosts.set(hostPort, data);
             }
 
             data.pending.push(pending);

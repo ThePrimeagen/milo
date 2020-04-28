@@ -18,11 +18,13 @@ export abstract class NetworkPipe extends EventEmitter {
         this.id = pipeId;
         this.platform = platform;
         this.forbidReuse = false;
+        this.freshConnect = false;
     }
 
     // concrete properties
     idle: boolean;
     forbidReuse: boolean;
+    freshConnect: boolean;
 
     readonly id: number;
 
