@@ -123,7 +123,7 @@ class NodePlatform implements IPlatform {
     }
 
     cookies(url: Url): string | undefined { return undefined; }
-    processCookie(url: Url, value: string): void {
+    processCookies(url: Url, value: string | string[]): void {
         /* */
     }
 

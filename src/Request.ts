@@ -73,6 +73,7 @@ export default class Request {
     private compressionBufferOffset?: number;
     private compressionContentReceived?: number;
     private chunked: boolean;
+    private setCookie?: string | string[];
 
     constructor(data: IRequestData, redirects?: string[]) {
         this.requestData = data;
@@ -216,30 +217,31 @@ export default class Request {
             if (!this.requestData.headers)
                 this.requestData.headers = {};
 
-            if (this.requestResponse.cname) {
-                let hasCookie = false;
-                for (const key in this.requestData.headers) {
-                    if (this.requestData.headers.hasOwnProperty(key)) {
-                        if (key.length === 6 && (key === "Cookie" || key.toLowerCase() === "cookie")) {
-                            hasCookie = true;
-                            break;
-                        }
+            let hasCookie = false;
+            for (const key in this.requestData.headers) {
+                if (this.requestData.headers.hasOwnProperty(key)) {
+                    if (key.length === 6 && (key === "Cookie" || key.toLowerCase() === "cookie")) {
+                        Platform.trace("Has cookie header already",
+                                       this.requestData.url,
+                                       this.requestData.headers[key]);
+                        hasCookie = true;
+                        break;
                     }
                 }
+            }
 
-                if (!hasCookie) {
-                    // const info = new
-                    // const info = Platform.cookieAccessInfo;
-                    // info.domain = this.requestResponse.cname;
-                    // info.path = this.url.pathname;
-                    // info.secure = typeof this.requestResponse.sslVersion !== undefined;
-                    // info.script = false;
-                    // const cookies = Platform.cookieJar.getCookies(Platform.cookieAccessInfo).toValueString();
-                    const cookies = Platform.cookies(this.url);
-                    // Platform.log(`checking for cookies for ${this.url} => ${cookies}`);
-                    if (cookies) {
-                        this.requestData.headers.Cookie = cookies;
-                    }
+            if (!hasCookie) {
+                // const info = new
+                // const info = Platform.cookieAccessInfo;
+                // info.domain = this.requestResponse.cname;
+                // info.path = this.url.pathname;
+                // info.secure = typeof this.requestResponse.sslVersion !== undefined;
+                // info.script = false;
+                // const cookies = Platform.cookieJar.getCookies(Platform.cookieAccessInfo).toValueString();
+                const cookies = Platform.cookies(this.url);
+                // Platform.log(`checking for cookies for ${this.url} => ${cookies}`);
+                if (cookies) {
+                    this.requestData.headers.Cookie = cookies;
                 }
             }
 
@@ -320,8 +322,14 @@ export default class Request {
             this._transition(RequestState.Finished);
             break;
         case RequestState.Error:
+            // rm does this on errors too
+            if (this.setCookie)
+                Platform.processCookies(this.url, this.setCookie);
             break;
         case RequestState.Finished:
+            if (this.setCookie)
+                Platform.processCookies(this.url, this.setCookie);
+
             assert(this.transactionStartTime, "Gotta have a transactionStartTime");
             assert(this.requestResponse, "Gotta have a requestResponse");
             assert(this.requestResponse.networkStartTime, "Gotta have a requestResponse.networkStartTime");
@@ -450,17 +458,8 @@ export default class Request {
         this.requestResponse.headersSize = event.headersSize;
         this.requestResponse.httpVersion = event.httpVersion;
         Platform.trace(`Got headers for cookies ${this.url} => ${event.setCookie}`);
-        if (typeof event.setCookie === "string") {
-            // const domain = this.url.hostname;
-            // const path = this.url.pathname;
-            // Platform.cookieJar.setCookies(event.setCookie, domain, path);
-            // Platform.log("set some cookies\n", JSON.stringify(Platform.cookieJar, null, 4));
-            Platform.processCookie(this.url, event.setCookie);
-        } else if (event.setCookie) {
-            for (const cookie of event.setCookie) {
-                Platform.processCookie(this.url, cookie);
-            }
-        }
+        // ### what if we already had cookies after a redirect?
+        this.setCookie = event.setCookie;
         if (event.redirectUrl) {
             const count = this.requestResponse.addUrl(event.redirectUrl);
             if (count <= 10) {

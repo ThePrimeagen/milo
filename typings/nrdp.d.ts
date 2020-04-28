@@ -32,8 +32,8 @@ declare namespace nrdp {
     }
 
     namespace resourcemanager {
-        function processCookie(url: string, value?: string): void;
-        function cookies(url: string): string;
+        function processCookies(url: string, value: string | string[]): void;
+        function cookies(url: string, flags?: number): string;
     }
 
     namespace l {

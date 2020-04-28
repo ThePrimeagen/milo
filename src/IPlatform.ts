@@ -87,7 +87,7 @@ export default interface IPlatform {
     // readonly cookieJar: CookieJar;
     // readonly cookieAccessInfo: CookieAccessInfo;
     cookies(url: Url): string | undefined;
-    processCookie(url: Url, value: string): void;
+    processCookies(url: Url, value: string | string[]): void;
     readonly defaultRequestTimeouts: IRequestTimeouts;
 
     quit(exitCode?: number): void;

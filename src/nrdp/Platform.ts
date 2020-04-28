@@ -18,7 +18,7 @@ import assert from "../utils/assert.macro";
 import createNrdpSSLNetworkPipe from "./NrdpSSLNetworkPipe";
 import createNrdpTCPNetworkPipe from "./NrdpTCPNetworkPipe";
 // import { CookieAccessInfo, CookieJar } from "cookiejar";
-import { IpConnectivityMode, CompressionStreamMethod, CompressionStreamType, RequestId } from "../types";
+import { CookieFlag, IpConnectivityMode, CompressionStreamMethod, CompressionStreamType, RequestId } from "../types";
 
 type NrdpGibbonLoadCallbackSignature = (response: RequestResponse) => void;
 type NrdpGibbonLoadSignature = (data: IRequestData | string, callback?: NrdpGibbonLoadCallbackSignature) => number;
@@ -153,12 +153,12 @@ export class NrdpPlatform implements IPlatform {
         };
     }
 
-    processCookie(url: Url, value?: string): void {
-        nrdp.resourcemanager.processCookie(url.toString(), value);
+    processCookies(url: Url, value: string | string[]): void {
+        nrdp.resourcemanager.processCookies(url.toString(), value);
     }
 
     cookies(url: Url): string | undefined {
-        return nrdp.resourcemanager.cookies(url.toString()) || undefined;
+        return nrdp.resourcemanager.cookies(url.toString(), CookieFlag.HttpOnly) || undefined;
     }
 
     serverTime(): number | undefined {
@@ -327,7 +327,7 @@ export class NrdpPlatform implements IPlatform {
             || data.url.lastIndexOf("http://localcontrol.netflix.com/", 0) === 0
             || data.url.lastIndexOf("file://", 0) === 0
             || data.url.lastIndexOf("data:", 0) === 0) {
-            this.log("disallowing policy", u.host, u.pathname, typeof data.body);
+            this.trace("disallowing policy", u.host, u.pathname, typeof data.body);
             // return this.realLoad(data, (response: RequestResponse) => {
             //     callback(response);
             // });
@@ -336,68 +336,8 @@ export class NrdpPlatform implements IPlatform {
 
         if (disallow > 0) {
             --disallow;
-            this.log("disallowing poly", disallow, u.host, u.pathname);
+            this.trace("disallowing poly", disallow, u.host, u.pathname);
             return this.realLoad(data, callback);
-        }
-
-        switch (u.host) {
-        case "api-global.netflix.com":
-            // this.log("piece of shit", data);
-            // break;
-        case "nrdp.prod.ftl.netflix.com":
-        case "uiboot.netflix.com":
-            // this.log("disallowing host", u.host, u.pathname);
-            // return this.realLoad(data, callback);
-        }
-
-        switch (typeof data.body) {
-        case "object":
-            // if (u.host === "api-global.netflix.com") {
-            //     this.log("disallowing body", u.host, u.pathname, data.body instanceof Uint8Array);
-            //     return this.realLoad(data, callback);
-            // }
-
-            if (u.host === "api-global.netflix.com" && data.format === "jsonstream") {
-                this.log("doing a json stream to api", data.url, data.format);
-                // this.log("disallowing poly", disallow, u.host, u.pathname);
-                // let count = 2;
-                const miloId = this.miloLoad(data, (response: RequestResponse) => {
-                    const shit: any = {};
-                    Object.keys(response).sort().forEach((key) => {
-                        // @ts-ignore
-                        shit[key] = response[key];
-                    });
-
-                    this.writeFile("/tmp/milo.json", JSON.stringify(shit, null, 4));
-                    // this.quit(0);
-                    if (callback)
-                        callback(response);
-                    // if (!--count)
-                    //     this.quit();
-                });
-                const nrdpId = this.realLoad(data, (response: RequestResponse) => {
-                    const shit: any = {};
-                    Object.keys(response).sort().forEach((key) => {
-                        // @ts-ignore
-                        shit[key] = response[key];
-                    });
-
-                    this.writeFile("/tmp/real.json", JSON.stringify(shit, null, 4));
-                    // if (callback)
-                    //     callback(response);
-                    // if (!--count)
-                    //     this.quit();
-                });
-                this.trace(miloId, nrdpId);
-                return miloId;
-            }
-            break;
-        case "undefined":
-        case "string":
-        default:
-            // this.log("GOT A BODY TYPE", typeof data.body, data.body instanceof Uint8Array,
-            //          data.body instanceof ArrayBuffer);
-            break;
         }
 
         if (this.polyfillMode === PolyfillMode.Check) {
@@ -428,7 +368,7 @@ export class NrdpPlatform implements IPlatform {
                 check();
             });
         } else {
-            this.log("allowing", u.host, u.pathname);
+            this.trace("allowing", u.host, u.pathname);
             return this.miloLoad(data, callback);
         }
     }
