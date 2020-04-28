@@ -180,18 +180,19 @@ export default class ConnectionPool {
         const data = this._hosts.get(hostPort);
         assert(data, "Must have data");
 
-        if (pipe.closed) {
-            this.onClose(data, pipe);
-        } else {
-            if (pipe.freshConnect) {
-                if (data.pipes.length + data.initializing >= this._maxConnectionsPerHost) {
-                    pipe.close();
-                    return;
-                }
-                assert(data.pipes.indexOf(pipe) === -1, "It should not be in here");
+        if (pipe.freshConnect) {
+            assert(data.pipes.indexOf(pipe) === -1, "It should not be in here");
+            if (data.pipes.length + data.initializing >= this._maxConnectionsPerHost) {
+                pipe.close();
+                return;
+            } else if (pipe.closed) {
+                return;
+            } else {
                 data.pipes.push(pipe);
             }
-
+        } else if (pipe.closed) {
+            this.onClose(data, pipe);
+        } else {
             pipe.on("close", this.onClose.bind(this, data, pipe));
             pipe.on("data", this.onData.bind(this, pipe));
             pipe.idle = true;
