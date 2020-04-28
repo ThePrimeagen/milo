@@ -5,7 +5,7 @@ var testClient = root.substr(0, idx) + "test-client.js";
 nrdp.gibbon.loadScript({url: testClient, async: false});
 
 nrdp.l(nrdp.js_options);
-var http = nrdp.js_options.MILO_TEST_HTTP_SERVER || "http://localhost:60000";
+var http = nrdp.js_options.MILO_TEST_HTTP_SERVER || "http://milo.netflix.com:60000";
 var https = nrdp.js_options.MILO_TEST_HTTPS_SERVER || "https://milo.netflix.com:60001";
 if (http === "0")
     http = undefined;

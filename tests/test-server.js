@@ -17,7 +17,7 @@ const options = {
 };
 
 const file = argv["ports-file"] || path.join(__dirname, "/test-server.ports");
-const host = argv["server"] || "localhost";
+const host = argv["server"] || "milo.netflix.com";
 
 let startPort = 59999;
 const maxPort = 65535;
