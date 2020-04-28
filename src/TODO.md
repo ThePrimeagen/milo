@@ -32,6 +32,8 @@
 * disallow non-const enums somehow (eslint, tsconfig)
 * handling of format === "none" is not right with content length and compression stream and so on
 * nrdp.gibbon.cookie must be polyfilled
+* network statistics for milo
+* /command for milo
 
 ### DONE
 * Support -X
