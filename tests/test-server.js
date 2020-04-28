@@ -7,9 +7,14 @@ const https = require("https");
 const http = require("http");
 const zlib = require("zlib");
 const seedrandom = require("seedrandom");
+const bodyParser = require("body-parser");
 
 const argv = require("minimist")(process.argv.slice(2));
 const app = express();
+
+// app.use(bodyParser.urlencoded({ extended: true }));
+// app.use(bodyParser.json());
+app.use(bodyParser.raw());
 
 const options = {
     key: fs.readFileSync(path.join(__dirname, "key.pem")),
@@ -78,11 +83,21 @@ createServer().then(server => {
 
 const table = "ABCDEFGHIJKLMNOPQRSTUVWXYZ\n";
 
-app.get("/", (req, res) => {
+function handler(req, res, body) {
+    if (body)
+        console.log(typeof body, body); //, Object.keys(body.prototype));
     const size = parseInt(req.query.size) || 1024;
     let payload = Buffer.allocUnsafe(size);
     for (let idx=0; idx<size; ++idx) {
         payload[idx] = table.charCodeAt(idx % table.length);
+    }
+
+    if ("json" in req.query) {
+
+
+    } else if ("jsonstream" in req.query) {
+
+
     }
 
     if ("gzip" in req.query) {
@@ -116,4 +131,10 @@ app.get("/", (req, res) => {
     } else {
         res.send(payload);
     }
+}
+
+app.get("/", handler);
+app.post("/", function(req, res) {
+    handler(req, res, req.body);
 });
+

@@ -59,6 +59,7 @@
     "babel-plugin-macros": "^2.8.0",
     "babel-plugin-transform-async-to-promises": "^0.8.15",
     "bindings": "^1.5.0",
+    "body-parser": "^1.19.0",
     "death": "^1.1.0",
     "del-cli": "^3.0.0",
     "dotenv": "^8.2.0",
