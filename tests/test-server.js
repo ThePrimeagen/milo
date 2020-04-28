@@ -93,7 +93,8 @@ app.get("/", (req, res) => {
         res.set("Content-Encoding", 'deflate');
     }
 
-    console.log("got request", req.url);
+    if (argv.verbose)
+        console.log("got request", req.url);
     // console.log("got payload", payload.length, payload.byteLength);
     if ("chunked" in req.query) {
         const random = seedrandom(JSON.stringify(req.query));
