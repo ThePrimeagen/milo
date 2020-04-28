@@ -14,10 +14,10 @@ import Platform from "./Platform";
 import RequestResponse from "./RequestResponse";
 import Url from "url-parse";
 import assert from "./utils/assert.macro";
-import { CookieJar, CookieAccessInfo } from "cookiejar";
-import { HTTPEncoding, NetError, NetworkErrorCode } from "./types";
+// import { CookieJar, CookieAccessInfo } from "cookiejar";
+import { HTTPEncoding, NetError, NetworkErrorCode, RequestId } from "./types";
 
-let nextId = 0;
+let nextId = RequestId.Min;
 
 const enum RequestState {
     Initial = 0,
@@ -76,9 +76,10 @@ export default class Request {
 
     constructor(data: IRequestData, redirects?: string[]) {
         this.requestData = data;
-        this.id = --nextId;
-        if (this.id === -2147483648)
-            nextId = 0;
+        this.id = nextId++;
+        if (nextId === RequestId.Max) {
+            nextId = RequestId.Min;
+        }
 
         this.requestResponse = new RequestResponse(this.id, redirects ? redirects : this.requestData.url);
         if (redirects) {

@@ -18,14 +18,14 @@ import assert from "../utils/assert.macro";
 import createNrdpSSLNetworkPipe from "./NrdpSSLNetworkPipe";
 import createNrdpTCPNetworkPipe from "./NrdpTCPNetworkPipe";
 // import { CookieAccessInfo, CookieJar } from "cookiejar";
-import { IpConnectivityMode, CompressionStreamMethod, CompressionStreamType } from "../types";
+import { IpConnectivityMode, CompressionStreamMethod, CompressionStreamType, RequestId } from "../types";
 
 type NrdpGibbonLoadCallbackSignature = (response: RequestResponse) => void;
 type NrdpGibbonLoadSignature = (data: IRequestData | string, callback?: NrdpGibbonLoadCallbackSignature) => number;
 
 const enum PolyfillMode { None, All, Optin, Check };
 
-let disallow = 20;
+let disallow = 0;
 function compareResults(platform: IPlatform, miloResp: RequestResponse, nrdpResp: RequestResponse) {
     if (typeof miloResp.data !== typeof nrdpResp.data) {
         platform.log("WRONG TYPE", miloResp.url, typeof miloResp.data, typeof nrdpResp.data);
@@ -518,7 +518,7 @@ export class NrdpPlatform implements IPlatform {
     }
 
     private polyfilledGibbonStopLoad(id: number): void {
-        if (id < 0) {
+        if (id >= RequestId.Min) {
             nrdp.l.error("SOMEONE CALLING STOPLOAD ON US", id);
         } else {
             this.realStopLoad(id);

@@ -15,6 +15,11 @@ export const enum ErrorCode {
 
 export type EventListenerCallback = (...args: any[]) => void;
 
+export const enum RequestId {
+    Min = 16777216,
+    Max = 9007199254740991
+}
+
 export const enum HTTPEncoding {
     Chunked = 1,
     Compress = 2,
