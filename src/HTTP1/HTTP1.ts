@@ -11,6 +11,7 @@ import Platform from "../Platform";
 import assert from "../utils/assert.macro";
 import { HTTPEncoding, NetworkErrorCode } from "../types";
 
+let shit = 0;
 function setEncodings(headerValue: string): undefined | HTTPEncoding[] {
     const encodings = headerValue.split(",");
     Platform.trace("got some encodings", headerValue);
@@ -112,6 +113,11 @@ Host: ${request.url.host}\r\n`;
                 }
                 this.networkPipe.write(str);
                 this.networkPipe.write(request.body);
+                if (this.request.url.hostname === "api-global.netflix.com") {
+                    Platform.writeFile(`/tmp/api_${shit}_${typeof request.body}`, str + request.body);
+                    ++shit;
+                }
+
                 break;
             case "number":
             case "boolean":
@@ -121,8 +127,13 @@ Host: ${request.url.host}\r\n`;
                 } else {
                     str += "\r\n";
                 }
+                str += body;
                 this.networkPipe.write(str);
-                this.networkPipe.write(body);
+                if (this.request.url.hostname === "api-global.netflix.com") {
+                    Platform.writeFile(`/tmp/api_${shit}_${typeof request.body}`, str);
+                    ++shit;
+                }
+
                 break;
             case "object":
                 if (request.body instanceof DataBuffer
@@ -135,6 +146,11 @@ Host: ${request.url.host}\r\n`;
                     }
                     this.networkPipe.write(str);
                     this.networkPipe.write(request.body, 0, request.body.byteLength);
+                    if (this.request.url.hostname === "api-global.netflix.com") {
+                        Platform.writeFile(`/tmp/api_${shit}_${typeof request.body}`, str);
+                        Platform.writeFile(`/tmp/api_${shit}_${typeof request.body}`, request.body, true);
+                        ++shit;
+                    }
                 } else {
                     const json = JSON.stringify(request.body);
                     if (!hasContentLength) {
@@ -145,12 +161,20 @@ Host: ${request.url.host}\r\n`;
 
                     this.networkPipe.write(str);
                     this.networkPipe.write(json);
+                    if (this.request.url.hostname === "api-global.netflix.com") {
+                        Platform.writeFile(`/tmp/api_${shit}_${typeof request.body}`, str + json);
+                        ++shit;
+                    }
                 }
                 break;
             }
         } else {
             str += "\r\n";
             this.networkPipe.write(str);
+            if (this.request.url.hostname === "api-global.netflix.com") {
+                Platform.writeFile(`/tmp/api_${shit}_${typeof request.body}`, str);
+                ++shit;
+            }
         }
 
         this.networkPipe.on("data", this._onData.bind(this));

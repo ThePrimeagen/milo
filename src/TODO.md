@@ -21,7 +21,6 @@
 * http pipelining
 * enforce http connection management
 * handle other X-Gibbon-Cache-Control stuff than key=
-* consider sockets surviving scriptengine restart or not?
 * handle file:/// and data:/ urls, maybe localcontrol as well.
 * Pool more classes, things like HTTP1 and Request should be quite poolable
 * network.js?
@@ -40,3 +39,4 @@
 * don't make a databuffer when output format is arraybuffer/uint8array and data is in chunks
 * call callbacks when I get errors
 * transfer-encoding/transport-encoding inflate,gzip etc
+* consider sockets surviving scriptengine restart or not?, considered, they will not

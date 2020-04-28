@@ -341,6 +341,9 @@ export default class Request {
                 this.requestResponse.transactionTime = now - this.transactionStartTime;
                 this.requestResponse.size = this.responseDataLength;
                 this.requestResponse.state = "network";
+                // ### Do I need these?
+                this.requestResponse.errorcode = 0;
+                this.requestResponse.errorgroup = 0;
                 assert(this.networkPipe, "must have networkPipe");
                 // Platform.log(`Finished ${this.networkPipe.socket} ${this.url} ${this.requestResponse.statusCode}`);
                 this.requestResponse.bytesRead = this.networkPipe.bytesRead;
@@ -609,6 +612,7 @@ export default class Request {
         const now = Platform.mono();
         assert(this.requestResponse, "Gotta have a requestResponse");
         assert(this.requestResponse.networkStartTime, "Gotta have a requestResponse.networkStartTime");
+        Platform.error(`Request timed out ${this.requestResponse.url}`);
         this._onError(new NetworkError(NetworkErrorCode.Timeout, `Request timed out after ${now - this.requestResponse.networkStartTime}ms`));
     }
 
