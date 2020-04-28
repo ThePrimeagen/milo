@@ -20,6 +20,12 @@ export const enum RequestId {
     Max = 9007199254740991
 }
 
+export const enum CookieFlag {
+    None = 0x0,
+    HttpOnly = 0x1,
+    Trusted = 0x2
+};
+
 export const enum HTTPEncoding {
     Chunked = 1,
     Compress = 2,

@@ -2,6 +2,7 @@
 import Platform from "./Platform";
 import assert from "./utils/assert.macro";
 import Url from "url-parse";
+import { CookieFlag } from "./types";
 
 interface Cookie {
     name: string;
@@ -11,12 +12,6 @@ interface Cookie {
     secure?: boolean;
     expires?: number;
     http?: boolean;
-};
-
-export const enum CookieFlag {
-    None = 0x0,
-    HttpOnly = 0x1,
-    Trusted = 0x2
 };
 
 function domainSuffix(host: string, suffix: string): boolean {
