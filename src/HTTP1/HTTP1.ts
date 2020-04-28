@@ -85,7 +85,11 @@ Host: ${request.url.host}\r\n`;
             if (request.requestHeaders.hasOwnProperty(key)) {
                 let value = request.requestHeaders[key];
                 if (typeof value === "object") {
-                    value = JSON.stringify(value);
+                    if (value instanceof Uint8Array || value instanceof ArrayBuffer) {
+                        value = Platform.utf8toa(value);
+                    } else {
+                        value = JSON.stringify(value);
+                    }
                 }
                 str += `${key}: ${value}\r\n`;
                 if (hasBody) {
