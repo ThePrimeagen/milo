@@ -331,9 +331,12 @@ export default class Request {
 
             if (typeof this.compressionBuffer !== "undefined") {
                 assert(this.compressionStream, "Must have compression stream");
-                assert(this.compressionBufferOffset, "Must have compression buffer offset");
-                this.compressionBuffer.byteLength = this.compressionBufferOffset;
-                this._onData(this.compressionBuffer, 0, this.compressionBufferOffset);
+                assert(typeof this.compressionBufferOffset !== "undefined",
+                       "Must have compression buffer offset");
+                if (this.compressionBufferOffset > 0) {
+                    this.compressionBuffer.byteLength = this.compressionBufferOffset;
+                    this._onData(this.compressionBuffer, 0, this.compressionBufferOffset);
+                }
                 this.compressionBuffer = undefined;
                 this.compressionBufferOffset = undefined;
             }
@@ -555,6 +558,7 @@ export default class Request {
                 this.compressionBuffer.byteLength = this.compressionBufferOffset;
                 this._onData(this.compressionBuffer, 0, this.compressionBufferOffset);
                 this.compressionBuffer = undefined;
+                this.compressionBufferOffset = undefined;
             }
             const used = this.compressionStream.inputUsed;
             if (used) {
