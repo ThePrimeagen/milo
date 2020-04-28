@@ -112,6 +112,7 @@ Host: ${request.url.host}\r\n`;
                 }
                 this.networkPipe.write(str);
                 this.networkPipe.write(request.body);
+
                 break;
             case "number":
             case "boolean":
@@ -121,8 +122,9 @@ Host: ${request.url.host}\r\n`;
                 } else {
                     str += "\r\n";
                 }
+                str += body;
                 this.networkPipe.write(str);
-                this.networkPipe.write(body);
+
                 break;
             case "object":
                 if (request.body instanceof DataBuffer

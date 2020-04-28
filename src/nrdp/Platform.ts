@@ -358,7 +358,7 @@ export class NrdpPlatform implements IPlatform {
             // }
 
             if (u.host === "api-global.netflix.com" && data.format === "jsonstream") {
-                this.log("mofokker", data.url, data.format);
+                this.log("doing a json stream to api", data.url, data.format);
                 // this.log("disallowing poly", disallow, u.host, u.pathname);
                 // let count = 2;
                 const miloId = this.miloLoad(data, (response: RequestResponse) => {
